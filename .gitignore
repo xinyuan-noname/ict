@@ -25,3 +25,8 @@ server/logs/
 app/build/
 *.log
 .codeartsdoer/.gitignore
+.tmp/
+*.keystore
+app/windows/**/Generated Files/
+app/windows/**/bin/
+app/windows/**/obj/
