@@ -1,0 +1,12 @@
+{
+  "name": "ict",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Huawei ID minimal login system (React Native + Go)",
+  "scripts": {
+    "gen:contracts": "node scripts/gen-contracts.mjs",
+    "check:contracts": "node scripts/gen-contracts.mjs && git diff --exit-code contracts/generated",
+    "check:go-syntax": "node scripts/check-go-syntax.mjs server",
+    "secret:scan": "node scripts/secret-scan.mjs"
+  }
+}

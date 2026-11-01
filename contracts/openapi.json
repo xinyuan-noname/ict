@@ -1,0 +1,174 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Huawei ID Minimal Login API",
+    "version": "1.0.0",
+    "description": "契约单一源。兼容规则：只增字段、不改语义、不删字段、枚举只扩不缩。"
+  },
+  "servers": [{ "url": "https://localhost:8443" }],
+  "paths": {
+    "/v1/auth/huawei/login": {
+      "post": {
+        "operationId": "login",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginRequest" } } } },
+        "responses": {
+          "200": { "description": "登录成功", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginResult" } } } },
+          "400": { "$ref": "#/components/responses/Error" },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" },
+          "500": { "$ref": "#/components/responses/Error" },
+          "502": { "$ref": "#/components/responses/Error" },
+          "503": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/auth/session/validate": {
+      "post": {
+        "operationId": "validateSession",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ValidateRequest" } } } },
+        "responses": {
+          "200": { "description": "凭证有效", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ValidateResponse" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" },
+          "500": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": { "required": false, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LogoutRequest" } } } },
+        "responses": {
+          "200": { "description": "退出成功（幂等）", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LogoutResponse" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" },
+          "500": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/auth/me": {
+      "get": {
+        "operationId": "me",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "当前用户", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MeResponse" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" },
+          "500": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/health": {
+      "get": {
+        "operationId": "health",
+        "responses": {
+          "200": { "description": "服务状态", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HealthResponse" } } } },
+          "503": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": { "bearerAuth": { "type": "http", "scheme": "bearer" } },
+    "responses": {
+      "Error": { "description": "统一失败包络", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorEnvelope" } } } }
+    },
+    "schemas": {
+      "Platform": { "type": "string", "enum": ["android", "ios", "windows"] },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["platform", "authCode", "clientVersion"],
+        "properties": {
+          "platform": { "$ref": "#/components/schemas/Platform" },
+          "authCode": { "type": "string", "minLength": 1, "maxLength": 2048 },
+          "redirectUri": { "type": "string", "maxLength": 512, "description": "platform=windows 时必填" },
+          "clientVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+          "deviceLabel": { "type": "string", "maxLength": 64 }
+        }
+      },
+      "UserBrief": {
+        "type": "object",
+        "required": ["userId"],
+        "properties": {
+          "userId": { "type": "string" },
+          "displayName": { "type": "string" },
+          "avatarUrl": { "type": "string" }
+        }
+      },
+      "LoginResult": {
+        "type": "object",
+        "required": ["sessionToken", "expiresAt", "user", "firstLogin", "traceId"],
+        "properties": {
+          "sessionToken": { "type": "string" },
+          "expiresAt": { "type": "string", "format": "date-time" },
+          "user": { "$ref": "#/components/schemas/UserBrief" },
+          "firstLogin": { "type": "boolean" },
+          "traceId": { "type": "string" }
+        }
+      },
+      "ValidateRequest": {
+        "type": "object",
+        "properties": { "sessionToken": { "type": "string" } }
+      },
+      "ValidateResponse": {
+        "type": "object",
+        "required": ["valid", "user", "expiresAt", "traceId"],
+        "properties": {
+          "valid": { "type": "boolean" },
+          "user": { "$ref": "#/components/schemas/UserBrief" },
+          "expiresAt": { "type": "string", "format": "date-time" },
+          "sessionToken": { "type": "string", "description": "仅在触发续期时返回" },
+          "traceId": { "type": "string" }
+        }
+      },
+      "LogoutRequest": { "type": "object", "properties": { "sessionToken": { "type": "string" } } },
+      "LogoutResponse": {
+        "type": "object",
+        "required": ["success", "traceId"],
+        "properties": { "success": { "type": "boolean" }, "traceId": { "type": "string" } }
+      },
+      "MeResponse": {
+        "type": "object",
+        "required": ["user", "platform", "expiresAt", "traceId"],
+        "properties": {
+          "user": { "$ref": "#/components/schemas/UserBrief" },
+          "platform": { "$ref": "#/components/schemas/Platform" },
+          "expiresAt": { "type": "string", "format": "date-time" },
+          "traceId": { "type": "string" }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "required": ["status", "version", "env", "checks", "time"],
+        "properties": {
+          "status": { "type": "string", "enum": ["ok", "degraded", "fail"] },
+          "version": { "type": "string" },
+          "env": { "type": "string" },
+          "checks": {
+            "type": "object",
+            "required": ["config", "storage", "huawei"],
+            "properties": {
+              "config": { "type": "string", "enum": ["ok", "fail"] },
+              "storage": { "type": "string", "enum": ["ok", "fail"] },
+              "huawei": { "type": "string", "enum": ["ok", "degraded", "unknown"] }
+            }
+          },
+          "time": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ErrorEnvelope": {
+        "type": "object",
+        "required": ["code", "message", "traceId"],
+        "properties": {
+          "code": { "type": "string", "pattern": "^AUTH_0(0[1-9]|1[0-4])$" },
+          "message": { "type": "string" },
+          "traceId": { "type": "string" }
+        }
+      }
+    }
+  }
+}

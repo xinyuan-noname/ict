@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "status": "stable",
+  "compileRules": [
+    "只增字段、不改语义、不删字段",
+    "枚举只扩不缩",
+    "AUTH_002 为客户端本地事件，无服务端响应"
+  ],
+  "internalReasons": ["version_unsupported", "redirect_mismatch", "code_replayed", "status_unknown"],
+  "internalReasonNote": "reason 仅入审计，不进响应、不新增码值",
+  "codes": [
+    { "code": "AUTH_001", "httpStatus": 400, "meaning": "授权码无效、过期或已被使用", "userMessage": "登录已过期，请重新登录", "clientAction": "relogin", "serverAction": "audit_login_failure", "retryable": true, "endpoints": ["login"] },
+    { "code": "AUTH_002", "httpStatus": null, "meaning": "用户取消授权（客户端本地事件，不产生服务端错误响应）", "userMessage": "已取消授权，可重新登录", "clientAction": "none", "serverAction": "none", "retryable": true, "endpoints": [] },
+    { "code": "AUTH_003", "httpStatus": 503, "meaning": "华为账号服务不可用或超时", "userMessage": "华为账号服务暂时不可用，请稍后重试", "clientAction": "retry_manual", "serverAction": "upstream_degraded", "retryable": true, "endpoints": ["login", "health"] },
+    { "code": "AUTH_004", "httpStatus": 401, "meaning": "会话凭证缺失、格式非法或校验失败", "userMessage": "登录状态已失效，请重新登录", "clientAction": "clear_credential", "serverAction": "audit_token_verify_failure", "retryable": false, "endpoints": ["validate", "logout", "me"] },
+    { "code": "AUTH_005", "httpStatus": 401, "meaning": "会话凭证已过期", "userMessage": "登录已过期，请重新登录", "clientAction": "clear_credential", "serverAction": "audit_token_verify_failure", "retryable": false, "endpoints": ["validate", "me"] },
+    { "code": "AUTH_006", "httpStatus": 400, "meaning": "请求参数非法（缺少授权码、回调地址不匹配等）", "userMessage": "登录请求异常，请重新登录", "clientAction": "relogin", "serverAction": "audit_login_failure", "retryable": false, "endpoints": ["login"] },
+    { "code": "AUTH_007", "httpStatus": 429, "meaning": "请求过于频繁，已触发限流", "userMessage": "操作过于频繁，请稍后再试", "clientAction": "wait_retry_after", "serverAction": "metrics_rate_limited", "retryable": true, "endpoints": ["login", "validate", "logout", "me"] },
+    { "code": "AUTH_008", "httpStatus": 503, "meaning": "服务配置缺失或不匹配", "userMessage": "服务配置异常，请联系管理员", "clientAction": "contact_admin", "serverAction": "alert_config", "retryable": false, "endpoints": ["login", "health"] },
+    { "code": "AUTH_009", "httpStatus": 400, "meaning": "平台标识缺失或不受支持", "userMessage": "当前平台暂不支持华为账号登录", "clientAction": "none", "serverAction": "audit_login_failure", "retryable": false, "endpoints": ["login"] },
+    { "code": "AUTH_010", "httpStatus": 403, "meaning": "用户已被停用", "userMessage": "账号不可用，请联系管理员", "clientAction": "contact_admin", "serverAction": "audit_login_failure", "retryable": false, "endpoints": ["login", "validate", "me"] },
+    { "code": "AUTH_011", "httpStatus": 502, "meaning": "华为侧未返回有效用户标识", "userMessage": "登录信息异常，请稍后重试", "clientAction": "retry_manual", "serverAction": "alert_security", "retryable": true, "endpoints": ["login"] },
+    { "code": "AUTH_012", "httpStatus": 500, "meaning": "用户档案建立或更新失败", "userMessage": "登录失败，请稍后重试", "clientAction": "retry_manual", "serverAction": "alert_storage", "retryable": true, "endpoints": ["login"] },
+    { "code": "AUTH_013", "httpStatus": 401, "meaning": "会话已被吊销", "userMessage": "登录状态已失效，请重新登录", "clientAction": "clear_credential", "serverAction": "audit_token_verify_failure", "retryable": false, "endpoints": ["validate", "me"] },
+    { "code": "AUTH_014", "httpStatus": 500, "meaning": "未归类的内部错误", "userMessage": "操作失败，请稍后重试", "clientAction": "retry_manual", "serverAction": "alert_internal", "retryable": true, "endpoints": ["login", "validate", "logout", "me", "health"] }
+  ]
+}
