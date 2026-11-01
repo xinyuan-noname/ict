@@ -22,24 +22,52 @@ import (
 	"ict/server/internal/platform/logx"
 )
 
+// Credentials 是单个平台的 AGC 凭据。
+type Credentials struct {
+	ClientID       string
+	Secret         string
+	SecretPrevious string
+}
+
 // Client 是系统唯一出网点（design 2.1.2），实现 port.HuaweiIdentityProvider。
 type Client struct {
-	BaseURL       string
-	TokenPath     string
-	TokeninfoPath string
-	JWKSPath      string
+	TokenURL     string
+	JWKSURL      string
+	TokeninfoURL string
+
 	ClientID      string
 	Secret        string
 	SecretPrev    string
-	Timeout       time.Duration
-	HTTP          *http.Client
-	Logger        *logx.Logger
+	CredentialFor func(domain.Platform) (Credentials, bool)
+
+	IssuerAllowlist []string
+	ClockSkew       time.Duration
+	JWKSMaxTTL      time.Duration
+
+	Timeout time.Duration
+	HTTP    *http.Client
+	Logger  *logx.Logger
 
 	breaker *Breaker
 
 	jwksMu    sync.RWMutex
 	keys      map[string]*rsa.PublicKey
 	fetchedAt time.Time
+}
+
+// credentials 返回平台凭据；未配置单平台解析器时回退到共享凭据。
+func (c *Client) credentials(platform domain.Platform) (Credentials, error) {
+	if c.CredentialFor != nil {
+		cred, ok := c.CredentialFor(platform)
+		if !ok || cred.ClientID == "" || cred.Secret == "" {
+			return Credentials{}, apperr.New(apperr.Auth008, errors.New("missing platform credential"))
+		}
+		return cred, nil
+	}
+	if c.ClientID == "" || c.Secret == "" {
+		return Credentials{}, apperr.New(apperr.Auth008, errors.New("missing credential"))
+	}
+	return Credentials{ClientID: c.ClientID, Secret: c.Secret, SecretPrevious: c.SecretPrev}, nil
 }
 
 type tokenResponse struct {
@@ -69,12 +97,17 @@ func (c *Client) Exchange(ctx context.Context, code string, platform domain.Plat
 	ctx, cancel := context.WithTimeout(ctx, c.Timeout)
 	defer cancel()
 
-	tr, err := c.exchangeToken(ctx, code, c.Secret, platform, redirectURI)
+	cred, err := c.credentials(platform)
+	if err != nil {
+		return domain.HuaweiIdentity{}, err
+	}
+
+	tr, err := c.exchangeToken(ctx, code, cred.ClientID, cred.Secret, platform, redirectURI)
 	if err != nil {
 		var te *tokenError
-		if errors.As(err, &te) && te.code == "invalid_client" && c.SecretPrev != "" {
+		if errors.As(err, &te) && te.code == "invalid_client" && cred.SecretPrevious != "" {
 			c.Logger.Warn(ctx, "client secret fallback", "event", "key_rotation_fallback")
-			tr, err = c.exchangeToken(ctx, code, c.SecretPrev, platform, redirectURI)
+			tr, err = c.exchangeToken(ctx, code, cred.ClientID, cred.SecretPrevious, platform, redirectURI)
 		}
 	}
 	if err != nil {
@@ -85,7 +118,7 @@ func (c *Client) Exchange(ctx context.Context, code string, platform domain.Plat
 	var identity domain.HuaweiIdentity
 	verified := false
 	if tr.IDToken != "" {
-		if id, verr := c.verifyIDToken(ctx, tr.IDToken); verr == nil {
+		if id, verr := c.verifyIDToken(ctx, tr.IDToken, cred.ClientID); verr == nil {
 			identity = id
 			verified = true
 		} else {
@@ -100,11 +133,10 @@ func (c *Client) Exchange(ctx context.Context, code string, platform domain.Plat
 			return domain.HuaweiIdentity{}, normalize(terr)
 		}
 		identity = mapIdentity(ti)
-		if tr.IDToken != "" {
-			if id, verr := c.verifyIDTokenLenient(ctx, tr.IDToken); verr == nil && id.OpenID != "" && identity.OpenID != "" && id.OpenID != identity.OpenID {
-				c.record(false)
-				return domain.HuaweiIdentity{}, apperr.New(apperr.Auth011, errors.New("openId mismatch between id_token and tokeninfo"))
-			}
+		// 回退路径必须核对 tokeninfo 所属应用，避免跨应用身份串号。
+		if ti.IssuerAppID != "" && ti.IssuerAppID != cred.ClientID {
+			c.record(false)
+			return domain.HuaweiIdentity{}, apperr.New(apperr.Auth011, errors.New("tokeninfo client_id mismatch"))
 		}
 	}
 
@@ -123,16 +155,16 @@ type tokenError struct {
 
 func (e *tokenError) Error() string { return "huawei token error: " + e.code }
 
-func (c *Client) exchangeToken(ctx context.Context, code, secret string, platform domain.Platform, redirectURI string) (*tokenResponse, error) {
+func (c *Client) exchangeToken(ctx context.Context, code, clientID, secret string, platform domain.Platform, redirectURI string) (*tokenResponse, error) {
 	form := url.Values{}
 	form.Set("grant_type", "authorization_code")
-	form.Set("client_id", c.ClientID)
+	form.Set("client_id", clientID)
 	form.Set("client_secret", secret)
 	form.Set("code", code)
 	if platform == domain.PlatformWindows && redirectURI != "" {
 		form.Set("redirect_uri", redirectURI)
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, strings.TrimRight(c.BaseURL, "/")+c.TokenPath, strings.NewReader(form.Encode()))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.TokenURL, strings.NewReader(form.Encode()))
 	if err != nil {
 		return nil, err
 	}
@@ -187,10 +219,11 @@ type jwtHeader struct {
 }
 
 type jwtClaims struct {
-	Iss string `json:"iss"`
-	Aud string `json:"aud"`
-	Sub string `json:"sub"`
-	Exp int64  `json:"exp"`
+	Iss string          `json:"iss"`
+	Aud json.RawMessage `json:"aud"`
+	Azp string          `json:"azp"`
+	Sub string          `json:"sub"`
+	Exp int64           `json:"exp"`
 	// 华为扩展字段
 	UnionID     string `json:"unionid"`
 	DisplayName string `json:"display_name"`
@@ -198,27 +231,7 @@ type jwtClaims struct {
 	ClientID    string `json:"client_id"`
 }
 
-func (c *Client) verifyIDToken(ctx context.Context, token string) (domain.HuaweiIdentity, error) {
-	return c.verifyJWT(ctx, token, true)
-}
-
-func (c *Client) verifyIDTokenLenient(ctx context.Context, token string) (domain.HuaweiIdentity, error) {
-	parts := strings.Split(token, ".")
-	if len(parts) != 3 {
-		return domain.HuaweiIdentity{}, errors.New("malformed jwt")
-	}
-	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
-	if err != nil {
-		return domain.HuaweiIdentity{}, err
-	}
-	var claims jwtClaims
-	if err := json.Unmarshal(payload, &claims); err != nil {
-		return domain.HuaweiIdentity{}, err
-	}
-	return domain.HuaweiIdentity{OpenID: claims.Sub, UnionID: claims.UnionID, DisplayName: pick(claims.DisplayName), AvatarURL: claims.Picture}, nil
-}
-
-func (c *Client) verifyJWT(ctx context.Context, token string, strict bool) (domain.HuaweiIdentity, error) {
+func (c *Client) verifyIDToken(ctx context.Context, token, clientID string) (domain.HuaweiIdentity, error) {
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {
 		return domain.HuaweiIdentity{}, errors.New("malformed jwt")
@@ -254,13 +267,8 @@ func (c *Client) verifyJWT(ctx context.Context, token string, strict bool) (doma
 	if err := json.Unmarshal(pb, &claims); err != nil {
 		return domain.HuaweiIdentity{}, err
 	}
-	if strict {
-		if claims.Aud != "" && c.ClientID != "" && claims.Aud != c.ClientID {
-			return domain.HuaweiIdentity{}, errors.New("aud mismatch")
-		}
-		if claims.Exp > 0 && time.Now().Unix() > claims.Exp {
-			return domain.HuaweiIdentity{}, errors.New("token expired")
-		}
+	if err := c.validateClaims(claims, clientID); err != nil {
+		return domain.HuaweiIdentity{}, err
 	}
 	return domain.HuaweiIdentity{
 		OpenID:      claims.Sub,
@@ -271,10 +279,61 @@ func (c *Client) verifyJWT(ctx context.Context, token string, strict bool) (doma
 	}, nil
 }
 
+// validateClaims：iss 白名单、aud 包含、azp、exp（含允许时钟偏移）。
+func (c *Client) validateClaims(claims jwtClaims, clientID string) error {
+	if len(c.IssuerAllowlist) > 0 {
+		allowed := false
+		for _, iss := range c.IssuerAllowlist {
+			if claims.Iss == iss {
+				allowed = true
+				break
+			}
+		}
+		if !allowed {
+			return errors.New("iss mismatch")
+		}
+	}
+	if clientID != "" && !audContains(claims.Aud, clientID) {
+		return errors.New("aud mismatch")
+	}
+	if claims.Azp != "" && clientID != "" && claims.Azp != clientID {
+		return errors.New("azp mismatch")
+	}
+	skew := int64(c.ClockSkew / time.Second)
+	if claims.Exp > 0 && time.Now().Unix() > claims.Exp+skew {
+		return errors.New("token expired")
+	}
+	return nil
+}
+
+// audContains 支持 aud 为字符串或字符串数组两种真实返回形态。
+func audContains(raw json.RawMessage, want string) bool {
+	if len(raw) == 0 {
+		return false
+	}
+	var single string
+	if err := json.Unmarshal(raw, &single); err == nil {
+		return single == want
+	}
+	var many []string
+	if err := json.Unmarshal(raw, &many); err == nil {
+		for _, v := range many {
+			if v == want {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // publicKey 拉取并缓存 JWKS 12 小时（任务 16.1）。
 func (c *Client) publicKey(ctx context.Context, kid string) (*rsa.PublicKey, error) {
 	c.jwksMu.RLock()
-	if time.Since(c.fetchedAt) < 12*time.Hour {
+	ttl := c.JWKSMaxTTL
+	if ttl <= 0 {
+		ttl = 12 * time.Hour
+	}
+	if time.Since(c.fetchedAt) < ttl {
 		if pk, ok := c.keys[kid]; ok {
 			c.jwksMu.RUnlock()
 			return pk, nil
@@ -301,7 +360,7 @@ type jwk struct {
 }
 
 func (c *Client) refreshJWKS(ctx context.Context) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, strings.TrimRight(c.BaseURL, "/")+c.JWKSPath, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.JWKSURL, nil)
 	if err != nil {
 		return err
 	}
@@ -341,7 +400,7 @@ func (c *Client) refreshJWKS(ctx context.Context) error {
 func (c *Client) fetchTokeninfo(ctx context.Context, accessToken string) (*tokeninfoResponse, error) {
 	form := url.Values{}
 	form.Set("access_token", accessToken)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, strings.TrimRight(c.BaseURL, "/")+c.TokeninfoPath, strings.NewReader(form.Encode()))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.TokeninfoURL, strings.NewReader(form.Encode()))
 	if err != nil {
 		return nil, err
 	}
@@ -504,19 +563,54 @@ func (b *Breaker) State() BreakerState {
 	return b.state
 }
 
-// New 构造带熔断的客户端。
+// Options 是真实接入的显式构造参数。
+type Options struct {
+	TokenURL        string
+	JWKSURL         string
+	TokeninfoURL    string
+	Credentials     func(domain.Platform) (Credentials, bool)
+	IssuerAllowlist []string
+	ClockSkew       time.Duration
+	JWKSMaxTTL      time.Duration
+	Timeout         time.Duration
+	Logger          *logx.Logger
+	HTTP            *http.Client
+}
+
+// NewWithOptions 构造真实模式客户端；端点必须由调用方传入官方常量。
+func NewWithOptions(opts Options) *Client {
+	httpClient := opts.HTTP
+	if httpClient == nil {
+		httpClient = &http.Client{Timeout: opts.Timeout}
+	}
+	return &Client{
+		TokenURL:        opts.TokenURL,
+		JWKSURL:         opts.JWKSURL,
+		TokeninfoURL:    opts.TokeninfoURL,
+		CredentialFor:   opts.Credentials,
+		IssuerAllowlist: opts.IssuerAllowlist,
+		ClockSkew:       opts.ClockSkew,
+		JWKSMaxTTL:      opts.JWKSMaxTTL,
+		Timeout:         opts.Timeout,
+		HTTP:            httpClient,
+		Logger:          opts.Logger,
+		breaker:         NewBreaker(5, 15*time.Second),
+		keys:            map[string]*rsa.PublicKey{},
+	}
+}
+
+// New 保留旧的 base+path 构造方式，供既有集成测试与本地模拟使用。
 func New(baseURL, tokenPath, tokeninfoPath, jwksPath, clientID, secret, secretPrev string, timeout time.Duration, logger *logx.Logger) *Client {
 	return &Client{
-		BaseURL:       baseURL,
-		TokenPath:     tokenPath,
-		TokeninfoPath: tokeninfoPath,
-		JWKSPath:      jwksPath,
-		ClientID:      clientID,
-		Secret:        secret,
-		SecretPrev:    secretPrev,
-		Timeout:       timeout,
-		Logger:        logger,
-		breaker:       NewBreaker(5, 15*time.Second),
-		keys:          map[string]*rsa.PublicKey{},
+		TokenURL:     strings.TrimRight(baseURL, "/") + tokenPath,
+		JWKSURL:      strings.TrimRight(baseURL, "/") + jwksPath,
+		TokeninfoURL: strings.TrimRight(baseURL, "/") + tokeninfoPath,
+		ClientID:     clientID,
+		Secret:       secret,
+		SecretPrev:   secretPrev,
+		Timeout:      timeout,
+		Logger:       logger,
+		breaker:      NewBreaker(5, 15*time.Second),
+		keys:         map[string]*rsa.PublicKey{},
 	}
 }

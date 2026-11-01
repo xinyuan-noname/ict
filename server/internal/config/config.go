@@ -3,7 +3,6 @@ package config
 import (
 	"errors"
 	"fmt"
-	"net/url"
 	"os"
 	"sort"
 	"strconv"
@@ -11,68 +10,158 @@ import (
 	"time"
 )
 
-// Config 对应 design 2.7.3 的服务端环境变量。
-// 敏感字段只允许通过 Redacted()/Masked() 输出。
+// Mode 决定上游是真华为还是本地模拟器（spec 5.4.1）。
+const (
+	ModeReal = "real"
+	ModeMock = "mock"
+)
+
+// 官方端点基线（AGC 管理员复核签字前视为基线值，design 2.5.2）。
+const (
+	OfficialTokenURL     = "https://oauth-login.cloud.huawei.com/oauth2/v3/token"
+	OfficialJWKSURL      = "https://oauth-login.cloud.huawei.com/oauth2/v3/certs"
+	OfficialTokeninfoURL = "https://oauth-api.cloud.huawei.com/oauth2/v3/tokeninfo"
+	OfficialAuthorizeURL = "https://oauth-login.cloud.huawei.com/oauth2/v3/authorize"
+)
+
+// Credential 是单个平台的 AGC 凭据；Secret 只允许经掩码输出。
+type Credential struct {
+	ClientID       string
+	Secret         string
+	SecretPrevious string
+}
+
+func (c Credential) Present() bool { return c.ClientID != "" && c.Secret != "" }
+
 type Config struct {
-	Env                  string
-	ServerAddr           string
-	TLSCertFile          string
-	TLSKeyFile           string
+	// 模式与环境
+	Env         string
+	AuthMode    string
+	AllowMock   bool
+	HwsimBase   string
+	IdentityMode string
+
+	ServerAddr  string
+	TLSCertFile string
+	TLSKeyFile  string
+
+	// 共享凭据（identityMode=shared 时使用，兼容既有部署）
 	HuaweiClientID       string
 	HuaweiClientSecret   string
 	HuaweiClientSecretPr string
-	HuaweiOAuthBaseURL   string
-	HuaweiTokenPath      string
-	HuaweiTokeninfoPath  string
-	HuaweiJWKSPath       string
-	HuaweiTimeout        time.Duration
-	HuaweiBreakerOpen    time.Duration
-	AllowedPlatforms     []string
-	WindowsRedirectURIs  []string
-	SessionTTL           time.Duration
-	SessionRenewRatio    float64
-	SessionMaxAbsolute   time.Duration
-	SessionPepper        string
-	DatabaseDriver       string
-	DatabaseDSN          string
-	RateLimitLoginFails  int
-	RateLimitCredFails   int
-	TrustedProxies       []string
-	ClientMinVersion     map[string]string
-	AuditSink            string
-	AuditQueueSize       int
-	LogLevel             string
-	MetricsAddr          string
-	Version              string
+
+	// 平台凭据（identityMode=per-platform 时使用）
+	PlatformCredentials map[string]Credential
+
+	// 端点（real 模式必须精确等于官方常量）
+	HuaweiOAuthBaseURL  string
+	HuaweiTokenURL      string
+	HuaweiJWKSURL       string
+	HuaweiTokeninfoURL  string
+	HuaweiAuthorizeURL  string
+	IssuerAllowlist     []string
+	ClockSkew           time.Duration
+	JWKSMaxTTL          time.Duration
+	DualSourceCheck     string
+
+	HuaweiTimeout     time.Duration
+	HuaweiBreakerOpen time.Duration
+
+	// AGC 身份登记
+	AppID                 string
+	AndroidPackageName    string
+	AndroidReleaseCertSHA string
+	IOSBundleID           string
+	IOSTeamID             string
+	AllowDebugFingerprint bool
+
+	AllowedPlatforms    []string
+	WindowsRedirectURIs []string
+
+	SessionTTL         time.Duration
+	SessionRenewRatio  float64
+	SessionMaxAbsolute time.Duration
+	SessionPepper      string
+
+	StorageNamespace string
+	DatabaseDriver   string
+	DatabaseDSN      string
+
+	RateLimitLoginFails int
+	RateLimitCredFails  int
+	TrustedProxies      []string
+	ClientMinVersion    map[string]string
+
+	AuditSink        string
+	AuditQueueSize   int
+	AlertSink        string
+	AlertWebhookURL  string
+	LastKnownGood    string
+	CredentialVersion string
+	CredentialChangedBy string
+	CredentialEffectiveAt string
+
+	TLSVerify bool
+	SmokeAllow bool
+	LogLevel  string
+	MetricsAddr string
+	Version   string
 }
 
-// Load 从环境变量加载配置并执行启动自检。
+// Load 解析环境变量；任何解析失败一律拒绝启动（design 1.2.2 第 4 条）。
 func Load() (*Config, error) {
 	c := &Config{
-		Env:                  env("ENV", "development"),
-		ServerAddr:           env("SERVER_ADDR", ":8443"),
-		TLSCertFile:          env("TLS_CERT_FILE", ""),
-		TLSKeyFile:           env("TLS_KEY_FILE", ""),
-		HuaweiClientID:       env("HUAWEI_CLIENT_ID", ""),
-		HuaweiClientSecret:   env("HUAWEI_CLIENT_SECRET", ""),
-		HuaweiClientSecretPr: env("HUAWEI_CLIENT_SECRET_PREVIOUS", ""),
-		HuaweiOAuthBaseURL:   env("HUAWEI_OAUTH_BASE_URL", "https://oauth-login.cloud.huawei.com"),
-		HuaweiTokenPath:      env("HUAWEI_TOKEN_PATH", "/oauth2/v3/token"),
-		HuaweiTokeninfoPath:  env("HUAWEI_TOKENINFO_PATH", "/oauth2/v3/tokeninfo"),
-		HuaweiJWKSPath:       env("HUAWEI_JWKS_PATH", "/oauth2/v3/certs"),
-		SessionPepper:        env("SESSION_PEPPER", ""),
-		DatabaseDriver:       env("DATABASE_DRIVER", "file"),
-		DatabaseDSN:          env("DATABASE_DSN", "./data/auth.json"),
-		AuditSink:            env("AUDIT_SINK", "file"),
-		LogLevel:             env("LOG_LEVEL", "info"),
-		MetricsAddr:          env("METRICS_ADDR", ""),
-		Version:              env("APP_VERSION", "1.0.0"),
-		ClientMinVersion: map[string]string{
-			"android": env("CLIENT_MIN_VERSION_ANDROID", "1.0.0"),
-			"ios":     env("CLIENT_MIN_VERSION_IOS", "1.0.0"),
-			"windows": env("CLIENT_MIN_VERSION_WINDOWS", "1.0.0"),
-		},
+		Env:                   env("ENV", "development"),
+		AuthMode:              env("AUTH_MODE", ModeReal),
+		AllowMock:             boolean("AUTH_ALLOW_MOCK", false),
+		HwsimBase:             env("HWSIM_BASE_URL", ""),
+		IdentityMode:          env("HUAWEI_IDENTITY_MODE", "shared"),
+		ServerAddr:            env("SERVER_ADDR", ":8443"),
+		TLSCertFile:           env("TLS_CERT_FILE", ""),
+		TLSKeyFile:            env("TLS_KEY_FILE", ""),
+		HuaweiClientID:        env("HUAWEI_CLIENT_ID", ""),
+		HuaweiClientSecret:    env("HUAWEI_CLIENT_SECRET", ""),
+		HuaweiClientSecretPr:  env("HUAWEI_CLIENT_SECRET_PREVIOUS", ""),
+		HuaweiOAuthBaseURL:    env("HUAWEI_OAUTH_BASE_URL", ""),
+		HuaweiTokenURL:        env("HUAWEI_TOKEN_URL", ""),
+		HuaweiJWKSURL:         env("HUAWEI_JWKS_URL", ""),
+		HuaweiTokeninfoURL:    env("HUAWEI_TOKENINFO_URL", ""),
+		HuaweiAuthorizeURL:    env("HUAWEI_AUTHORIZE_URL", ""),
+		DualSourceCheck:       env("AUTH_DUAL_SOURCE_CHECK", "auto"),
+		AppID:                 env("AUTH_APP_ID", ""),
+		AndroidPackageName:    env("AUTH_ANDROID_PACKAGE_NAME", ""),
+		AndroidReleaseCertSHA: strings.ToLower(env("AUTH_ANDROID_RELEASE_CERT_SHA256_DIGEST", "")),
+		IOSBundleID:           env("AUTH_IOS_BUNDLE_ID", ""),
+		IOSTeamID:             env("AUTH_IOS_TEAM_ID", ""),
+		AllowDebugFingerprint: boolean("AUTH_ANDROID_ALLOW_DEBUG_FINGERPRINT", false),
+		SessionPepper:         env("SESSION_PEPPER", ""),
+		StorageNamespace:      env("AUTH_STORAGE_NAMESPACE", "real"),
+		DatabaseDriver:        env("DATABASE_DRIVER", "file"),
+		DatabaseDSN:           env("DATABASE_DSN", "./data/auth.json"),
+		AuditSink:             env("AUDIT_SINK", "file"),
+		AlertSink:             env("AUTH_ALERT_SINK", "log"),
+		AlertWebhookURL:       env("AUTH_ALERT_WEBHOOK_URL", ""),
+		LastKnownGood:         env("AUTH_LAST_KNOWN_GOOD_PATH", ""),
+		CredentialVersion:     env("AUTH_CREDENTIAL_VERSION", ""),
+		CredentialChangedBy:   env("AUTH_CREDENTIAL_CHANGED_BY", ""),
+		CredentialEffectiveAt: env("AUTH_CREDENTIAL_EFFECTIVE_AT", ""),
+		TLSVerify:             boolean("AUTH_TLS_VERIFY", true),
+		SmokeAllow:            boolean("AUTH_REAL_SMOKE_ALLOW", false),
+		LogLevel:              env("LOG_LEVEL", "info"),
+		MetricsAddr:           env("METRICS_ADDR", ""),
+		Version:               env("APP_VERSION", "1.0.0"),
+		IssuerAllowlist:       list("HUAWEI_ISSUER_ALLOWLIST", []string{"https://accounts.huawei.com", "https://oauth-login.cloud.huawei.com"}),
+		PlatformCredentials:   map[string]Credential{},
 	}
+	for _, p := range []string{"android", "ios", "windows"} {
+		upper := strings.ToUpper(p)
+		c.PlatformCredentials[p] = Credential{
+			ClientID:       env("HUAWEI_CLIENT_ID_"+upper, ""),
+			Secret:         env("HUAWEI_CLIENT_SECRET_"+upper, ""),
+			SecretPrevious: env("HUAWEI_CLIENT_SECRET_PREVIOUS_"+upper, ""),
+		}
+	}
+
 	var err error
 	if c.HuaweiTimeout, err = duration("HUAWEI_TIMEOUT", 3*time.Second); err != nil {
 		return nil, err
@@ -86,82 +175,95 @@ func Load() (*Config, error) {
 	if c.SessionMaxAbsolute, err = duration("SESSION_MAX_ABSOLUTE_TTL", 168*time.Hour); err != nil {
 		return nil, err
 	}
-	c.SessionRenewRatio = float("SESSION_RENEW_THRESHOLD", 0.2)
-	c.RateLimitLoginFails = integer("RATE_LIMIT_LOGIN_FAILS", 10)
-	c.RateLimitCredFails = integer("RATE_LIMIT_CREDENTIAL_FAILS", 5)
-	c.AuditQueueSize = integer("AUDIT_QUEUE_SIZE", 4096)
+	if c.ClockSkew, err = duration("AUTH_CLOCK_SKEW", 60*time.Second); err != nil {
+		return nil, err
+	}
+	if c.JWKSMaxTTL, err = duration("AUTH_JWKS_MAX_TTL", 12*time.Hour); err != nil {
+		return nil, err
+	}
+	if c.SessionRenewRatio, err = floatValue("SESSION_RENEW_THRESHOLD", 0.2); err != nil {
+		return nil, err
+	}
+	if c.RateLimitLoginFails, err = integerValue("RATE_LIMIT_LOGIN_FAILS", 10); err != nil {
+		return nil, err
+	}
+	if c.RateLimitCredFails, err = integerValue("RATE_LIMIT_CREDENTIAL_FAILS", 5); err != nil {
+		return nil, err
+	}
+	if c.AuditQueueSize, err = integerValue("AUDIT_QUEUE_SIZE", 4096); err != nil {
+		return nil, err
+	}
+
 	c.AllowedPlatforms = list("ALLOWED_PLATFORMS", []string{"android", "ios", "windows"})
 	c.WindowsRedirectURIs = list("WINDOWS_REDIRECT_URIS", []string{"http://127.0.0.1:17890/callback"})
 	c.TrustedProxies = list("TRUSTED_PROXIES", nil)
-	if err := c.Validate(); err != nil {
-		return nil, err
+	c.ClientMinVersion = map[string]string{
+		"android": env("CLIENT_MIN_VERSION_ANDROID", "1.0.0"),
+		"ios":     env("CLIENT_MIN_VERSION_IOS", "1.0.0"),
+		"windows": env("CLIENT_MIN_VERSION_WINDOWS", "1.0.0"),
+	}
+
+	c.resolveEndpoints()
+	if problems := c.SelfCheck(); len(problems) > 0 {
+		sort.Strings(problems)
+		return nil, errors.New("config invalid: " + strings.Join(problems, "; "))
 	}
 	return c, nil
 }
 
-// Validate 实现任务 6.2 的启动自检；错误信息只包含项名，不含值。
+// resolveEndpoints 支持显式完整 URL，也兼容旧的 base+path 组合。
+func (c *Config) resolveEndpoints() {
+	if c.HuaweiTokenURL == "" {
+		c.HuaweiTokenURL = joinBase(c.HuaweiOAuthBaseURL, "/oauth2/v3/token", OfficialTokenURL)
+	}
+	if c.HuaweiJWKSURL == "" {
+		c.HuaweiJWKSURL = joinBase(c.HuaweiOAuthBaseURL, "/oauth2/v3/certs", OfficialJWKSURL)
+	}
+	if c.HuaweiTokeninfoURL == "" {
+		c.HuaweiTokeninfoURL = joinBase(c.HuaweiOAuthBaseURL, "/oauth2/v3/tokeninfo", OfficialTokeninfoURL)
+	}
+	if c.HuaweiAuthorizeURL == "" {
+		c.HuaweiAuthorizeURL = joinBase(c.HuaweiOAuthBaseURL, "/oauth2/v3/authorize", OfficialAuthorizeURL)
+	}
+}
+
+func joinBase(base, path, official string) string {
+	if base == "" {
+		return official
+	}
+	return strings.TrimRight(base, "/") + path
+}
+
+// Validate 保留旧入口，等价于 SelfCheck。
 func (c *Config) Validate() error {
-	var problems []string
-	if c.HuaweiClientID == "" {
-		problems = append(problems, "missing HUAWEI_CLIENT_ID")
-	}
-	if c.HuaweiClientSecret == "" {
-		problems = append(problems, "missing HUAWEI_CLIENT_SECRET")
-	} else if len(c.HuaweiClientSecret) < 16 {
-		problems = append(problems, "invalid HUAWEI_CLIENT_SECRET (too short)")
-	}
-	if c.SessionPepper == "" {
-		problems = append(problems, "missing SESSION_PEPPER")
-	} else if len(c.SessionPepper) < 16 {
-		problems = append(problems, "invalid SESSION_PEPPER (too short)")
-	}
-	if c.SessionTTL < time.Hour || c.SessionTTL > 168*time.Hour {
-		problems = append(problems, "invalid SESSION_TTL (must be 1h..168h)")
-	}
-	if c.SessionMaxAbsolute < c.SessionTTL {
-		problems = append(problems, "invalid SESSION_MAX_ABSOLUTE_TTL (must be >= SESSION_TTL)")
-	}
-	if c.SessionRenewRatio <= 0 || c.SessionRenewRatio >= 1 {
-		problems = append(problems, "invalid SESSION_RENEW_THRESHOLD (must be in (0,1))")
-	}
-	if c.HuaweiTimeout < 500*time.Millisecond || c.HuaweiTimeout > 3*time.Second {
-		problems = append(problems, "invalid HUAWEI_TIMEOUT (must be 500ms..3s)")
-	}
-	if c.HuaweiBreakerOpen < 5*time.Second || c.HuaweiBreakerOpen > 60*time.Second {
-		problems = append(problems, "invalid HUAWEI_BREAKER_OPEN (must be 5s..60s)")
-	}
-	if len(c.AllowedPlatforms) == 0 {
-		problems = append(problems, "invalid ALLOWED_PLATFORMS (empty)")
-	}
-	for _, p := range c.AllowedPlatforms {
-		if p != "android" && p != "ios" && p != "windows" {
-			problems = append(problems, "invalid ALLOWED_PLATFORMS (unknown element)")
-			break
-		}
-	}
-	if c.Env == "production" {
-		u, err := url.Parse(c.HuaweiOAuthBaseURL)
-		if err != nil || !strings.HasSuffix(u.Hostname(), "huawei.com") {
-			problems = append(problems, "invalid HUAWEI_OAUTH_BASE_URL (must be official huawei.com domain in production)")
-		}
-		if c.AuditSink == "discard" {
-			problems = append(problems, "invalid AUDIT_SINK (discard not allowed in production)")
-		}
-		if c.LogLevel == "debug" {
-			problems = append(problems, "invalid LOG_LEVEL (debug not allowed in production)")
-		}
-	}
-	if len(problems) > 0 {
+	if problems := c.SelfCheck(); len(problems) > 0 {
 		sort.Strings(problems)
 		return errors.New("config invalid: " + strings.Join(problems, "; "))
 	}
 	return nil
 }
 
-// Redacted 返回可安全写入日志的配置摘要。
+// IsMock 返回是否处于模拟模式。
+func (c *Config) IsMock() bool { return c.AuthMode == ModeMock }
+
+// CredentialFor 返回平台凭据；shared 模式回退到共享凭据。
+func (c *Config) CredentialFor(platform string) (Credential, bool) {
+	if c.IdentityMode == "per-platform" {
+		cred, ok := c.PlatformCredentials[platform]
+		return cred, ok && cred.Present()
+	}
+	return Credential{
+		ClientID:       c.HuaweiClientID,
+		Secret:         c.HuaweiClientSecret,
+		SecretPrevious: c.HuaweiClientSecretPr,
+	}, c.HuaweiClientID != "" && c.HuaweiClientSecret != ""
+}
+
+// Redacted 返回可安全写入日志的摘要，任何路径都不输出 secret。
 func (c *Config) Redacted() string {
-	return fmt.Sprintf("env=%s addr=%s huawei=%s secret=%s pepper=%s ttl=%s",
-		c.Env, c.ServerAddr, c.HuaweiOAuthBaseURL, MaskSecret(c.HuaweiClientSecret), MaskSecret(c.SessionPepper), c.SessionTTL)
+	return fmt.Sprintf("mode=%s env=%s addr=%s identity=%s token_url=%s secret=%s pepper=%s ttl=%s",
+		c.AuthMode, c.Env, c.ServerAddr, c.IdentityMode, c.HuaweiTokenURL,
+		MaskSecret(c.HuaweiClientSecret), MaskSecret(c.SessionPepper), c.SessionTTL)
 }
 
 // MaskSecret 保留末 4 位用于人工核对，其余隐藏。
@@ -175,7 +277,7 @@ func MaskSecret(s string) string {
 	return "***" + s[len(s)-4:]
 }
 
-// IsWindowsRedirectAllowed 逐字符比对回调白名单（任务 22.5）。
+// IsWindowsRedirectAllowed 逐字符比对回调白名单（不接受尾部斜杠、不接受公网域名）。
 func (c *Config) IsWindowsRedirectAllowed(candidate string) bool {
 	for _, allowed := range c.WindowsRedirectURIs {
 		if candidate == allowed {
@@ -199,33 +301,48 @@ func duration(key string, def time.Duration) (time.Duration, error) {
 	}
 	d, err := time.ParseDuration(v)
 	if err != nil {
-		return 0, fmt.Errorf("config invalid: invalid %s (not a duration)", key)
+		return 0, fmt.Errorf("config invalid: invalid %s (parse)", key)
 	}
 	return d, nil
 }
 
-func float(key string, def float64) float64 {
+func floatValue(key string, def float64) (float64, error) {
 	v, ok := os.LookupEnv(key)
 	if !ok || v == "" {
-		return def
+		return def, nil
 	}
 	f, err := strconv.ParseFloat(v, 64)
 	if err != nil {
-		return def
+		return 0, fmt.Errorf("config invalid: invalid %s (parse)", key)
 	}
-	return f
+	return f, nil
 }
 
-func integer(key string, def int) int {
+func integerValue(key string, def int) (int, error) {
+	v, ok := os.LookupEnv(key)
+	if !ok || v == "" {
+		return def, nil
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		return 0, fmt.Errorf("config invalid: invalid %s (parse)", key)
+	}
+	return n, nil
+}
+
+func boolean(key string, def bool) bool {
 	v, ok := os.LookupEnv(key)
 	if !ok || v == "" {
 		return def
 	}
-	n, err := strconv.Atoi(v)
-	if err != nil {
+	switch strings.ToLower(strings.TrimSpace(v)) {
+	case "1", "true", "yes", "on":
+		return true
+	case "0", "false", "no", "off":
+		return false
+	default:
 		return def
 	}
-	return n
 }
 
 func list(key string, def []string) []string {

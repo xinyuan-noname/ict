@@ -28,3 +28,12 @@ export function currentPlatform(): AuthPlatform {
 export const WINDOWS_REDIRECT_URI = 'http://127.0.0.1:17890/callback';
 
 declare const __DEV__: boolean;
+
+// 真实模式授权端点必须精确等于官方地址，禁止镜像/代理（spec 5.3.4）。
+export const OFFICIAL_HUAWEI_AUTHORIZE_URL = 'https://oauth-login.cloud.huawei.com/oauth2/v3/authorize';
+
+export function assertOfficialAuthorizeUrl(url: string): void {
+  if (url.replace(/\/+$/, '') !== OFFICIAL_HUAWEI_AUTHORIZE_URL) {
+    throw new Error('authorizeUrl must be the official Huawei endpoint');
+  }
+}

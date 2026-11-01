@@ -20,11 +20,14 @@ import (
 )
 
 type persisted struct {
-	Users   map[string]domain.UserProfile `json:"users"`   // key: userId
-	OpenIDs map[string]string             `json:"openIds"` // openId -> userId
-	Sessions map[string]domain.Session    `json:"sessions"`
-	Codes   map[string]int64              `json:"codes"` // codeDigest -> expiresAt unix
-	Events  []domain.AuthEvent            `json:"events"`
+	// 文件头：模式与命名空间，用于 real/mock 隔离校验。
+	Namespace string                      `json:"namespace,omitempty"`
+	Mode      string                      `json:"mode,omitempty"`
+	Users     map[string]domain.UserProfile `json:"users"`   // key: userId
+	OpenIDs   map[string]string             `json:"openIds"` // openId -> userId
+	Sessions  map[string]domain.Session    `json:"sessions"`
+	Codes     map[string]int64             `json:"codes"` // codeDigest -> expiresAt unix
+	Events    []domain.AuthEvent           `json:"events"`
 }
 
 type Store struct {
@@ -33,6 +36,51 @@ type Store struct {
 	data persisted
 }
 
+// Options 用于 real/mock 存储隔离（design 2.6.4 闸 3）。
+type Options struct {
+	Namespace string
+	Mode      string
+}
+
+// ErrNamespaceMismatch 表示存储文件属于另一模式/命名空间。
+var ErrNamespaceMismatch = errors.New("storage namespace mismatch")
+
+// OpenWithOptions 打开存储并强制校验文件头；空文件写入当前标识。
+func OpenWithOptions(path string, opts Options) (*Store, error) {
+	s, err := Open(path)
+	if err != nil {
+		return nil, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	switch {
+	case s.data.Namespace == "" && s.data.Mode == "":
+		s.data.Namespace = opts.Namespace
+		s.data.Mode = opts.Mode
+		if err := s.flushLocked(); err != nil {
+			return nil, err
+		}
+	case s.data.Namespace != opts.Namespace || s.data.Mode != opts.Mode:
+		return nil, ErrNamespaceMismatch
+	}
+	return s, nil
+}
+
+// Namespace 返回当前存储命名空间。
+func (s *Store) Namespace() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.data.Namespace
+}
+
+// Mode 返回存储所属模式。
+func (s *Store) Mode() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.data.Mode
+}
+
+// Open 打开（或创建）存储文件，不做模式断言。
 func Open(path string) (*Store, error) {
 	if dir := filepath.Dir(path); dir != "." && dir != "" {
 		if err := os.MkdirAll(dir, 0o750); err != nil {

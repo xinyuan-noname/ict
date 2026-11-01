@@ -20,8 +20,8 @@ func TestLoadRequiresSecret(t *testing.T) {
 	setBase(t)
 	t.Setenv("HUAWEI_CLIENT_SECRET", "")
 	_, err := Load()
-	if err == nil || !strings.Contains(err.Error(), "HUAWEI_CLIENT_SECRET") {
-		t.Fatalf("expected missing secret error, got %v", err)
+	if err == nil || !strings.Contains(err.Error(), "credentials") {
+		t.Fatalf("expected missing credentials error, got %v", err)
 	}
 	if err != nil && strings.Contains(err.Error(), "0123456789") {
 		t.Fatal("error message must not contain secret values")

@@ -31,20 +31,55 @@ func main() {
 		os.Exit(1)
 	}
 
+	// --selfcheck 只输出模式与环境，不输出任何凭据（design 2.5.1）。
+	if len(os.Args) > 1 && os.Args[1] == "--selfcheck" {
+		fmt.Printf("selfcheck ok mode=%s env=%s\n", cfg.AuthMode, cfg.Env)
+		return
+	}
+
+	if cfg.IsMock() {
+		// mock 模式仅指向本地 hwsim；真实模式禁用该分支（自检已拦截）。
+		base := cfg.HwsimBase
+		cfg.HuaweiTokenURL = base + "/oauth2/v3/token"
+		cfg.HuaweiJWKSURL = base + "/oauth2/v3/certs"
+		cfg.HuaweiTokeninfoURL = base + "/oauth2/v3/tokeninfo"
+	}
+
 	logger := logx.New(os.Stdout, cfg.LogLevel)
 	logger.Info(context.Background(), "starting authd", "event", "boot", "config", cfg.Redacted())
 
-	store, err := filestore.Open(cfg.DatabaseDSN)
+	store, err := filestore.OpenWithOptions(cfg.DatabaseDSN, filestore.Options{
+		Namespace: cfg.StorageNamespace,
+		Mode:      cfg.AuthMode,
+	})
 	if err != nil {
-		logger.Error(context.Background(), "storage open failed", "event", "boot_failure")
+		logger.Error(context.Background(), "storage open failed", "event", "boot_failure", "reason", err.Error())
 		os.Exit(1)
 	}
 
-	provider := huawei.New(
-		cfg.HuaweiOAuthBaseURL, cfg.HuaweiTokenPath, cfg.HuaweiTokeninfoPath, cfg.HuaweiJWKSPath,
-		cfg.HuaweiClientID, cfg.HuaweiClientSecret, cfg.HuaweiClientSecretPr,
-		cfg.HuaweiTimeout, logger,
-	)
+	provider := huawei.NewWithOptions(huawei.Options{
+		TokenURL:     cfg.HuaweiTokenURL,
+		JWKSURL:      cfg.HuaweiJWKSURL,
+		TokeninfoURL: cfg.HuaweiTokeninfoURL,
+		Credentials: func(platform domain.Platform) (huawei.Credentials, bool) {
+			if cfg.IsMock() {
+				// mock 仅使用形态明显不同的占位凭据（闸 1）。
+				return huawei.Credentials{ClientID: "hwsim-client", Secret: "hwsim-placeholder-secret"}, true
+			}
+			cred, ok := cfg.CredentialFor(string(platform))
+			return huawei.Credentials{
+				ClientID:       cred.ClientID,
+				Secret:         cred.Secret,
+				SecretPrevious: cred.SecretPrevious,
+			}, ok
+		},
+		IssuerAllowlist: cfg.IssuerAllowlist,
+		ClockSkew:       cfg.ClockSkew,
+		JWKSMaxTTL:      cfg.JWKSMaxTTL,
+		Timeout:         cfg.HuaweiTimeout,
+		Logger:          logger,
+		HTTP:            config.NewOutboundClient(cfg.HuaweiTimeout),
+	})
 
 	sessions := &service.SessionService{
 		Sessions: store, Users: store, Clock: portClock{},

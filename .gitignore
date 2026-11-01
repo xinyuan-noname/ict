@@ -30,3 +30,6 @@ app/build/
 app/windows/**/Generated Files/
 app/windows/**/bin/
 app/windows/**/obj/
+keystore.properties
+app/ios/**/agconnect-services.plist
+records/*.secret.md
