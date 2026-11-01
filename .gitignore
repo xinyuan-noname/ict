@@ -21,5 +21,7 @@ app/windows/**/Release/
 app/windows/**/x64/
 app/windows/**/ARM64/
 server/bin/
+server/logs/
+app/build/
 *.log
 .codeartsdoer/.gitignore
