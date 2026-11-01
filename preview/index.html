@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ICT 华为账号登录 · UI 预览</title>
+<style>
+  :root { --primary:#c7000b; --danger-bg:#fdecec; --danger:#a61b1b; --text:#333; --muted:#666; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif; background:#eef0f4; display:flex; justify-content:center; padding:32px 16px; }
+  .phone { width:390px; min-height:720px; background:#fff; border-radius:28px; box-shadow:0 18px 50px rgba(0,0,0,.18); overflow:hidden; display:flex; flex-direction:column; }
+  .status { height:32px; display:flex; align-items:center; justify-content:space-between; padding:0 18px; font-size:12px; color:#888; background:#fff; }
+  .screen { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:28px; }
+  .hidden { display:none !important; }
+  .title { font-size:24px; font-weight:600; color:var(--text); margin-bottom:32px; }
+  .banner { width:100%; background:var(--danger-bg); border-radius:8px; padding:12px; margin-bottom:16px; }
+  .banner p { margin:0; color:var(--danger); font-size:14px; }
+  .banner small { display:block; color:#7a7a7a; font-size:12px; margin-top:4px; }
+  .btn { background:var(--primary); color:#fff; border:none; border-radius:24px; padding:14px 48px; font-size:16px; font-weight:600; cursor:pointer; }
+  .btn:disabled { opacity:.6; cursor:progress; }
+  .avatar { width:88px; height:88px; border-radius:44px; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:16px; }
+  .name { font-size:22px; font-weight:600; color:var(--text); margin-bottom:12px; }
+  .meta { color:var(--muted); font-size:14px; margin-bottom:6px; }
+  .link { background:none; border:none; color:var(--primary); font-size:15px; padding:12px; cursor:pointer; margin-top:16px; }
+  .ghost { background:none; border:none; color:#999; font-size:15px; padding:12px; cursor:pointer; }
+  .section { align-items:flex-start; justify-content:flex-start; padding-top:32px; }
+  .section p { font-size:15px; color:var(--text); margin:0 0 12px; }
+  .tabs { display:flex; gap:8px; margin-bottom:20px; justify-content:center; }
+  .tab { background:#fff; border:1px solid #d8dde5; border-radius:16px; padding:6px 14px; font-size:13px; cursor:pointer; color:#555; }
+  .tab.active { background:var(--primary); border-color:var(--primary); color:#fff; }
+  .note { position:fixed; left:16px; bottom:16px; max-width:320px; font-size:12px; color:#666; background:#fff; border-radius:8px; padding:10px 12px; box-shadow:0 4px 16px rgba(0,0,0,.08); line-height:1.6; }
+</style>
+</head>
+<body>
+<div>
+  <div class="tabs">
+    <button class="tab active" data-tab="login">登录页</button>
+    <button class="tab" data-tab="home">主页</button>
+    <button class="tab" data-tab="settings">设置页</button>
+  </div>
+
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>ICTApp · 预览</span></div>
+
+    <div id="login" class="screen">
+      <div class="title">华为账号登录</div>
+      <div id="errorBanner" class="banner hidden">
+        <p id="errorText">华为账号服务暂时不可用，请稍后重试</p>
+        <small id="errorCode">AUTH_003 · traceId: 9f2c1a7e4b6d</small>
+      </div>
+      <button id="loginBtn" class="btn">华为账号登录</button>
+      <button class="link" onclick="showError('AUTH_002')">演示：用户取消授权</button>
+      <button class="ghost" onclick="showError('AUTH_007')">演示：触发限流</button>
+    </div>
+
+    <div id="home" class="screen hidden">
+      <div class="avatar">华为</div>
+      <div class="name">华小为</div>
+      <div class="meta">平台：android</div>
+      <div class="meta">用户标识：u_53299f4bd11cd5ab4fd5a5ff83b709a0</div>
+      <button class="link" onclick="alert('已刷新用户资料（预览）')">刷新资料</button>
+      <button class="ghost" id="logoutBtn">退出登录</button>
+    </div>
+
+    <div id="settings" class="screen section hidden">
+      <p>客户端版本：1.0.0</p>
+      <p>运行环境：development</p>
+      <p>服务端版本：1.0.0</p>
+      <p>traceId：e016db9ce0c51ffe815c8037692a977c</p>
+      <p style="color:#999;font-size:13px">服务端 /v1/health 返回 status=ok，checks: config/storage/huawei 全部 ok</p>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  <b>静态 UI 预览</b>：布局与文案取自 <code>app/src/screens/*.tsx</code>，用于查看界面效果，不是 React Native 真机渲染，也不会调用真实接口。真机预览需构建 APK（当前 Gradle 下载受阻）。
+</div>
+
+<script>
+  const screens = {
+    login: document.getElementById('login'),
+    home: document.getElementById('home'),
+    settings: document.getElementById('settings')
+  };
+  const messages = {
+    AUTH_002: ['已取消授权，可重新登录', 'AUTH_002（客户端本地事件）'],
+    AUTH_003: ['华为账号服务暂时不可用，请稍后重试', 'AUTH_003 · HTTP 503'],
+    AUTH_007: ['操作过于频繁，请稍后再试', 'AUTH_007 · HTTP 429 · Retry-After: 42s'],
+    AUTH_010: ['账号不可用，请联系管理员', 'AUTH_010 · HTTP 403']
+  };
+
+  function show(name) {
+    Object.entries(screens).forEach(([key, el]) => el.classList.toggle('hidden', key !== name));
+    document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === name));
+  }
+
+  function showError(code) {
+    const [text, meta] = messages[code];
+    document.getElementById('errorText').textContent = text;
+    document.getElementById('errorCode').textContent = meta;
+    document.getElementById('errorBanner').classList.remove('hidden');
+  }
+
+  document.querySelectorAll('.tab').forEach((tab) => {
+    tab.addEventListener('click', () => show(tab.dataset.tab));
+  });
+
+  const loginBtn = document.getElementById('loginBtn');
+  loginBtn.addEventListener('click', () => {
+    loginBtn.disabled = true;
+    loginBtn.textContent = '正在唤起华为账号…';
+    document.getElementById('errorBanner').classList.add('hidden');
+    setTimeout(() => {
+      loginBtn.disabled = false;
+      loginBtn.textContent = '华为账号登录';
+      show('home');
+    }, 900);
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    show('login');
+  });
+</script>
+</body>
+</html>
