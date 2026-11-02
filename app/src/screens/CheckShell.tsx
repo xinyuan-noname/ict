@@ -93,38 +93,7 @@ function TodayView({ snapshot, ratio, store }: { snapshot: CheckSnapshot; ratio:
 
       <Text style={styles.section}>今日记录</Text>
       {snapshot.totalMl === 0 ? <Text style={styles.empty}>还没有记录</Text> : null}
-      {snapshot.week.length >= 0
-        ? null
-        : null}
-      <RecordList store={store} snapshot={snapshot} />
-    </ScrollView>
-  );
-}
-
-function RecordList({ store, snapshot }: { store: CheckStore; snapshot: CheckSnapshot }): React.JSX.Element {
-  const [records, setRecords] = useState<{ recordId: string; ml: number; createdAt: string }[]>([]);
-  useEffect(() => {
-    const refresh = async (): Promise<void> => {
-      const raw = await import('@react-native-async-storage/async-storage');
-      if (snapshot.isGuest) {
-        try {
-          const text = await raw.default.getItem('guest.check.v1');
-          const data = text ? JSON.parse(text) : { records: [] };
-          const today = snapshot.day;
-          setRecords((data.records ?? []).filter((r: { day: string }) => r.day === today));
-        } catch {
-          setRecords([]);
-        }
-      } else {
-        setRecords([]);
-      }
-    };
-    void refresh();
-  }, [snapshot.isGuest, snapshot.day, snapshot.totalMl]);
-
-  return (
-    <View>
-      {records.map((r) => (
+      {snapshot.records.map((r) => (
         <View key={r.recordId} style={styles.record}>
           <Text style={styles.recordText}>{r.ml} ml</Text>
           <Pressable accessibilityRole="button" onPress={() => void store.removeRecord(r.recordId)}>
@@ -132,7 +101,7 @@ function RecordList({ store, snapshot }: { store: CheckStore; snapshot: CheckSna
           </Pressable>
         </View>
       ))}
-    </View>
+    </ScrollView>
   );
 }
 

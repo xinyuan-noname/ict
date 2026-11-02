@@ -58,6 +58,7 @@ export interface CheckSnapshot {
   achieved: boolean;
   profile: HealthProfile | null;
   week: { day: string; totalMl: number; targetMl: number; achieved: boolean }[];
+  records: { recordId: string; ml: number; createdAt: string }[];
   averageMl: number | null;
   achievementRate: number;
   errorMessage?: string;
@@ -77,7 +78,7 @@ let idemSeq = 0;
 export class CheckStore {
   private snapshot: CheckSnapshot = {
     loading: false, day: '', targetMl: 0, totalMl: 0, cups: 0, streak: 0, achieved: false,
-    profile: null, week: [], averageMl: null, achievementRate: 0, isGuest: false
+    profile: null, week: [], records: [], averageMl: null, achievementRate: 0, isGuest: false
   };
   private readonly listeners = new Set<(s: CheckSnapshot) => void>();
   private data: GuestCheckData = { ...EMPTY };
@@ -110,7 +111,7 @@ export class CheckStore {
     this.data = { ...EMPTY };
     this.set({
       loading: false, day: '', targetMl: 0, totalMl: 0, cups: 0, streak: 0, achieved: false,
-      profile: null, week: [], averageMl: null, achievementRate: 0, errorMessage: undefined, notice: undefined, isGuest: false
+      profile: null, week: [], records: [], averageMl: null, achievementRate: 0, errorMessage: undefined, notice: undefined, isGuest: false
     });
   }
 
@@ -153,6 +154,7 @@ export class CheckStore {
       achieved: todayRes?.data.achieved ?? false,
       profile,
       week: weekRes?.data.days ?? [],
+      records: (todayRes?.data.records ?? []).map((r) => ({ recordId: r.recordId, ml: r.ml, createdAt: r.createdAt })),
       averageMl: weekRes?.data.averageMl ?? null,
       achievementRate: weekRes?.data.achievementRate ?? 0
     });
@@ -179,7 +181,8 @@ export class CheckStore {
       day: today, targetMl: target, totalMl: total, cups: Math.floor(total / DEFAULT_CUP_ML),
       achieved: target > 0 && total >= target,
       profile: this.data.profile,
-      week: days, averageMl: stats.averageMl, achievementRate: stats.achievementRate,
+      week: days, records: records.map((r) => ({ recordId: r.recordId, ml: r.ml, createdAt: r.createdAt })),
+      averageMl: stats.averageMl, achievementRate: stats.achievementRate,
       streak: this.localStreak(today)
     });
   }
