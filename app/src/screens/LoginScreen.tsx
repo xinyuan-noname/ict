@@ -8,10 +8,11 @@ export interface LoginScreenProps {
   errorMessage?: string;
   traceId?: string;
   onLogin: () => void;
+  onGuest?: () => void;
 }
 
 // 仅一个"华为账号登录"按钮，无账号密码输入（任务 33.1）。
-export function LoginScreen({ loading, errorCode, errorMessage, traceId, onLogin }: LoginScreenProps): React.JSX.Element {
+export function LoginScreen({ loading, errorCode, errorMessage, traceId, onLogin, onGuest }: LoginScreenProps): React.JSX.Element {
   const message = errorMessage ?? (errorCode ? userMessageFor(errorCode) : undefined);
   const showCode = errorCode !== undefined && errorCode !== 'AUTH_002';
   return (
@@ -32,6 +33,11 @@ export function LoginScreen({ loading, errorCode, errorMessage, traceId, onLogin
       >
         {loading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.buttonText}>华为账号登录</Text>}
       </Pressable>
+      {onGuest ? (
+        <Pressable accessibilityRole="button" testID="guest-entry" disabled={loading} onPress={onGuest} style={styles.guest}>
+          <Text style={styles.guestText}>游客进入预览</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -44,5 +50,7 @@ const styles = StyleSheet.create({
   codeText: { color: '#7a7a7a', fontSize: 12, marginTop: 4 },
   button: { backgroundColor: '#c7000b', borderRadius: 24, paddingVertical: 14, paddingHorizontal: 48 },
   buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#ffffff', fontSize: 16, fontWeight: '600' }
+  buttonText: { color: '#ffffff', fontSize: 16, fontWeight: '600' },
+  guest: { marginTop: 16, padding: 10 },
+  guestText: { color: '#999', fontSize: 14 }
 });

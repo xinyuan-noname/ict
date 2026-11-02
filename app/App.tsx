@@ -9,6 +9,9 @@ import { WebOAuthProvider, WindowsCapabilityProbe } from './src/auth/providers/w
 import type { AuthProviderStrategy, CapabilityProbe } from './src/auth/providers/types';
 import { RewardsApi } from './src/api/rewardsApi';
 import { RewardsStore } from './src/rewards/rewardsStore';
+import { GuestNetworkGuard } from './src/guest/GuestNetworkGuard';
+import { GuestStore } from './src/guest/GuestStore';
+import { AsyncStorageGuestStorage } from './src/guest/GuestStorage';
 import { KeychainVault } from './src/native/SecureVault';
 import { APP_VERSION, WINDOWS_REDIRECT_URI, defaultBaseUrl } from './src/shared/config';
 
@@ -17,10 +20,15 @@ export interface AppDependencies {
   authorizeUrl?: string;
   provider?: AuthProviderStrategy;
   capability?: CapabilityProbe;
+  guard?: GuestNetworkGuard;
 }
 
 export function buildAuthProvider(deps: AppDependencies = {}): AuthProvider {
-  const client = new ApiClient({ baseUrl: deps.baseUrl ?? defaultBaseUrl(), allowInsecure: __DEV__ });
+  const client = new ApiClient({
+    baseUrl: deps.baseUrl ?? defaultBaseUrl(),
+    allowInsecure: __DEV__,
+    guard: deps.guard
+  });
   const api = new AuthApi(client);
   const isWindows = Platform.OS === 'windows' || process.env.RN_PLATFORM === 'windows';
   const strategy =
@@ -36,16 +44,19 @@ export function buildAuthProvider(deps: AppDependencies = {}): AuthProvider {
     vault: new KeychainVault(),
     provider: strategy,
     capability: deps.capability ?? (isWindows ? new WindowsCapabilityProbe() : undefined),
-    clientVersion: APP_VERSION
+    clientVersion: APP_VERSION,
+    guestStore: new GuestStore({ storage: new AsyncStorageGuestStorage() }),
+    networkGuard: deps.guard
   });
 }
 
 export default function App(): React.JSX.Element {
-  const provider = useMemo(() => buildAuthProvider(), []);
+  const guard = useMemo(() => new GuestNetworkGuard(), []);
+  const provider = useMemo(() => buildAuthProvider({ guard }), [guard]);
   const rewardsStore = useMemo(() => {
-    const client = new ApiClient({ baseUrl: defaultBaseUrl(), allowInsecure: __DEV__ });
+    const client = new ApiClient({ baseUrl: defaultBaseUrl(), allowInsecure: __DEV__, guard });
     return new RewardsStore({ api: new RewardsApi(client), getToken: () => provider.currentToken() });
-  }, [provider]);
+  }, [provider, guard]);
   return (
     <SafeAreaView style={styles.root}>
       <AppRoot provider={provider} rewardsStore={rewardsStore} />

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import type { AuthProvider, AuthSnapshot } from '../auth/AuthProvider';
 import type { RewardsStore } from '../rewards/rewardsStore';
+import { GuestHomeScreen } from '../screens/GuestHomeScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { RewardsScreen } from '../screens/RewardsScreen';
@@ -12,7 +13,7 @@ export interface AppRootProps {
   rewardsStore: RewardsStore;
 }
 
-// 导航守卫：restoring→骨架、anonymous→登录、authenticated→主页/奖励页、unsupported→禁用。
+// 导航守卫：restoring→骨架、guest→游客主页、anonymous→登录、authenticated→主页/奖励页、unsupported→禁用。
 export function AppRoot({ provider, rewardsStore }: AppRootProps): React.JSX.Element {
   const [snapshot, setSnapshot] = useState<AuthSnapshot>(provider.getSnapshot());
   const [rewardsSnapshot, setRewardsSnapshot] = useState(rewardsStore.getSnapshot());
@@ -58,7 +59,28 @@ export function AppRoot({ provider, rewardsStore }: AppRootProps): React.JSX.Ele
     return (
       <View style={styles.center}>
         <Text style={styles.unsupported}>当前环境暂不支持华为账号登录</Text>
+        <LoginScreen
+          loading={false}
+          onLogin={() => undefined}
+          onGuest={() => {
+            void provider.enterGuest();
+          }}
+        />
       </View>
+    );
+  }
+
+  if (snapshot.state === 'guest') {
+    return (
+      <GuestHomeScreen
+        displayName={snapshot.user?.displayName ?? '游客'}
+        onUpgrade={() => {
+          void provider.login();
+        }}
+        onExit={() => {
+          void provider.exitGuest();
+        }}
+      />
     );
   }
 
@@ -99,6 +121,12 @@ export function AppRoot({ provider, rewardsStore }: AppRootProps): React.JSX.Ele
         setBusy(true);
         void provider.login().finally(() => setBusy(false));
       }}
+      onGuest={() => {
+        if (busy) {
+          return;
+        }
+        void provider.enterGuest();
+      }}
     />
   );
 }
@@ -106,5 +134,5 @@ export function AppRoot({ provider, rewardsStore }: AppRootProps): React.JSX.Ele
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   hint: { marginTop: 12, color: '#666' },
-  unsupported: { color: '#a61b1b', fontSize: 16, textAlign: 'center' }
+  unsupported: { color: '#a61b1b', fontSize: 16, textAlign: 'center', marginBottom: 16 }
 });

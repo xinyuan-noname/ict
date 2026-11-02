@@ -39,11 +39,17 @@ export interface RequestOptions {
   idempotencyKey?: string;
 }
 
+export interface NetworkGuard {
+  allowOutbound(): boolean;
+  recordOutbound(): void;
+}
+
 export interface ApiClientOptions {
   baseUrl: string;
   timeoutMs?: number;
   fetchImpl?: typeof fetch;
   allowInsecure?: boolean;
+  guard?: NetworkGuard;
 }
 
 export interface RawResponse<T> {
@@ -75,14 +81,20 @@ export class ApiClient {
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
   private readonly fetchImpl: typeof fetch;
+  private readonly guard: NetworkGuard | undefined;
 
   constructor(options: ApiClientOptions) {
     this.baseUrl = assertBaseUrl(options.baseUrl, options.allowInsecure ?? false);
     this.timeoutMs = options.timeoutMs ?? 3000;
     this.fetchImpl = options.fetchImpl ?? globalThis.fetch.bind(globalThis);
+    this.guard = options.guard;
   }
 
   async request<T>(path: string, options: RequestOptions = {}): Promise<RawResponse<T>> {
+    // 游客窗口内必须零出网：先阻断并计数，再创建定时器。
+    if (this.guard && !this.guard.allowOutbound()) {
+      throw new ProtocolError('guest mode: network disabled');
+    }
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
     const headers: Record<string, string> = { Accept: 'application/json' };
@@ -98,6 +110,7 @@ export class ApiClient {
 
     let response: Response;
     try {
+      this.guard?.recordOutbound();
       response = await this.fetchImpl(`${this.baseUrl}${path}`, {
         method: options.method ?? 'GET',
         headers,

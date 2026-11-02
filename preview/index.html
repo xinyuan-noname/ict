@@ -55,6 +55,8 @@
   .tabs { display:flex; gap:8px; margin-bottom:14px; justify-content:center; }
   .tab { background:#fff; border:1px solid #d8dde5; border-radius:16px; padding:6px 14px; font-size:13px; cursor:pointer; color:#555; }
   .tab.active { background:var(--primary); border-color:var(--primary); color:#fff; }
+  .guest-entry { margin-top:14px; background:none; border:none; color:#999; font-size:13px; cursor:pointer; }
+  .guest-badge { display:inline-block; border:1px solid var(--primary); color:var(--primary); background:#fff1f0; border-radius:12px; padding:2px 10px; font-size:12px; }
   .note { position:fixed; left:16px; bottom:16px; max-width:330px; font-size:12px; color:#666; background:#fff; border-radius:8px; padding:10px 12px; box-shadow:0 4px 16px rgba(0,0,0,.08); line-height:1.6; }
 </style>
 </head>
@@ -79,6 +81,19 @@
       <button id="loginBtn" class="btn">华为账号登录</button>
       <button class="link" onclick="showError('AUTH_002')">演示：用户取消授权</button>
       <button class="ghost" onclick="showError('AUTH_007')">演示：触发限流</button>
+      <button class="guest-entry" id="guestEntryBtn">游客进入预览</button>
+    </div>
+
+    <!-- 游客主页（无签到/积分/商城） -->
+    <div id="guest" class="screen center hidden">
+      <div class="avatar" style="position:static;margin-bottom:14px">
+        <span style="font-size:14px;line-height:1.2;text-align:center">游客</span>
+      </div>
+      <div class="name">游客</div>
+      <span class="guest-badge">游客模式</span>
+      <div class="meta" style="margin:12px 0 26px;text-align:center">数据仅保存在本机，不会上传服务器</div>
+      <button class="btn" onclick="show('login')">登录华为账号</button>
+      <button class="ghost" onclick="show('login')">退出游客模式</button>
     </div>
 
     <!-- 主页 -->
@@ -162,7 +177,7 @@
   };
 
   function show(name) {
-    ['login', 'home', 'rewards'].forEach((key) => $(key).classList.toggle('hidden', key !== name));
+    ['login', 'home', 'rewards', 'guest'].forEach((key) => $(key).classList.toggle('hidden', key !== name));
     document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === name));
     if (name === 'home') renderHome();
     if (name === 'rewards') renderRewards();
@@ -287,6 +302,7 @@
 
   document.querySelectorAll('.tab').forEach((tab) => tab.addEventListener('click', () => show(tab.dataset.tab)));
   $('checkinBtn').addEventListener('click', checkIn);
+  $('guestEntryBtn').addEventListener('click', () => show('guest'));
 
   $('loginBtn').addEventListener('click', () => {
     const btn = $('loginBtn');
