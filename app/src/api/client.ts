@@ -33,7 +33,7 @@ export class ProtocolError extends Error {
 }
 
 export interface RequestOptions {
-  method?: 'GET' | 'POST' | 'PUT';
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   body?: unknown;
   token?: string;
   idempotencyKey?: string;

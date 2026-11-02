@@ -8,6 +8,8 @@ import { NativeAccountKitProvider } from './src/auth/providers/nativeAccountKit'
 import { WebOAuthProvider, WindowsCapabilityProbe } from './src/auth/providers/webOAuth';
 import type { AuthProviderStrategy, CapabilityProbe } from './src/auth/providers/types';
 import { RewardsApi } from './src/api/rewardsApi';
+import { CheckApi } from './src/api/checkApi';
+import { CheckStore } from './src/check/checkStore';
 import { RewardsStore } from './src/rewards/rewardsStore';
 import { GuestNetworkGuard } from './src/guest/GuestNetworkGuard';
 import { GuestStore } from './src/guest/GuestStore';
@@ -57,9 +59,13 @@ export default function App(): React.JSX.Element {
     const client = new ApiClient({ baseUrl: defaultBaseUrl(), allowInsecure: __DEV__, guard });
     return new RewardsStore({ api: new RewardsApi(client), getToken: () => provider.currentToken() });
   }, [provider, guard]);
+  const checkStore = useMemo(() => {
+    const client = new ApiClient({ baseUrl: defaultBaseUrl(), allowInsecure: __DEV__, guard });
+    return new CheckStore({ api: new CheckApi(client), getToken: () => provider.currentToken() });
+  }, [provider, guard]);
   return (
     <SafeAreaView style={styles.root}>
-      <AppRoot provider={provider} rewardsStore={rewardsStore} />
+      <AppRoot provider={provider} rewardsStore={rewardsStore} checkStore={checkStore} />
     </SafeAreaView>
   );
 }

@@ -20,6 +20,7 @@ type Deps struct {
 	Cfg       *config.Config
 	Auth      *service.AuthService
 	Reward    *service.RewardService
+	Check     *service.CheckService
 	Sessions  *service.SessionService
 	Provider  interface{ Probe(context.Context) string }
 	Storage   interface{ Ping(context.Context) error }
@@ -45,6 +46,16 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("GET /v1/rewards/frames", s.rewardFrames)
 	mux.HandleFunc("POST /v1/rewards/frames/{frameId}/redeem", s.rewardRedeem)
 	mux.HandleFunc("PUT /v1/rewards/avatar-frame", s.rewardEquip)
+
+	// 清单域（check）：喝水清单为定量式。
+	mux.HandleFunc("GET /v1/check/profile", s.checkProfile)
+	mux.HandleFunc("PUT /v1/check/profile", s.checkPutProfile)
+	mux.HandleFunc("GET /v1/check/today", s.checkToday)
+	mux.HandleFunc("POST /v1/check/water/records", s.checkAddRecord)
+	mux.HandleFunc("DELETE /v1/check/water/records/{recordId}", s.checkDeleteRecord)
+	mux.HandleFunc("GET /v1/check/water/week", s.checkWeek)
+	mux.HandleFunc("GET /v1/check/goal/preview", s.checkPreview)
+	mux.HandleFunc("GET /v1/check/list", s.checkList)
 
 	// 像素头像框静态资源（开发/自托管；生产可由 CDN 覆盖）。
 	frames := http.FileServer(http.Dir("assets/frames"))

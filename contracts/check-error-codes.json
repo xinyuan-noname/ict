@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "namespace": "check",
+  "note": "清单域独立码表；禁止新增 AUTH_015+，既有 AUTH 与奖励码语义不变。",
+  "codes": [
+    { "code": "CHECK_001", "httpStatus": 400, "meaning": "请求参数非法", "userMessage": "请求参数有误，请重试", "retryable": false },
+    { "code": "CHECK_002", "httpStatus": 404, "meaning": "记录不存在", "userMessage": "记录不存在", "retryable": false },
+    { "code": "CHECK_003", "httpStatus": 409, "meaning": "幂等键被复用于不同请求", "userMessage": "请求冲突，请重新提交", "retryable": false },
+    { "code": "CHECK_004", "httpStatus": 409, "meaning": "目标版本冲突", "userMessage": "目标已更新，请刷新后重试", "retryable": true },
+    { "code": "CHECK_005", "httpStatus": 422, "meaning": "身体档案数值超出范围", "userMessage": "身体数据超出合理范围，请检查", "retryable": false },
+    { "code": "CHECK_006", "httpStatus": 403, "meaning": "身体档案未完成", "userMessage": "请先完善身体档案", "retryable": false },
+    { "code": "CHECK_007", "httpStatus": 429, "meaning": "请求过于频繁", "userMessage": "操作过于频繁，请稍后再试", "retryable": true },
+    { "code": "CHECK_008", "httpStatus": 503, "meaning": "存储或服务不可用", "userMessage": "清单服务暂时不可用，请稍后重试", "retryable": true },
+    { "code": "CHECK_009", "httpStatus": 500, "meaning": "未归类的内部错误", "userMessage": "操作失败，请稍后重试", "retryable": true },
+    { "code": "CHECK_010", "httpStatus": 400, "meaning": "日期或时区非法", "userMessage": "日期格式有误，请重试", "retryable": false },
+    { "code": "CHECK_011", "httpStatus": 409, "meaning": "记录已存在", "userMessage": "记录已存在", "retryable": false },
+    { "code": "CHECK_012", "httpStatus": 413, "meaning": "请求体过大", "userMessage": "请求内容过大", "retryable": false }
+  ]
+}

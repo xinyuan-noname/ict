@@ -123,14 +123,28 @@ func main() {
 		GlobalLimiter:     ratelimit.New(300, time.Minute),
 	})
 
+	checkStore, cerr := filestore.OpenCheck(cfg.DatabaseDSN+".check.json", filestore.Options{
+		Namespace: cfg.StorageNamespace,
+		Mode:      cfg.AuthMode,
+	})
+	if cerr != nil {
+		logger.Error(context.Background(), "check storage open failed", "event", "boot_failure", "reason", cerr.Error())
+		os.Exit(1)
+	}
+
 	rewardService := &service.RewardService{
 		Store: rewardStore, Clock: portClock{}, Logger: logger,
 		CheckInLimiter: ratelimit.New(10, time.Minute),
 		RedeemLimiter:  ratelimit.New(20, time.Minute),
 	}
 
+	checkService := &service.CheckService{
+		Store: checkStore, Clock: portClock{}, Logger: logger,
+		Limiter: ratelimit.New(60, time.Minute),
+	}
+
 	srv := &handler.Server{Deps: handler.Deps{
-		Cfg: cfg, Auth: authService, Reward: rewardService, Sessions: sessions, Provider: provider,
+		Cfg: cfg, Auth: authService, Reward: rewardService, Check: checkService, Sessions: sessions, Provider: provider,
 		Storage: store, Log: logger, StartedAt: time.Now(),
 	}}
 
