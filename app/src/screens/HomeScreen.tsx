@@ -7,10 +7,12 @@ export interface HomeScreenProps {
   platform: string;
   onLogout: () => void;
   onRefresh: () => Promise<UserBrief | null>;
+  onOpenRewards?: () => void;
+  pointsBalance?: number;
 }
 
 // 受保护页面：仅 authenticated 状态挂载（任务 33.2/32.5）。
-export function HomeScreen({ user, platform, onLogout, onRefresh }: HomeScreenProps): React.JSX.Element {
+export function HomeScreen({ user, platform, onLogout, onRefresh, onOpenRewards, pointsBalance }: HomeScreenProps): React.JSX.Element {
   const [current, setCurrent] = useState<UserBrief | null>(user);
 
   useEffect(() => {
@@ -36,6 +38,11 @@ export function HomeScreen({ user, platform, onLogout, onRefresh }: HomeScreenPr
       <Text style={styles.name}>{current?.displayName || '华为账号用户'}</Text>
       <Text style={styles.meta}>平台：{platform}</Text>
       <Text style={styles.meta}>用户标识：{current?.userId ?? '-'}</Text>
+      {onOpenRewards ? (
+        <Pressable accessibilityRole="button" style={styles.rewards} onPress={onOpenRewards}>
+          <Text style={styles.rewardsText}>每日签到 · {pointsBalance ?? 0} 积分</Text>
+        </Pressable>
+      ) : null}
       <Pressable accessibilityRole="button" style={styles.secondary} onPress={refresh}>
         <Text style={styles.secondaryText}>刷新资料</Text>
       </Pressable>
@@ -55,6 +62,8 @@ const styles = StyleSheet.create({
   meta: { color: '#666', fontSize: 14, marginBottom: 6 },
   secondary: { marginTop: 24, padding: 12 },
   secondaryText: { color: '#c7000b', fontSize: 15 },
+  rewards: { marginTop: 16, backgroundColor: '#fff5f5', borderRadius: 16, paddingVertical: 10, paddingHorizontal: 20, borderWidth: 1, borderColor: '#c7000b' },
+  rewardsText: { color: '#c7000b', fontSize: 14, fontWeight: '600' },
   danger: { marginTop: 8, padding: 12 },
   dangerText: { color: '#999', fontSize: 15 }
 });

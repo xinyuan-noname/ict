@@ -39,6 +39,11 @@ export class AuthProvider {
     return this.snapshot;
   }
 
+  // 奖励域等只读调用方通过该方法取当前会话凭证，不暴露写能力。
+  currentToken(): string | null {
+    return this.sessionToken;
+  }
+
   subscribe(listener: Listener): () => void {
     this.listeners.add(listener);
     return () => {

@@ -1,0 +1,83 @@
+{
+  "catalogVersion": "catalog-v1",
+  "frames": [
+    {
+      "frameId": "frame_pixel_cyan",
+      "name": "青岚光环",
+      "price": 0,
+      "status": "on_sale",
+      "assetPrefix": "/assets/frames/frame_pixel_cyan",
+      "pixelSpec": {
+        "canvas": 96,
+        "grid": 24,
+        "paletteMax": 16
+      },
+      "colors": 3
+    },
+    {
+      "frameId": "frame_pixel_sakura",
+      "name": "樱瓣",
+      "price": 100,
+      "status": "on_sale",
+      "assetPrefix": "/assets/frames/frame_pixel_sakura",
+      "pixelSpec": {
+        "canvas": 96,
+        "grid": 24,
+        "paletteMax": 16
+      },
+      "colors": 3
+    },
+    {
+      "frameId": "frame_pixel_circuit",
+      "name": "电路",
+      "price": 300,
+      "status": "on_sale",
+      "assetPrefix": "/assets/frames/frame_pixel_circuit",
+      "pixelSpec": {
+        "canvas": 96,
+        "grid": 24,
+        "paletteMax": 16
+      },
+      "colors": 3
+    },
+    {
+      "frameId": "frame_pixel_dawn",
+      "name": "晨曦门扉",
+      "price": 500,
+      "status": "on_sale",
+      "assetPrefix": "/assets/frames/frame_pixel_dawn",
+      "pixelSpec": {
+        "canvas": 96,
+        "grid": 24,
+        "paletteMax": 16
+      },
+      "colors": 3
+    },
+    {
+      "frameId": "frame_pixel_starnest",
+      "name": "星巢",
+      "price": 800,
+      "status": "on_sale",
+      "assetPrefix": "/assets/frames/frame_pixel_starnest",
+      "pixelSpec": {
+        "canvas": 96,
+        "grid": 24,
+        "paletteMax": 16
+      },
+      "colors": 3
+    },
+    {
+      "frameId": "frame_pixel_cat",
+      "name": "猫爪",
+      "price": 1200,
+      "status": "on_sale",
+      "assetPrefix": "/assets/frames/frame_pixel_cat",
+      "pixelSpec": {
+        "canvas": 96,
+        "grid": 24,
+        "paletteMax": 16
+      },
+      "colors": 3
+    }
+  ]
+}

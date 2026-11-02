@@ -1,6 +1,15 @@
 {
   "version": 1,
   "status": "stable",
+  "domains": {
+    "auth": { "namespace": "AUTH_", "codes": 14, "file": "contracts/error-codes.json" },
+    "rewards": { "namespace": "POINT_/REWARD_", "codes": 14, "file": "contracts/reward-error-codes.json" }
+  },
+  "domainRules": [
+    "AUTH_015 及以上禁止新增",
+    "AUTH_xxx 语义、HTTP 状态与用户提示不得修改",
+    "鉴权失败仍使用 AUTH_004/005/010/013"
+  ],
   "compileRules": [
     "只增字段、不改语义、不删字段",
     "枚举只扩不缩",

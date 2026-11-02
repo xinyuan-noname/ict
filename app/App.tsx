@@ -7,6 +7,8 @@ import { AuthProvider } from './src/auth/AuthProvider';
 import { NativeAccountKitProvider } from './src/auth/providers/nativeAccountKit';
 import { WebOAuthProvider, WindowsCapabilityProbe } from './src/auth/providers/webOAuth';
 import type { AuthProviderStrategy, CapabilityProbe } from './src/auth/providers/types';
+import { RewardsApi } from './src/api/rewardsApi';
+import { RewardsStore } from './src/rewards/rewardsStore';
 import { KeychainVault } from './src/native/SecureVault';
 import { APP_VERSION, WINDOWS_REDIRECT_URI, defaultBaseUrl } from './src/shared/config';
 
@@ -40,9 +42,13 @@ export function buildAuthProvider(deps: AppDependencies = {}): AuthProvider {
 
 export default function App(): React.JSX.Element {
   const provider = useMemo(() => buildAuthProvider(), []);
+  const rewardsStore = useMemo(() => {
+    const client = new ApiClient({ baseUrl: defaultBaseUrl(), allowInsecure: __DEV__ });
+    return new RewardsStore({ api: new RewardsApi(client), getToken: () => provider.currentToken() });
+  }, [provider]);
   return (
     <SafeAreaView style={styles.root}>
-      <AppRoot provider={provider} />
+      <AppRoot provider={provider} rewardsStore={rewardsStore} />
     </SafeAreaView>
   );
 }

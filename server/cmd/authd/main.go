@@ -81,6 +81,15 @@ func main() {
 		HTTP:            config.NewOutboundClient(cfg.HuaweiTimeout),
 	})
 
+	rewardStore, rerr := filestore.OpenRewards(cfg.DatabaseDSN+".rewards.json", filestore.Options{
+		Namespace: cfg.StorageNamespace,
+		Mode:      cfg.AuthMode,
+	})
+	if rerr != nil {
+		logger.Error(context.Background(), "reward storage open failed", "event", "boot_failure", "reason", rerr.Error())
+		os.Exit(1)
+	}
+
 	sessions := &service.SessionService{
 		Sessions: store, Users: store, Clock: portClock{},
 		TTL: cfg.SessionTTL, MaxAbsolute: cfg.SessionMaxAbsolute,
@@ -114,8 +123,14 @@ func main() {
 		GlobalLimiter:     ratelimit.New(300, time.Minute),
 	})
 
+	rewardService := &service.RewardService{
+		Store: rewardStore, Clock: portClock{}, Logger: logger,
+		CheckInLimiter: ratelimit.New(10, time.Minute),
+		RedeemLimiter:  ratelimit.New(20, time.Minute),
+	}
+
 	srv := &handler.Server{Deps: handler.Deps{
-		Cfg: cfg, Auth: authService, Sessions: sessions, Provider: provider,
+		Cfg: cfg, Auth: authService, Reward: rewardService, Sessions: sessions, Provider: provider,
 		Storage: store, Log: logger, StartedAt: time.Now(),
 	}}
 

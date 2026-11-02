@@ -33,9 +33,10 @@ export class ProtocolError extends Error {
 }
 
 export interface RequestOptions {
-  method?: 'GET' | 'POST';
+  method?: 'GET' | 'POST' | 'PUT';
   body?: unknown;
   token?: string;
+  idempotencyKey?: string;
 }
 
 export interface ApiClientOptions {
@@ -90,6 +91,9 @@ export class ApiClient {
     }
     if (options.token) {
       headers.Authorization = `Bearer ${options.token}`;
+    }
+    if (options.idempotencyKey) {
+      headers['Idempotency-Key'] = options.idempotencyKey;
     }
 
     let response: Response;

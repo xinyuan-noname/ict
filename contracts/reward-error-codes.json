@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "namespace": "rewards",
+  "note": "奖励域独立码表；禁止新增 AUTH_015+，既有 14 个 AUTH 码语义不变。",
+  "codes": [
+    { "code": "POINT_001", "httpStatus": 400, "meaning": "请求参数非法", "userMessage": "请求参数有误，请重试", "retryable": false },
+    { "code": "POINT_002", "httpStatus": 409, "meaning": "积分余额不足", "userMessage": "积分不足，无法兑换", "retryable": false },
+    { "code": "POINT_003", "httpStatus": 403, "meaning": "积分账户不可用", "userMessage": "积分账户不可用，请联系管理员", "retryable": false },
+    { "code": "POINT_004", "httpStatus": 429, "meaning": "用户维度请求过于频繁", "userMessage": "操作过于频繁，请稍后再试", "retryable": true },
+    { "code": "POINT_005", "httpStatus": 503, "meaning": "积分或账务服务暂不可用", "userMessage": "积分服务暂时不可用，请稍后重试", "retryable": true },
+    { "code": "POINT_006", "httpStatus": 500, "meaning": "积分流水读取失败", "userMessage": "积分记录加载失败，请稍后重试", "retryable": true },
+    { "code": "REWARD_001", "httpStatus": 404, "meaning": "头像框不存在", "userMessage": "头像框不存在", "retryable": false },
+    { "code": "REWARD_002", "httpStatus": 409, "meaning": "头像框已下架", "userMessage": "该头像框已下架", "retryable": false },
+    { "code": "REWARD_003", "httpStatus": 409, "meaning": "用户已拥有该头像框", "userMessage": "你已拥有该头像框", "retryable": false },
+    { "code": "REWARD_004", "httpStatus": 403, "meaning": "未拥有该头像框", "userMessage": "尚未拥有该头像框", "retryable": false },
+    { "code": "REWARD_005", "httpStatus": 503, "meaning": "目录或资源服务不可用", "userMessage": "头像框服务暂时不可用，请稍后重试", "retryable": true },
+    { "code": "REWARD_006", "httpStatus": 409, "meaning": "幂等键被复用于不同请求", "userMessage": "请求冲突，请重新提交", "retryable": false },
+    { "code": "REWARD_007", "httpStatus": 409, "meaning": "目录版本已更新或并发冲突", "userMessage": "头像框信息已更新，请刷新后重试", "retryable": true },
+    { "code": "REWARD_008", "httpStatus": 400, "meaning": "请求参数非法", "userMessage": "请求参数有误，请重试", "retryable": false }
+  ]
+}

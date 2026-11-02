@@ -19,6 +19,7 @@ import (
 type Deps struct {
 	Cfg       *config.Config
 	Auth      *service.AuthService
+	Reward    *service.RewardService
 	Sessions  *service.SessionService
 	Provider  interface{ Probe(context.Context) string }
 	Storage   interface{ Ping(context.Context) error }
@@ -36,6 +37,18 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("GET /v1/auth/me", s.me)
 	mux.HandleFunc("GET /v1/health", s.health)
 	mux.HandleFunc("GET /readyz", s.ready)
+
+	// 奖励域：鉴权在 handler 内复用既有会话校验。
+	mux.HandleFunc("GET /v1/rewards/checkin/status", s.rewardStatus)
+	mux.HandleFunc("POST /v1/rewards/checkin", s.rewardCheckIn)
+	mux.HandleFunc("GET /v1/rewards/points/ledger", s.rewardLedger)
+	mux.HandleFunc("GET /v1/rewards/frames", s.rewardFrames)
+	mux.HandleFunc("POST /v1/rewards/frames/{frameId}/redeem", s.rewardRedeem)
+	mux.HandleFunc("PUT /v1/rewards/avatar-frame", s.rewardEquip)
+
+	// 像素头像框静态资源（开发/自托管；生产可由 CDN 覆盖）。
+	frames := http.FileServer(http.Dir("assets/frames"))
+	mux.Handle("GET /assets/frames/", http.StripPrefix("/assets/frames/", frames))
 	return mux
 }
 
