@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { CheckSnapshot, CheckStore } from '../check/checkStore';
-import { DEFAULT_CUP_ML, formatML, type Gender } from '../model/waterGoal';
+import { DEFAULT_CUP_ML, ageFromBirthDate, businessToday, formatML, type Gender } from '../model/waterGoal';
 
 type Tab = 'today' | 'stats' | 'profile';
 
@@ -202,14 +202,19 @@ function ProfileView({
   onExit: () => void;
   onOpenRewards?: () => void;
 }): React.JSX.Element {
-  const [height, setHeight] = useState(String(snapshot.profile?.heightCm ?? 175));
-  const [weight, setWeight] = useState(String(Math.round((snapshot.profile?.weightG ?? 70000) / 1000)));
-  const [age, setAge] = useState(String(snapshot.profile?.age ?? 30));
-  const [gender, setGender] = useState<Gender>(snapshot.profile?.gender ?? 'male');
+  const [height, setHeight] = useState(snapshot.profile ? String(snapshot.profile.heightCm) : '');
+  const [weight, setWeight] = useState(snapshot.profile ? String(Math.round(snapshot.profile.weightG / 1000)) : '');
+  const [birthDate, setBirthDate] = useState('');
+  const [gender, setGender] = useState<Gender | ''>(snapshot.profile?.gender ?? '');
+  const age = birthDate ? ageFromBirthDate(birthDate, businessToday()) : null;
 
   const save = async (): Promise<void> => {
+    if (!height || !weight || !birthDate || !gender || age === null) {
+      Alert.alert('请完善档案', '身高、体重、出生日期与性别都需要填写');
+      return;
+    }
     await store.saveProfile({
-      heightCm: Number(height), weightG: Number(weight) * 1000, age: Number(age), gender
+      heightCm: Number(height), weightG: Number(weight) * 1000, age, gender
     });
   };
 
@@ -218,7 +223,7 @@ function ProfileView({
       <Text style={styles.section}>身体档案</Text>
       <Field label="身高 (cm)" value={height} onChange={setHeight} />
       <Field label="体重 (kg)" value={weight} onChange={setWeight} />
-      <Field label="年龄" value={age} onChange={setAge} />
+      <Field label="出生日期 (YYYY-MM-DD)" value={birthDate} onChange={setBirthDate} />
       <View style={styles.genderRow}>
         {(['male', 'female', 'other'] as Gender[]).map((g) => (
           <Pressable key={g} onPress={() => setGender(g)} style={[styles.gender, gender === g && styles.genderActive]}>
@@ -228,7 +233,9 @@ function ProfileView({
           </Pressable>
         ))}
       </View>
-      <Text style={styles.hint}>今日目标：{snapshot.targetMl} ml（档案变更次日生效）</Text>
+      <Text style={styles.hint}>
+        {age === null ? '填写出生日期后自动计算年龄' : `年龄：${age} 岁`} · 今日目标：{snapshot.targetMl || '待填写'} ml（档案变更次日生效）
+      </Text>
       <Pressable accessibilityRole="button" testID="save-profile" style={styles.primary} onPress={() => void save()}>
         <Text style={styles.primaryText}>保存档案</Text>
       </Pressable>

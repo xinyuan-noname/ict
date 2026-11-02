@@ -113,3 +113,19 @@ export function formatML(ml: number | null): string {
   if (ml === null || ml === undefined) return '—';
   return ml >= 1000 ? `${(ml / 1000).toFixed(2).replace(/\.?0+$/, '')} L` : `${ml} ml`;
 }
+
+// 出生日期 → 年龄（按业务日 +08:00 计算）；无效返回 null。
+export function ageFromBirthDate(birthDate: string, today: string): number | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) return null;
+  const b = new Date(`${birthDate}T00:00:00Z`);
+  const t = new Date(`${today}T00:00:00Z`);
+  if (Number.isNaN(b.getTime()) || Number.isNaN(t.getTime())) return null;
+  let age = t.getUTCFullYear() - b.getUTCFullYear();
+  const monthDiff = t.getUTCMonth() - b.getUTCMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && t.getUTCDate() < b.getUTCDate())) age -= 1;
+  return age >= 0 ? age : null;
+}
+
+export function businessToday(now = new Date()): string {
+  return new Date(now.getTime() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+}
