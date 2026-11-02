@@ -4,9 +4,13 @@
   "private": true,
   "description": "Huawei ID minimal login system (React Native + Go)",
   "scripts": {
+    "start": "node scripts/dev.mjs",
+    "start:api": "node scripts/dev.mjs --api-only --no-open",
+    "start:test": "node scripts/dev.mjs --self-test --no-metro --no-open",
     "gen:contracts": "node scripts/gen-contracts.mjs",
     "check:contracts": "node scripts/gen-contracts.mjs && git diff --exit-code contracts/generated",
     "check:go-syntax": "node scripts/check-go-syntax.mjs server",
+    "check:frames": "node scripts/check-pixel-frames.mjs",
     "secret:scan": "node scripts/secret-scan.mjs"
   }
 }
