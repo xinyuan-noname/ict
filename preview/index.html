@@ -3,89 +3,95 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>check · 清单 / 喝水 / 像素头像框 预览</title>
+<title>check · 清单预览</title>
 <style>
   :root { --primary:#c7000b; --danger-bg:#fdecec; --danger:#a61b1b; --text:#333; --muted:#888; --ok:#1a7a3c; }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body { margin:0; font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif; background:#eef0f4; display:flex; justify-content:center; padding:20px 16px; }
-  .phone { width:390px; height:780px; background:#fff; border-radius:28px; box-shadow:0 18px 50px rgba(0,0,0,.18); overflow:hidden; display:flex; flex-direction:column; }
-  .status { height:30px; flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; padding:0 18px; font-size:12px; color:#aaa; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif; background:#eef0f4; display:flex; justify-content:center; padding:18px 16px; }
+  .phone { width:390px; height:800px; background:#fff; border-radius:28px; box-shadow:0 18px 50px rgba(0,0,0,.18); overflow:hidden; display:flex; flex-direction:column; }
+  .status { height:28px; flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; padding:0 18px; font-size:11px; color:#bbb; }
   .screen { flex:1; display:flex; flex-direction:column; overflow:hidden; }
   .hidden { display:none !important; }
   .center { align-items:center; justify-content:center; padding:24px; }
-  .brand { font-size:22px; font-weight:700; color:var(--primary); letter-spacing:1px; }
-  .title { font-size:24px; font-weight:600; color:var(--text); margin-bottom:28px; }
-  .btn { background:var(--primary); color:#fff; border:none; border-radius:24px; padding:13px 44px; font-size:16px; font-weight:600; cursor:pointer; }
+  .brand { font-size:21px; font-weight:700; color:var(--primary); letter-spacing:1px; }
+  .title { font-size:23px; font-weight:600; color:var(--text); margin-bottom:26px; }
+  .btn { background:var(--primary); color:#fff; border:none; border-radius:24px; padding:12px 42px; font-size:15px; font-weight:600; cursor:pointer; }
   .btn:disabled { opacity:.55; cursor:not-allowed; }
-  .link { background:none; border:none; color:var(--primary); font-size:14px; padding:8px; cursor:pointer; }
-  .ghost { background:none; border:none; color:#999; font-size:14px; padding:8px; cursor:pointer; }
+  .link { background:none; border:none; color:var(--primary); font-size:13px; padding:8px; cursor:pointer; }
+  .ghost { background:none; border:none; color:#999; font-size:13px; padding:8px; cursor:pointer; }
   .banner { width:100%; background:var(--danger-bg); border-radius:8px; padding:10px 12px; margin-bottom:12px; }
   .banner p { margin:0; color:var(--danger); font-size:13px; }
   .banner small { color:#7a7a7a; font-size:11px; }
-  .header { display:flex; align-items:center; justify-content:space-between; padding:10px 20px 6px; }
+  .header { display:flex; align-items:center; justify-content:space-between; padding:8px 20px 4px; }
   .badge { font-size:11px; color:#999; border:1px solid #eee; border-radius:10px; padding:2px 8px; }
-  .body { flex:1; overflow-y:auto; padding:8px 20px 20px; }
-  .notice { color:var(--ok); font-size:12px; min-height:18px; margin:4px 0; }
-  .hero { text-align:center; font-size:30px; font-weight:700; color:#222; }
-  .hero small { font-size:14px; color:#aaa; font-weight:400; }
+  .body { flex:1; overflow-y:auto; padding:6px 20px 16px; }
+  .notice { color:var(--ok); font-size:12px; min-height:16px; margin:2px 0; }
+  .hero { text-align:center; font-size:29px; font-weight:700; color:#222; }
+  .hero small { font-size:13px; color:#aaa; font-weight:400; }
   .sub { text-align:center; font-size:12px; color:var(--muted); margin-top:4px; }
-  .ring { position:relative; width:196px; height:196px; margin:6px auto 4px; }
-  .ring .seg { position:absolute; left:96px; top:96px; width:4px; height:13px; border-radius:2px; transform-origin:2px 2px; }
+  .ring { position:relative; width:190px; height:190px; margin:6px auto 2px; }
+  .ring .seg { position:absolute; left:93px; top:93px; width:4px; height:13px; border-radius:2px; transform-origin:2px 2px; }
   .ring .center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-  .ring .pct { font-size:30px; font-weight:700; color:var(--primary); }
+  .ring .pct { font-size:29px; font-weight:700; color:var(--primary); }
   .ring .lbl { font-size:11px; color:#aaa; }
-  .actions { display:flex; gap:12px; justify-content:center; margin:16px 0 4px; }
-  .actions .btn { padding:11px 26px; font-size:14px; }
-  .actions .outline { background:#fff; color:var(--primary); border:1px solid var(--primary); border-radius:24px; padding:11px 26px; font-size:14px; font-weight:600; cursor:pointer; }
-  .section { font-size:14px; font-weight:600; color:#333; margin:20px 0 8px; }
+  .actions { display:flex; gap:10px; justify-content:center; margin:14px 0 2px; }
+  .actions .btn { padding:10px 24px; font-size:13px; }
+  .actions .outline { background:#fff; color:var(--primary); border:1px solid var(--primary); border-radius:24px; padding:10px 24px; font-size:13px; font-weight:600; cursor:pointer; }
+  .section { font-size:14px; font-weight:600; color:#333; margin:18px 0 8px; }
   .empty { color:#bbb; font-size:12px; }
-  .rec { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px dashed #f2f2f2; font-size:13px; color:#555; }
+  .rec { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed #f2f2f2; font-size:13px; color:#555; }
   .rec button { background:none; border:none; color:var(--primary); font-size:12px; cursor:pointer; }
-  .stats { display:flex; margin-top:6px; }
+  .stats { display:flex; margin-top:4px; }
   .stat { flex:1; text-align:center; }
-  .stat b { display:block; font-size:20px; color:#222; }
+  .stat b { display:block; font-size:19px; color:#222; }
   .stat span { font-size:11px; color:#aaa; }
-  .chart { display:flex; align-items:flex-end; justify-content:space-between; height:180px; margin-top:10px; }
+  .chart { display:flex; align-items:flex-end; justify-content:space-between; height:172px; margin-top:8px; }
   .col { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; }
-  .col .v { font-size:10px; color:#aaa; height:14px; }
-  .col .bar { width:20px; border-radius:4px; background:#f0dcdd; }
-  .col .d { font-size:10px; color:#aaa; margin-top:4px; }
-  .legend { font-size:11px; color:#bbb; text-align:center; margin-top:8px; }
-  .row { display:flex; align-items:center; padding:8px 0; border-bottom:1px solid #f6f6f6; font-size:12px; color:#666; }
+  .col .v { font-size:10px; color:#aaa; height:13px; }
+  .col .bar { width:19px; border-radius:4px; background:#f0dcdd; }
+  .col .d { font-size:10px; color:#aaa; margin-top:3px; }
+  .legend { font-size:11px; color:#bbb; text-align:center; margin-top:6px; }
+  .row { display:flex; padding:7px 0; border-bottom:1px solid #f6f6f6; font-size:12px; color:#666; }
   .row span:first-child { flex:0 0 90px; }
   .row span:nth-child(2) { flex:1; }
-  .field { display:flex; align-items:center; margin-bottom:10px; }
+  .field { display:flex; align-items:center; margin-bottom:9px; }
   .field label { width:96px; font-size:13px; color:#666; }
   .field input { flex:1; border:1px solid #e6e6e6; border-radius:8px; padding:8px 10px; font-size:14px; outline:none; }
-  .genders { display:flex; gap:8px; margin:2px 0 8px 96px; }
+  .genders { display:flex; gap:8px; margin:0 0 8px 96px; }
   .genders button { flex:1; border:1px solid #e6e6e6; background:#fff; border-radius:8px; padding:7px 0; font-size:13px; color:#666; cursor:pointer; }
   .genders button.on { border-color:var(--primary); color:var(--primary); background:#fff5f5; font-weight:600; }
   .hint { font-size:11px; color:#aaa; margin-top:6px; }
-  .danger { color:#bbb; font-size:12px; margin-top:12px; }
-  .tabbar { display:flex; border-top:1px solid #f0f0f0; padding:6px 0 10px; flex:0 0 auto; }
+  .tabbar { display:flex; border-top:1px solid #f0f0f0; padding:5px 0 9px; flex:0 0 auto; }
   .tabbar button { flex:1; border:none; background:none; font-size:13px; color:#aaa; padding:6px 0; cursor:pointer; }
   .tabbar button.on { color:var(--primary); font-weight:600; }
-  .card { border:1px solid #f0f0f0; border-radius:12px; padding:12px; margin-top:12px; }
-  .card .t { font-size:13px; color:#333; font-weight:600; }
-  .card .d { font-size:11px; color:#aaa; margin-top:3px; }
-  .avatar { width:88px; height:88px; border-radius:44px; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:15px; margin-bottom:12px; }
-  .pixel { width:96px; height:96px; image-rendering:pixelated; }
-  .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+  .me-head { display:flex; align-items:center; gap:14px; padding:6px 0 14px; cursor:pointer; }
+  .avatar { width:68px; height:68px; border-radius:34px; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:600; position:relative; }
+  .avatar .dot { position:absolute; right:-2px; bottom:-2px; width:20px; height:20px; border-radius:10px; background:#fff; color:var(--primary); font-size:11px; display:flex; align-items:center; justify-content:center; border:1px solid var(--primary); }
+  .me-name { font-size:17px; font-weight:600; color:#222; }
+  .me-hint { font-size:11px; color:#aaa; margin-top:3px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
   .frameCard { background:#fafafa; border-radius:12px; padding:10px; text-align:center; }
   .frameCard img { width:64px; height:64px; image-rendering:pixelated; }
   .frameCard .n { font-size:13px; font-weight:600; margin-top:4px; }
   .frameCard .p { font-size:11px; color:#999; }
   .frameCard button { margin-top:6px; border:1px solid var(--primary); background:#fff; color:var(--primary); border-radius:14px; padding:4px 12px; font-size:11px; cursor:pointer; }
   .frameCard button.own { border-color:#ddd; color:#999; }
-  .note { position:fixed; left:16px; bottom:16px; max-width:320px; font-size:11px; color:#777; background:#fff; border-radius:8px; padding:9px 12px; box-shadow:0 4px 16px rgba(0,0,0,.08); line-height:1.6; }
+  .calendar { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-top:6px; }
+  .calendar .dow { font-size:10px; color:#bbb; text-align:center; }
+  .calendar .day { height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; color:#666; background:#fafafa; }
+  .calendar .day.done { background:var(--primary); color:#fff; font-weight:600; }
+  .calendar .day.today { outline:2px solid #ffd0d3; }
+  .calendar .day.blank { background:transparent; }
+  .note { position:fixed; left:16px; bottom:14px; max-width:320px; font-size:11px; color:#777; background:#fff; border-radius:8px; padding:9px 12px; box-shadow:0 4px 16px rgba(0,0,0,.08); line-height:1.6; }
+  .tabsTop { display:flex; gap:8px; justify-content:center; margin-bottom:10px; }
+  .tabsTop button { background:#fff; border:1px solid #d8dde5; border-radius:16px; padding:6px 14px; font-size:12px; cursor:pointer; }
 </style>
 </head>
 <body>
 <div>
-  <div class="tabs" style="display:flex;gap:8px;justify-content:center;margin-bottom:12px">
-    <button class="tab" data-screen="login" style="background:#fff;border:1px solid #d8dde5;border-radius:16px;padding:6px 14px;font-size:12px;cursor:pointer">登录</button>
-    <button class="tab" data-screen="check" style="background:#fff;border:1px solid #d8dde5;border-radius:16px;padding:6px 14px;font-size:12px;cursor:pointer">check 清单</button>
-    <button class="tab" data-screen="rewards" style="background:#fff;border:1px solid #d8dde5;border-radius:16px;padding:6px 14px;font-size:12px;cursor:pointer">签到/头像框</button>
+  <div class="tabsTop">
+    <button class="tab" data-screen="login">登录</button>
+    <button class="tab" data-screen="check">check 清单</button>
   </div>
 
   <div class="phone">
@@ -93,7 +99,7 @@
 
     <!-- 登录 -->
     <div id="login" class="screen center">
-      <div class="brand" style="margin-bottom:18px">check</div>
+      <div class="brand" style="margin-bottom:16px">check</div>
       <div class="title">华为账号登录</div>
       <div id="loginBanner" class="banner hidden"><p id="loginErr">华为账号服务暂时不可用</p><small id="loginCode">AUTH_003</small></div>
       <button class="btn" id="loginBtn">华为账号登录</button>
@@ -101,316 +107,265 @@
       <button class="ghost" onclick="showLoginError('AUTH_007')">演示：触发限流</button>
     </div>
 
-    <!-- check 清单 -->
+    <!-- check -->
     <div id="check" class="screen hidden">
-      <div class="header">
-        <span class="brand">check</span>
-        <span class="badge" id="identityBadge">华为用户</span>
-      </div>
+      <div class="header"><span class="brand">check</span><span class="badge" id="identityBadge">华为用户</span></div>
       <div class="body" id="checkBody"></div>
-      <div class="tabbar">
-        <button data-tab="today" class="on">今日</button>
-        <button data-tab="stats">统计</button>
-        <button data-tab="me">我的</button>
-      </div>
-    </div>
-
-    <!-- 签到 / 头像框 -->
-    <div id="rewards" class="screen hidden">
-      <div class="header">
-        <button class="ghost" onclick="show('check')">‹ 返回</button>
-        <span style="font-size:15px;font-weight:600">签到与头像框</span>
-        <span style="width:48px"></span>
-      </div>
-      <div class="body" id="rewardBody"></div>
+      <div class="tabbar" id="tabbar"></div>
     </div>
   </div>
 </div>
 
 <div class="note">
-  <b>静态 UI 预览</b>：布局/文案取自 <code>app/src/screens/CheckShell.tsx</code>，目标量用与 Go/TS 相同的 water-goal-v1 计算，数据保存在浏览器 localStorage，不调用接口。
+  <b>静态 UI 预览</b>：身高/体重/出生日期不设默认值；点击「我的」头像解锁积分页；数据存于浏览器 localStorage。
 </div>
 
 <script>
-  // ---------- 与 Go/TS 同构的目标算法 ----------
-  const V = { MIN_A: 1200, MAX_A: 3500, MIN_T: 1000, MAX_T: 3000, CUP: 250 };
+  const V = { MIN_A:1200, MAX_A:3500, MIN_T:1000, MAX_T:3000, CUP:250 };
+  // ---------- 算法（与 Go/TS 同构） ----------
+  function ageFromBirthDate(birthDate) {
+    if (!birthDate) return null;
+    const b = new Date(birthDate + 'T00:00:00Z');
+    const t = new Date(bizToday() + 'T00:00:00Z');
+    let age = t.getUTCFullYear() - b.getUTCFullYear();
+    const m = t.getUTCMonth() - b.getUTCMonth();
+    if (m < 0 || (m === 0 && t.getUTCDate() < b.getUTCDate())) age -= 1;
+    return age;
+  }
   function waterGoal(p) {
-    const { heightCm: h, weightG: w, age, gender } = p;
-    const sbw = 22 * h * h * 100;
-    const weight = w * 1000;
-    const eff = Math.floor((7 * weight + 3 * sbw) / 10);
-    let micro = eff * 32;
+    const age = ageFromBirthDate(p.birthDate);
+    if (!p.heightCm || !p.weightG || age === null || !p.gender) return 0;
+    const sbw = 22 * p.heightCm * p.heightCm * 100;
+    let micro = Math.floor((7 * p.weightG * 1000 + 3 * sbw) / 10) * 32;
     let ap = 1000;
     if (age >= 80) ap = 900; else if (age >= 65) ap = 920; else if (age >= 50) ap = 950; else if (age >= 30) ap = 980;
-    let gp = gender === 'female' ? 950 : gender === 'other' ? 975 : 1000;
+    const gp = p.gender === 'female' ? 950 : p.gender === 'other' ? 975 : 1000;
     micro = Math.floor(micro * ap / 1000);
     micro = Math.floor(micro * gp / 1000);
-    let ml = Math.floor((micro + 500000) / 1000000);
-    ml = Math.round(ml / 50) * 50;
-    const low = age < 18 ? V.MIN_T : V.MIN_A;
-    const high = age < 18 ? V.MAX_T : V.MAX_A;
+    let ml = Math.round(Math.floor((micro + 500000) / 1000000) / 50) * 50;
+    const low = age < 18 ? V.MIN_T : V.MIN_A, high = age < 18 ? V.MAX_T : V.MAX_A;
     return Math.min(high, Math.max(low, ml));
   }
-  function bizToday() {
-    return new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
-  }
-  function addDays(day, n) {
-    const d = new Date(day + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10);
-  }
-  function weekStart(day) {
-    const d = new Date(day + 'T00:00:00Z');
-    const w = d.getUTCDay() || 7;
-    return addDays(day, -(w - 1));
-  }
+  function bizToday() { return new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10); }
+  function addDays(day, n) { const d = new Date(day + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+  function weekStart(day) { const d = new Date(day + 'T00:00:00Z'); return addDays(day, -((d.getUTCDay() || 7) - 1)); }
   function fmt(ml) { return ml >= 1000 ? (ml / 1000).toFixed(2).replace(/\.?0+$/, '') + ' L' : ml + ' ml'; }
 
-  // ---------- 状态 ----------
-  const KEY = 'preview.check.v1';
+  const KEY = 'preview.check.v2';
   const state = {
-    mode: 'account', tab: 'today', notice: '',
-    profile: { heightCm: 175, weightG: 70000, age: 30, gender: 'male' },
-    goals: {},
-    records: []
+    mode: 'account', tab: 'today', notice: '', pointsUnlocked: false,
+    profile: { heightCm: 0, weightG: 0, birthDate: '', gender: '' },
+    goals: {}, records: [],
+    points: 0, streak: 0, checkedDates: [], owned: ['frame_pixel_cyan'], equipped: 'frame_pixel_cyan', ledger: []
   };
+  try { const raw = localStorage.getItem(KEY); if (raw) Object.assign(state, JSON.parse(raw)); } catch {}
+  function persist() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+
   const FRAMES = [
-    { id: 'frame_pixel_cyan', name: '青岚光环', price: 0 },
-    { id: 'frame_pixel_sakura', name: '樱瓣', price: 100 },
-    { id: 'frame_pixel_circuit', name: '电路', price: 300 },
-    { id: 'frame_pixel_dawn', name: '晨曦门扉', price: 500 },
-    { id: 'frame_pixel_starnest', name: '星巢', price: 800 },
-    { id: 'frame_pixel_cat', name: '猫爪', price: 1200 }
+    { id:'frame_pixel_cyan', name:'青岚光环', price:0 }, { id:'frame_pixel_sakura', name:'樱瓣', price:100 },
+    { id:'frame_pixel_circuit', name:'电路', price:300 }, { id:'frame_pixel_dawn', name:'晨曦门扉', price:500 },
+    { id:'frame_pixel_starnest', name:'星巢', price:800 }, { id:'frame_pixel_cat', name:'猫爪', price:1200 }
   ];
-  const rewards = { points: 0, streak: 0, checkedIn: false, owned: new Set(['frame_pixel_cyan']), equipped: 'frame_pixel_cyan', ledger: [] };
-
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (raw) Object.assign(state, JSON.parse(raw));
-  } catch { /* ignore */ }
-  function persist() {
-    try { localStorage.setItem(KEY, JSON.stringify({ mode: state.mode, profile: state.profile, goals: state.goals, records: state.records })); } catch { /* ignore */ }
-  }
-
   const $ = (id) => document.getElementById(id);
-  function targetFor(day) {
-    return state.goals[day] ?? waterGoal(state.profile);
-  }
+
   function show(name) {
-    ['login', 'check', 'rewards'].forEach((k) => $(k).classList.toggle('hidden', k !== name));
+    ['login','check'].forEach((k) => $(k).classList.toggle('hidden', k !== name));
     document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.screen === name));
-    if (name === 'check') renderCheck();
-    if (name === 'rewards') renderRewards();
+    if (name === 'check') render();
   }
   function showLoginError(code) {
-    const map = { AUTH_002: ['已取消授权，可重新登录', 'AUTH_002'], AUTH_003: ['华为账号服务暂时不可用', 'AUTH_003 · 503'], AUTH_007: ['操作过于频繁，请稍后再试', 'AUTH_007 · 429 · Retry-After: 42s'] };
-    $('loginErr').textContent = map[code][0];
-    $('loginCode').textContent = map[code][1];
+    const map = { AUTH_002:['已取消授权，可重新登录','AUTH_002'], AUTH_007:['操作过于频繁，请稍后再试','AUTH_007 · 429'] };
+    $('loginErr').textContent = map[code][0]; $('loginCode').textContent = map[code][1];
     $('loginBanner').classList.remove('hidden');
   }
 
-  // ---------- check：今日 ----------
-  function renderCheck() {
+  function targetFor(day) { return state.goals[day] ?? waterGoal(state.profile); }
+
+  // ---------- 渲染 ----------
+  function render() {
     $('identityBadge').textContent = state.mode === 'guest' ? '游客模式' : '华为用户';
-    document.querySelectorAll('.tabbar button').forEach((b) => b.classList.toggle('on', b.dataset.tab === state.tab));
+    const tabs = [['today','今日'],['stats','统计']];
+    if (state.pointsUnlocked) tabs.push(['points','积分']);
+    tabs.push(['me','我的']);
+    $('tabbar').innerHTML = tabs.map(([k,l]) => `<button class="${state.tab===k?'on':''}" onclick="setTab('${k}')">${l}</button>`).join('');
+    if (!tabs.some(([k]) => k === state.tab)) state.tab = 'today';
     if (state.tab === 'today') renderToday();
     if (state.tab === 'stats') renderStats();
+    if (state.tab === 'points') renderPoints();
     if (state.tab === 'me') renderMe();
   }
+  function setTab(tab) { state.tab = tab; render(); }
 
   function renderToday() {
-    const today = bizToday();
-    const target = targetFor(today);
+    const today = bizToday(), target = targetFor(today);
     const recs = state.records.filter((r) => r.day === today);
     const total = recs.reduce((s, r) => s + r.ml, 0);
     const ratio = target > 0 ? Math.min(1, total / target) : 0;
     const segs = 60, active = Math.round(segs * ratio);
     let ring = '';
-    for (let i = 0; i < segs; i++) {
-      const angle = (i / segs) * 360;
-      ring += `<span class="seg" style="background:${i < active ? '#c7000b' : '#f0dcdd'};transform:rotate(${angle}deg) translateY(-86px)"></span>`;
-    }
+    for (let i = 0; i < segs; i++) ring += `<span class="seg" style="background:${i<active?'#c7000b':'#f0dcdd'};transform:rotate(${(i/segs)*360}deg) translateY(-84px)"></span>`;
     $('checkBody').innerHTML = `
       <div class="notice">${state.notice || ''}</div>
-      <div class="ring">${ring}<div class="center"><div class="pct">${Math.round(ratio * 100)}%</div><div class="lbl">今日进度</div></div></div>
-      <div class="hero">${total} <small>/ ${target} ml</small></div>
-      <div class="sub">${target === 0 ? '请先在「我的」填写身体档案' : total >= target ? '今日目标已达成' : '还差 ' + (target - total) + ' ml'}</div>
-      <div class="sub">约 ${Math.floor(total / V.CUP)} 杯（${V.CUP} ml/杯）</div>
+      <div class="ring">${ring}<div class="center"><div class="pct">${Math.round(ratio*100)}%</div><div class="lbl">今日进度</div></div></div>
+      <div class="hero">${total} <small>/ ${target || '--'} ml</small></div>
+      <div class="sub">${target === 0 ? '请先在「我的」填写身高、体重、出生日期与性别' : total >= target ? '今日目标已达成' : '还差 ' + (target-total) + ' ml'}</div>
+      <div class="sub">约 ${Math.floor(total/V.CUP)} 杯（${V.CUP} ml/杯）</div>
       <div class="actions">
-        <button class="btn" onclick="addWater(250)">+250 ml</button>
-        <button class="btn outline" onclick="addWater(500)">+500 ml</button>
+        <button class="btn" ${target===0?'disabled':''} onclick="addWater(250)">+250 ml</button>
+        <button class="btn outline" ${target===0?'disabled':''} onclick="addWater(500)">+500 ml</button>
       </div>
       <div class="section">今日记录</div>
-      ${recs.length === 0 ? '<div class="empty">还没有记录</div>' : recs.map((r) => `
-        <div class="rec"><span>${r.ml} ml · ${r.time}</span><button onclick="removeRecord('${r.id}')">撤销</button></div>`).join('')}
+      ${recs.length===0 ? '<div class="empty">还没有记录</div>' : recs.map(r => `<div class="rec"><span>${r.ml} ml · ${r.time}</span><button onclick="removeRecord('${r.id}')">撤销</button></div>`).join('')}
       <div class="hint">目标仅作日常参考，不构成医学建议。</div>`;
   }
 
   function addWater(ml) {
     const today = bizToday();
-    state.records.push({ id: 'wr_' + Date.now(), day: today, ml, time: new Date().toTimeString().slice(0, 5) });
-    state.notice = `已记录 ${ml} ml`;
-    persist(); renderCheck();
-    setTimeout(() => { state.notice = ''; }, 1800);
+    state.records.push({ id:'wr_'+Date.now(), day:today, ml, time:new Date().toTimeString().slice(0,5) });
+    state.notice = `已记录 ${ml} ml`; persist(); render();
+    setTimeout(() => { state.notice=''; }, 1500);
   }
-  function removeRecord(id) {
-    state.records = state.records.filter((r) => r.id !== id);
-    persist(); renderCheck();
-  }
+  function removeRecord(id) { state.records = state.records.filter(r => r.id !== id); persist(); render(); }
 
-  // ---------- check：统计 ----------
   function renderStats() {
-    const today = bizToday();
-    const start = weekStart(today);
-    const days = Array.from({ length: 7 }, (_, i) => {
-      const day = addDays(start, i);
-      const target = targetFor(day);
-      const total = state.records.filter((r) => r.day === day).reduce((s, r) => s + r.ml, 0);
-      return { day, target, total, achieved: target > 0 && total >= target };
+    const today = bizToday(), start = weekStart(today);
+    const days = Array.from({length:7}, (_, i) => {
+      const day = addDays(start, i), target = targetFor(day);
+      const total = state.records.filter(r => r.day===day).reduce((s,r)=>s+r.ml,0);
+      return { day, target, total, achieved: target>0 && total>=target };
     });
-    let recorded = 0, sum = 0, achieved = 0, elapsed = 0;
-    days.forEach((d) => {
-      sum += d.total; if (d.total > 0) recorded += 1;
-      if (d.achieved) achieved += 1;
-      if (d.day <= today) elapsed += 1;
-    });
-    const avg = recorded ? Math.round(sum / recorded) : null;
-    const max = Math.max(targetFor(today), ...days.map((d) => d.total), 1);
-    const bars = days.map((d) => `
-      <div class="col">
-        <div class="v">${d.total || ''}</div>
-        <div class="bar" style="height:${Math.max(4, Math.round(d.total / max * 120))}px;background:${d.achieved ? '#c7000b' : d.total ? '#f2a6ab' : '#f0f0f0'}"></div>
-        <div class="d">${d.day.slice(5)}</div>
-      </div>`).join('');
-    const rows = days.map((d) => `
-      <div class="row"><span>${d.day}</span><span>${fmt(d.total)}</span><span style="color:${d.achieved ? '#1a7a3c' : '#bbb'}">${d.achieved ? '达成' : d.total ? '未达成' : '无记录'}</span></div>`).join('');
-
+    let recorded=0,sum=0,achieved=0,elapsed=0;
+    days.forEach(d => { sum+=d.total; if(d.total>0) recorded++; if(d.achieved) achieved++; if(d.day<=today) elapsed++; });
+    const avg = recorded ? Math.round(sum/recorded) : null;
+    const max = Math.max(targetFor(today), ...days.map(d=>d.total), 1);
     $('checkBody').innerHTML = `
       <div class="stats">
-        <div class="stat"><b>${avg === null ? '—' : fmt(avg)}</b><span>周平均</span></div>
-        <div class="stat"><b>${elapsed ? Math.round(achieved / elapsed * 100) : 0}%</b><span>达成率</span></div>
+        <div class="stat"><b>${avg===null?'—':fmt(avg)}</b><span>周平均</span></div>
+        <div class="stat"><b>${elapsed?Math.round(achieved/elapsed*100):0}%</b><span>达成率</span></div>
         <div class="stat"><b>${streak()}</b><span>连续天数</span></div>
       </div>
       <div class="section">本周饮水变化</div>
-      <div class="chart">${bars}</div>
+      <div class="chart">${days.map(d => `<div class="col"><div class="v">${d.total||''}</div><div class="bar" style="height:${Math.max(4,Math.round(d.total/max*118))}px;background:${d.achieved?'#c7000b':d.total?'#f2a6ab':'#f0f0f0'}"></div><div class="d">${d.day.slice(5)}</div></div>`).join('')}</div>
       <div class="legend">目标线 ${targetFor(today)} ml · 柱高按最大值归一</div>
       <div class="section">每日明细</div>
-      ${rows}`;
+      ${days.map(d => `<div class="row"><span>${d.day}</span><span>${fmt(d.total)}</span><span style="color:${d.achieved?'#1a7a3c':'#bbb'}">${d.achieved?'达成':d.total?'未达成':'无记录'}</span></div>`).join('')}`;
   }
-
   function streak() {
-    let n = 0, day = bizToday();
-    for (let i = 0; i < 60; i++) {
-      const target = targetFor(day);
-      const total = state.records.filter((r) => r.day === day).reduce((s, r) => s + r.ml, 0);
-      if (target > 0 && total >= target) n += 1; else break;
-      day = addDays(day, -1);
+    let n=0, day=bizToday();
+    for (let i=0;i<60;i++) {
+      const target=targetFor(day), total=state.records.filter(r=>r.day===day).reduce((s,r)=>s+r.ml,0);
+      if (target>0 && total>=target) n++; else break;
+      day = addDays(day,-1);
     }
     return n;
   }
 
-  // ---------- check：我的 ----------
-  function renderMe() {
-    const p = state.profile;
-    const goal = waterGoal(p);
-    $('checkBody').innerHTML = `
-      <div class="section" style="margin-top:4px">身体档案</div>
-      <div class="field"><label>身高 (cm)</label><input id="fHeight" type="number" value="${p.heightCm}" /></div>
-      <div class="field"><label>体重 (kg)</label><input id="fWeight" type="number" value="${Math.round(p.weightG / 1000)}" /></div>
-      <div class="field"><label>年龄</label><input id="fAge" type="number" value="${p.age}" /></div>
-      <div class="field"><label>性别</label></div>
-      <div class="genders">
-        ${[['male', '男'], ['female', '女'], ['other', '其他']].map(([k, label]) => `
-          <button class="${p.gender === k ? 'on' : ''}" onclick="setGender('${k}')">${label}</button>`).join('')}
-      </div>
-      <div class="hint">目标：${goal} ml（档案变更次日生效）</div>
-      <button class="btn" style="margin-top:12px;width:100%" onclick="saveProfile()">保存档案</button>
-      <div class="section">身份</div>
-      <div class="card">
-        <div class="t">${state.mode === 'guest' ? '游客模式 · 本机数据' : '华为账号 · 云端数据'}</div>
-        <div class="d">${state.mode === 'guest' ? '数据仅保存在本机，不会上传服务器' : '数据已保存在云端'}</div>
-      </div>
-      <button class="link" style="margin-top:10px" onclick="show('rewards')">签到与头像框 ›</button>
-      <button class="ghost" style="display:block;margin-top:4px" onclick="exitToLogin()">${state.mode === 'guest' ? '退出游客模式' : '退出登录'}</button>`;
-  }
-
-  function setGender(g) { state.profile.gender = g; renderCheck(); }
-  function saveProfile() {
-    const h = Number($('fHeight').value), w = Number($('fWeight').value) * 1000, a = Number($('fAge').value);
-    if (!(h >= 100 && h <= 250) || !(w >= 20000 && w <= 300000) || !(a >= 14 && a <= 120)) {
-      state.notice = '身体数据超出合理范围，请检查';
-      renderCheck(); return;
-    }
-    state.profile = { heightCm: h, weightG: w, age: a, gender: state.profile.gender };
-    const effective = addDays(bizToday(), 1);
-    state.goals[effective] = waterGoal(state.profile);
-    state.notice = '身体档案已保存（次日生效）';
-    persist(); renderCheck();
-  }
-
-  // ---------- 签到 / 头像框 ----------
-  function renderRewards() {
+  // ---------- 积分（点击头像后解锁） ----------
+  function renderPoints() {
+    const today = bizToday();
+    const checked = state.checkedDates.includes(today);
+    const gain = Math.min(10 + 2*state.streak, 30);
     const frameUrl = (id) => `../server/assets/frames/${id}-3x.png`;
-    const points = rewards.points;
-    const equipped = rewards.equipped;
-    const cards = FRAMES.map((f) => {
-      const owned = rewards.owned.has(f.id);
-      return `<div class="frameCard">
-        <img src="${frameUrl(f.id)}" alt="${f.name}" />
-        <div class="n">${f.name}</div>
-        <div class="p">${f.price === 0 ? '免费' : f.price + ' 积分'}</div>
-        <button class="${owned ? 'own' : ''}" onclick="${owned ? `toggleEquip('${f.id}')` : `redeem('${f.id}')`}">
-          ${owned ? (equipped === f.id ? '卸下' : '装备') : '兑换'}
-        </button>
-      </div>`;
-    }).join('');
+    $('checkBody').innerHTML = `
+      <div class="hero" style="font-size:26px">${state.points} <small>积分</small></div>
+      <div class="sub">连续签到 ${state.streak} 天</div>
+      <button class="btn" style="width:100%;margin-top:12px" ${checked?'disabled':''} onclick="checkIn()">${checked?'今日已签到':`签到 +${gain} 积分`}</button>
 
-    $('rewardBody').innerHTML = `
-      <div class="hero" style="font-size:24px">${points} <small>积分</small></div>
-      <div class="sub">连续签到 ${rewards.streak} 天</div>
-      <button class="btn" style="width:100%;margin-top:12px" ${rewards.checkedIn ? 'disabled' : ''} onclick="checkIn()">
-        ${rewards.checkedIn ? '今日已签到' : `签到 +${Math.min(10 + 2 * rewards.streak, 30)} 积分`}
-      </button>
+      <div class="section">签到日历</div>
+      ${calendarHTML()}
+
       <div class="section">像素头像框</div>
-      <div class="grid">${cards}</div>
+      <div class="grid">${FRAMES.map(f => {
+        const owned = state.owned.includes(f.id);
+        return `<div class="frameCard"><img src="${frameUrl(f.id)}" alt="${f.name}" /><div class="n">${f.name}</div><div class="p">${f.price===0?'免费':f.price+' 积分'}</div>
+          <button class="${owned?'own':''}" onclick="${owned?`toggleEquip('${f.id}')`:`redeem('${f.id}')`}">${owned?(state.equipped===f.id?'卸下':'装备'):'兑换'}</button></div>`;
+      }).join('')}</div>
+
       <div class="section">积分流水</div>
-      ${rewards.ledger.length === 0 ? '<div class="empty">暂无记录</div>'
-        : rewards.ledger.map((e) => `<div class="rec"><span>${e.label}</span><span style="color:${e.amount >= 0 ? '#1a7a3c' : '#c7000b'}">${e.amount >= 0 ? '+' : ''}${e.amount}</span></div>`).join('')}`;
+      ${state.ledger.length===0?'<div class="empty">暂无记录</div>':state.ledger.map(e=>`<div class="rec"><span>${e.label}</span><span style="color:${e.amount>=0?'#1a7a3c':'#c7000b'}">${e.amount>=0?'+':''}${e.amount}</span></div>`).join('')}`;
   }
+
+  function calendarHTML() {
+    const today = bizToday();
+    const [y,m] = today.split('-').map(Number);
+    const first = new Date(Date.UTC(y, m-1, 1));
+    const dim = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    const lead = (first.getUTCDay() + 6) % 7;
+    const dow = ['一','二','三','四','五','六','日'].map(d=>`<div class="dow">${d}</div>`).join('');
+    let cells = '';
+    for (let i=0;i<lead;i++) cells += '<div class="day blank"></div>';
+    for (let d=1; d<=dim; d++) {
+      const day = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const done = state.checkedDates.includes(day);
+      cells += `<div class="day ${done?'done':''} ${day===today?'today':''}">${d}</div>`;
+    }
+    return `<div class="calendar">${dow}${cells}</div>`;
+  }
+
   function checkIn() {
-    if (rewards.checkedIn) return;
-    rewards.streak += 1;
-    const gain = Math.min(10 + 2 * (rewards.streak - 1), 30);
-    rewards.points += gain; rewards.checkedIn = true;
-    rewards.ledger.unshift({ label: `签到 · 第 ${rewards.streak} 天`, amount: gain });
-    renderRewards();
+    const today = bizToday();
+    if (state.checkedDates.includes(today)) return;
+    state.streak += 1;
+    const gain = Math.min(10 + 2*(state.streak-1), 30);
+    state.points += gain;
+    state.checkedDates.push(today);
+    state.ledger.unshift({ label:`签到 · 第 ${state.streak} 天`, amount: gain });
+    state.notice = `签到成功，获得 ${gain} 积分`;
+    persist(); render();
   }
   function redeem(id) {
-    const f = FRAMES.find((x) => x.id === id);
-    if (rewards.owned.has(id)) return;
-    if (rewards.points < f.price) { show('check'); state.notice = '积分不足，无法兑换（POINT_002）'; renderCheck(); setTimeout(() => { state.notice = ''; }, 2200); return; }
-    rewards.points -= f.price; rewards.owned.add(id);
-    if (f.price > 0) rewards.ledger.unshift({ label: `兑换 · ${f.name}`, amount: -f.price });
-    renderRewards();
+    const f = FRAMES.find(x => x.id === id);
+    if (state.owned.includes(id)) return;
+    if (state.points < f.price) { state.notice='积分不足，无法兑换（POINT_002）'; render(); setTimeout(()=>{state.notice='';},2000); return; }
+    state.points -= f.price; state.owned.push(id);
+    if (f.price>0) state.ledger.unshift({ label:`兑换 · ${f.name}`, amount:-f.price });
+    persist(); render();
   }
-  function toggleEquip(id) {
-    rewards.equipped = rewards.equipped === id ? null : id;
-    renderRewards();
+  function toggleEquip(id) { state.equipped = state.equipped===id ? null : id; persist(); render(); }
+
+  // ---------- 我的 ----------
+  function renderMe() {
+    const p = state.profile, age = ageFromBirthDate(p.birthDate), goal = waterGoal(p);
+    $('checkBody').innerHTML = `
+      <div class="me-head" onclick="unlockPoints()">
+        <div class="avatar">${state.mode==='guest'?'游':'华'}<span class="dot">★</span></div>
+        <div>
+          <div class="me-name">${state.mode==='guest'?'游客':'华为用户'}</div>
+          <div class="me-hint">点击头像解锁积分与签到 ›</div>
+        </div>
+      </div>
+
+      <div class="section" style="margin-top:2px">身体档案</div>
+      <div class="field"><label>身高 (cm)</label><input id="fHeight" type="number" placeholder="请输入" value="${p.heightCm||''}" /></div>
+      <div class="field"><label>体重 (kg)</label><input id="fWeight" type="number" placeholder="请输入" value="${p.weightG?Math.round(p.weightG/1000):''}" /></div>
+      <div class="field"><label>出生日期</label><input id="fBirth" type="date" value="${p.birthDate||''}" /></div>
+      <div class="field"><label>性别</label></div>
+      <div class="genders">${[['male','男'],['female','女'],['other','其他']].map(([k,l])=>`<button class="${p.gender===k?'on':''}" onclick="setGender('${k}')">${l}</button>`).join('')}</div>
+      <div class="hint">${age===null?'填写出生日期后自动计算年龄':`年龄：${age} 岁`} · 目标：${goal?goal+' ml':'待填写'}（变更次日生效）</div>
+      <button class="btn" style="margin-top:12px;width:100%" onclick="saveProfile()">保存档案</button>
+      <div class="hint">目标仅作日常参考，不构成医学建议。</div>
+      <button class="ghost" style="display:block;margin-top:12px" onclick="exitToLogin()">${state.mode==='guest'?'退出游客模式':'退出登录'}</button>`;
+  }
+  function unlockPoints() { state.pointsUnlocked = true; state.tab = 'points'; state.notice = '已解锁积分与签到'; render(); }
+  function setGender(g) { state.profile.gender = g; render(); }
+  function saveProfile() {
+    const h = Number($('fHeight').value), w = Number($('fWeight').value)*1000, birth = $('fBirth').value;
+    const age = ageFromBirthDate(birth);
+    if (!(h>=100&&h<=250) || !(w>=20000&&w<=300000) || age===null || age<14 || age>120 || !state.profile.gender) {
+      state.notice='请完整填写合理的身高、体重、出生日期与性别'; render(); return;
+    }
+    state.profile = { heightCm:h, weightG:w, birthDate:birth, gender:state.profile.gender };
+    state.goals[addDays(bizToday(),1)] = waterGoal(state.profile);
+    state.notice = '身体档案已保存（次日生效）'; persist(); render();
   }
 
   // ---------- 入口 ----------
-  $('loginBtn').onclick = () => {
-    state.mode = 'account';
-    $('loginBanner').classList.add('hidden');
-    show('check');
-  };
-  $('guestBtn').onclick = () => {
-    state.mode = 'guest';
-    show('check');
-  };
-  function exitToLogin() { state.mode = 'guest'; persist(); show('login'); }
+  $('loginBtn').onclick = () => { state.mode='account'; $('loginBanner').classList.add('hidden'); show('check'); };
+  $('guestBtn').onclick = () => { state.mode='guest'; show('check'); };
+  function exitToLogin() { persist(); show('login'); }
+  document.querySelectorAll('.tab').forEach(t => t.onclick = () => show(t.dataset.screen));
 
-  document.querySelectorAll('.tab').forEach((t) => t.onclick = () => show(t.dataset.screen));
-  document.querySelectorAll('.tabbar button').forEach((b) => b.onclick = () => { state.tab = b.dataset.tab; renderCheck(); });
-
+  render();
   show('login');
 </script>
 </body>
