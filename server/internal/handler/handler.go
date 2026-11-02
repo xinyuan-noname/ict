@@ -57,6 +57,22 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("GET /v1/check/goal/preview", s.checkPreview)
 	mux.HandleFunc("GET /v1/check/list", s.checkList)
 
+	// 单位、清单启停与药物清单。
+	mux.HandleFunc("GET /v1/check/units", s.checkUnits)
+	mux.HandleFunc("POST /v1/check/units", s.checkCreateUnit)
+	mux.HandleFunc("PATCH /v1/check/units/{unitId}", s.checkUpdateUnit)
+	mux.HandleFunc("DELETE /v1/check/units/{unitId}", s.checkDeleteUnit)
+	mux.HandleFunc("GET /v1/check/lists", s.checkLists)
+	mux.HandleFunc("PATCH /v1/check/lists/{listId}", s.checkSetList)
+	mux.HandleFunc("GET /v1/check/medication/items", s.checkMedItems)
+	mux.HandleFunc("POST /v1/check/medication/items", s.checkCreateMedItem)
+	mux.HandleFunc("PATCH /v1/check/medication/items/{itemId}", s.checkUpdateMedItem)
+	mux.HandleFunc("DELETE /v1/check/medication/items/{itemId}", s.checkDeleteMedItem)
+	mux.HandleFunc("GET /v1/check/medication/today", s.checkMedToday)
+	mux.HandleFunc("POST /v1/check/medication/doses", s.checkTakeDose)
+	mux.HandleFunc("DELETE /v1/check/medication/doses/{doseId}", s.checkCancelDose)
+	mux.HandleFunc("GET /v1/check/medication/week", s.checkMedWeek)
+
 	// 像素头像框静态资源（开发/自托管；生产可由 CDN 覆盖）。
 	frames := http.FileServer(http.Dir("assets/frames"))
 	mux.Handle("GET /assets/frames/", http.StripPrefix("/assets/frames/", frames))

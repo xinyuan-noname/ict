@@ -26,6 +26,10 @@ type checkData struct {
 	Goals     map[string]map[string]int       `json:"goals"`
 	Records   map[string][]domain.WaterRecord `json:"records"`
 	Idem      map[string]map[string]string    `json:"idem"`
+	Units     map[string][]domain.Unit        `json:"units"`
+	MedItems  map[string][]domain.MedicationItem `json:"medItems"`
+	MedDoses  map[string][]domain.MedDose     `json:"medDoses"`
+	Lists     map[string]map[string]bool      `json:"lists"`
 }
 
 func newCheckData() checkData {
@@ -34,6 +38,10 @@ func newCheckData() checkData {
 		Goals:    map[string]map[string]int{},
 		Records:  map[string][]domain.WaterRecord{},
 		Idem:     map[string]map[string]string{},
+		Units:    map[string][]domain.Unit{},
+		MedItems: map[string][]domain.MedicationItem{},
+		MedDoses: map[string][]domain.MedDose{},
+		Lists:    map[string]map[string]bool{},
 	}
 }
 
@@ -131,11 +139,23 @@ func (s *CheckStore) txFor(userID string) *port.CheckTx {
 		idem = map[string]string{}
 	}
 	return &port.CheckTx{
-		Profile: profile,
-		Goals:   goals,
-		Records: append([]domain.WaterRecord(nil), s.data.Records[userID]...),
-		Idem:    idem,
+		Profile:   profile,
+		Goals:     goals,
+		Records:   append([]domain.WaterRecord(nil), s.data.Records[userID]...),
+		Idem:      idem,
+		Units:     append([]domain.Unit(nil), s.data.Units[userID]...),
+		MedItems:  append([]domain.MedicationItem(nil), s.data.MedItems[userID]...),
+		MedDoses:  append([]domain.MedDose(nil), s.data.MedDoses[userID]...),
+		ListStates: copyBoolMap(s.data.Lists[userID]),
 	}
+}
+
+func copyBoolMap(in map[string]bool) map[string]bool {
+	out := map[string]bool{}
+	for k, v := range in {
+		out[k] = v
+	}
+	return out
 }
 
 func (s *CheckStore) commit(userID string, tx *port.CheckTx) {
@@ -147,6 +167,10 @@ func (s *CheckStore) commit(userID string, tx *port.CheckTx) {
 	s.data.Goals[userID] = tx.Goals
 	s.data.Records[userID] = tx.Records
 	s.data.Idem[userID] = tx.Idem
+	s.data.Units[userID] = tx.Units
+	s.data.MedItems[userID] = tx.MedItems
+	s.data.MedDoses[userID] = tx.MedDoses
+	s.data.Lists[userID] = tx.ListStates
 }
 
 var _ port.CheckStore = (*CheckStore)(nil)

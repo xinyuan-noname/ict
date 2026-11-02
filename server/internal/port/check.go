@@ -12,6 +12,10 @@ type CheckTx struct {
 	Goals   map[string]int // day -> target ml
 	Records []domain.WaterRecord
 	Idem    map[string]string // idempotency key -> recordId
+	Units   []domain.Unit
+	MedItems []domain.MedicationItem
+	MedDoses []domain.MedDose
+	ListStates map[string]bool
 }
 
 type CheckStore interface {

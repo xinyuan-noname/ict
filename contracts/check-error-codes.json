@@ -14,6 +14,16 @@
     { "code": "CHECK_009", "httpStatus": 500, "meaning": "未归类的内部错误", "userMessage": "操作失败，请稍后重试", "retryable": true },
     { "code": "CHECK_010", "httpStatus": 400, "meaning": "日期或时区非法", "userMessage": "日期格式有误，请重试", "retryable": false },
     { "code": "CHECK_011", "httpStatus": 409, "meaning": "记录已存在", "userMessage": "记录已存在", "retryable": false },
-    { "code": "CHECK_012", "httpStatus": 413, "meaning": "请求体过大", "userMessage": "请求内容过大", "retryable": false }
+    { "code": "CHECK_012", "httpStatus": 413, "meaning": "请求体过大", "userMessage": "请求内容过大", "retryable": false },
+    { "code": "CHECK_013", "httpStatus": 400, "meaning": "单位名称或容量非法", "userMessage": "单位名称或容量不合法", "retryable": false },
+    { "code": "CHECK_014", "httpStatus": 409, "meaning": "单位名称已存在", "userMessage": "该单位名称已存在", "retryable": false },
+    { "code": "CHECK_015", "httpStatus": 409, "meaning": "单位已被引用不可删除", "userMessage": "该单位已被使用，只能停用", "retryable": false },
+    { "code": "CHECK_016", "httpStatus": 404, "meaning": "单位不存在", "userMessage": "单位不存在", "retryable": false },
+    { "code": "CHECK_017", "httpStatus": 409, "meaning": "清单未启用", "userMessage": "该清单尚未启用", "retryable": false },
+    { "code": "CHECK_018", "httpStatus": 400, "meaning": "药物条目参数非法", "userMessage": "药物信息填写有误", "retryable": false },
+    { "code": "CHECK_019", "httpStatus": 404, "meaning": "药物条目不存在", "userMessage": "药物条目不存在", "retryable": false },
+    { "code": "CHECK_020", "httpStatus": 409, "meaning": "打卡冲突", "userMessage": "该时段已打卡", "retryable": true },
+    { "code": "CHECK_021", "httpStatus": 409, "meaning": "补打窗口已过", "userMessage": "已超过补打时间", "retryable": false },
+    { "code": "CHECK_022", "httpStatus": 500, "meaning": "药物数据清理失败", "userMessage": "清除药物数据失败，请稍后重试", "retryable": true }
   ]
 }

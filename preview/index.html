@@ -8,80 +8,82 @@
   :root { --primary:#c7000b; --danger-bg:#fdecec; --danger:#a61b1b; --text:#333; --muted:#888; --ok:#1a7a3c; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   body { margin:0; font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif; background:#eef0f4; display:flex; justify-content:center; padding:18px 16px; }
-  .phone { width:390px; height:800px; background:#fff; border-radius:28px; box-shadow:0 18px 50px rgba(0,0,0,.18); overflow:hidden; display:flex; flex-direction:column; }
-  .status { height:28px; flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; padding:0 18px; font-size:11px; color:#bbb; }
+  .phone { width:390px; height:820px; background:#fff; border-radius:28px; box-shadow:0 18px 50px rgba(0,0,0,.18); overflow:hidden; display:flex; flex-direction:column; }
+  .status { height:26px; flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; padding:0 18px; font-size:11px; color:#bbb; }
   .screen { flex:1; display:flex; flex-direction:column; overflow:hidden; }
   .hidden { display:none !important; }
   .center { align-items:center; justify-content:center; padding:24px; }
   .brand { font-size:21px; font-weight:700; color:var(--primary); letter-spacing:1px; }
-  .title { font-size:23px; font-weight:600; color:var(--text); margin-bottom:26px; }
-  .btn { background:var(--primary); color:#fff; border:none; border-radius:24px; padding:12px 42px; font-size:15px; font-weight:600; cursor:pointer; }
+  .title { font-size:23px; font-weight:600; color:var(--text); margin-bottom:24px; }
+  .btn { background:var(--primary); color:#fff; border:none; border-radius:24px; padding:11px 40px; font-size:15px; font-weight:600; cursor:pointer; }
   .btn:disabled { opacity:.55; cursor:not-allowed; }
-  .link { background:none; border:none; color:var(--primary); font-size:13px; padding:8px; cursor:pointer; }
-  .ghost { background:none; border:none; color:#999; font-size:13px; padding:8px; cursor:pointer; }
-  .banner { width:100%; background:var(--danger-bg); border-radius:8px; padding:10px 12px; margin-bottom:12px; }
-  .banner p { margin:0; color:var(--danger); font-size:13px; }
-  .banner small { color:#7a7a7a; font-size:11px; }
-  .header { display:flex; align-items:center; justify-content:space-between; padding:8px 20px 4px; }
+  .link { background:none; border:none; color:var(--primary); font-size:13px; padding:7px; cursor:pointer; }
+  .ghost { background:none; border:none; color:#999; font-size:13px; padding:7px; cursor:pointer; }
+  .banner { width:100%; background:var(--danger-bg); border-radius:8px; padding:9px 12px; margin-bottom:10px; }
+  .banner p { margin:0; color:var(--danger); font-size:12px; }
+  .header { display:flex; align-items:center; justify-content:space-between; padding:6px 18px 2px; }
   .badge { font-size:11px; color:#999; border:1px solid #eee; border-radius:10px; padding:2px 8px; }
-  .body { flex:1; overflow-y:auto; padding:6px 20px 16px; }
-  .notice { color:var(--ok); font-size:12px; min-height:16px; margin:2px 0; }
-  .hero { text-align:center; font-size:29px; font-weight:700; color:#222; }
+  .listTabs { display:flex; gap:6px; padding:8px 18px 4px; }
+  .listTabs button { flex:1; border:1px solid #eee; background:#fff; border-radius:12px; padding:7px 0; font-size:13px; color:#888; cursor:pointer; }
+  .listTabs button.on { background:var(--primary); border-color:var(--primary); color:#fff; font-weight:600; }
+  .body { flex:1; overflow-y:auto; padding:4px 18px 14px; }
+  .notice { color:var(--ok); font-size:12px; min-height:15px; margin:2px 0; }
+  .hero { text-align:center; font-size:28px; font-weight:700; color:#222; }
   .hero small { font-size:13px; color:#aaa; font-weight:400; }
-  .sub { text-align:center; font-size:12px; color:var(--muted); margin-top:4px; }
-  .ring { position:relative; width:190px; height:190px; margin:6px auto 2px; }
-  .ring .seg { position:absolute; left:93px; top:93px; width:4px; height:13px; border-radius:2px; transform-origin:2px 2px; }
+  .sub { text-align:center; font-size:12px; color:var(--muted); margin-top:3px; }
+  .ring { position:relative; width:180px; height:180px; margin:4px auto 0; }
+  .ring .seg { position:absolute; left:88px; top:88px; width:4px; height:12px; border-radius:2px; transform-origin:2px 2px; }
   .ring .center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-  .ring .pct { font-size:29px; font-weight:700; color:var(--primary); }
+  .ring .pct { font-size:27px; font-weight:700; color:var(--primary); }
   .ring .lbl { font-size:11px; color:#aaa; }
-  .actions { display:flex; gap:10px; justify-content:center; margin:14px 0 2px; }
-  .actions .btn { padding:10px 24px; font-size:13px; }
-  .actions .outline { background:#fff; color:var(--primary); border:1px solid var(--primary); border-radius:24px; padding:10px 24px; font-size:13px; font-weight:600; cursor:pointer; }
-  .section { font-size:14px; font-weight:600; color:#333; margin:18px 0 8px; }
+  .units { display:flex; gap:6px; justify-content:center; margin:12px 0 0; flex-wrap:wrap; }
+  .units button { border:1px solid #eee; background:#fff; border-radius:14px; padding:4px 10px; font-size:11px; color:#777; cursor:pointer; }
+  .units button.on { border-color:var(--primary); color:var(--primary); font-weight:600; background:#fff5f5; }
+  .actions { display:flex; gap:8px; justify-content:center; margin:12px 0 0; }
+  .actions .btn { padding:10px 22px; font-size:13px; }
+  .actions .outline { background:#fff; color:var(--primary); border:1px solid var(--primary); border-radius:24px; padding:10px 22px; font-size:13px; font-weight:600; cursor:pointer; }
+  .section { font-size:13px; font-weight:600; color:#333; margin:16px 0 6px; }
   .empty { color:#bbb; font-size:12px; }
   .rec { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed #f2f2f2; font-size:13px; color:#555; }
   .rec button { background:none; border:none; color:var(--primary); font-size:12px; cursor:pointer; }
-  .stats { display:flex; margin-top:4px; }
+  .stats { display:flex; margin-top:2px; }
   .stat { flex:1; text-align:center; }
-  .stat b { display:block; font-size:19px; color:#222; }
+  .stat b { display:block; font-size:18px; color:#222; }
   .stat span { font-size:11px; color:#aaa; }
-  .chart { display:flex; align-items:flex-end; justify-content:space-between; height:172px; margin-top:8px; }
+  .chart { display:flex; align-items:flex-end; justify-content:space-between; height:160px; margin-top:6px; }
   .col { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; }
-  .col .v { font-size:10px; color:#aaa; height:13px; }
-  .col .bar { width:19px; border-radius:4px; background:#f0dcdd; }
+  .col .v { font-size:10px; color:#aaa; height:12px; }
+  .col .bar { width:18px; border-radius:4px; background:#f0dcdd; }
   .col .d { font-size:10px; color:#aaa; margin-top:3px; }
   .legend { font-size:11px; color:#bbb; text-align:center; margin-top:6px; }
-  .row { display:flex; padding:7px 0; border-bottom:1px solid #f6f6f6; font-size:12px; color:#666; }
-  .row span:first-child { flex:0 0 90px; }
+  .row { display:flex; padding:6px 0; border-bottom:1px solid #f6f6f6; font-size:12px; color:#666; }
+  .row span:first-child { flex:0 0 86px; }
   .row span:nth-child(2) { flex:1; }
-  .field { display:flex; align-items:center; margin-bottom:9px; }
-  .field label { width:96px; font-size:13px; color:#666; }
-  .field input { flex:1; border:1px solid #e6e6e6; border-radius:8px; padding:8px 10px; font-size:14px; outline:none; }
-  .genders { display:flex; gap:8px; margin:0 0 8px 96px; }
-  .genders button { flex:1; border:1px solid #e6e6e6; background:#fff; border-radius:8px; padding:7px 0; font-size:13px; color:#666; cursor:pointer; }
+  .field { display:flex; align-items:center; margin-bottom:8px; }
+  .field label { width:92px; font-size:12px; color:#666; }
+  .field input { flex:1; border:1px solid #e6e6e6; border-radius:8px; padding:7px 9px; font-size:13px; outline:none; }
+  .genders { display:flex; gap:8px; margin:0 0 6px 92px; }
+  .genders button { flex:1; border:1px solid #e6e6e6; background:#fff; border-radius:8px; padding:6px 0; font-size:12px; color:#666; cursor:pointer; }
   .genders button.on { border-color:var(--primary); color:var(--primary); background:#fff5f5; font-weight:600; }
-  .hint { font-size:11px; color:#aaa; margin-top:6px; }
-  .tabbar { display:flex; border-top:1px solid #f0f0f0; padding:5px 0 9px; flex:0 0 auto; }
-  .tabbar button { flex:1; border:none; background:none; font-size:13px; color:#aaa; padding:6px 0; cursor:pointer; }
+  .hint { font-size:11px; color:#aaa; margin-top:5px; }
+  .tabbar { display:flex; border-top:1px solid #f0f0f0; padding:4px 0 8px; flex:0 0 auto; }
+  .tabbar button { flex:1; border:none; background:none; font-size:12px; color:#aaa; padding:6px 0; cursor:pointer; }
   .tabbar button.on { color:var(--primary); font-weight:600; }
-  .me-head { display:flex; align-items:center; gap:14px; padding:6px 0 14px; cursor:pointer; }
-  .avatar { width:68px; height:68px; border-radius:34px; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:600; position:relative; }
-  .avatar .dot { position:absolute; right:-2px; bottom:-2px; width:20px; height:20px; border-radius:10px; background:#fff; color:var(--primary); font-size:11px; display:flex; align-items:center; justify-content:center; border:1px solid var(--primary); }
-  .me-name { font-size:17px; font-weight:600; color:#222; }
-  .me-hint { font-size:11px; color:#aaa; margin-top:3px; }
-  .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
-  .frameCard { background:#fafafa; border-radius:12px; padding:10px; text-align:center; }
-  .frameCard img { width:64px; height:64px; image-rendering:pixelated; }
-  .frameCard .n { font-size:13px; font-weight:600; margin-top:4px; }
-  .frameCard .p { font-size:11px; color:#999; }
-  .frameCard button { margin-top:6px; border:1px solid var(--primary); background:#fff; color:var(--primary); border-radius:14px; padding:4px 12px; font-size:11px; cursor:pointer; }
-  .frameCard button.own { border-color:#ddd; color:#999; }
-  .calendar { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-top:6px; }
-  .calendar .dow { font-size:10px; color:#bbb; text-align:center; }
-  .calendar .day { height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; color:#666; background:#fafafa; }
-  .calendar .day.done { background:var(--primary); color:#fff; font-weight:600; }
-  .calendar .day.today { outline:2px solid #ffd0d3; }
-  .calendar .day.blank { background:transparent; }
+  .me-head { display:flex; align-items:center; gap:12px; padding:4px 0 12px; cursor:pointer; }
+  .avatar { width:64px; height:64px; border-radius:32px; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:600; position:relative; }
+  .avatar .dot { position:absolute; right:-2px; bottom:-2px; width:19px; height:19px; border-radius:10px; background:#fff; color:var(--primary); font-size:10px; display:flex; align-items:center; justify-content:center; border:1px solid var(--primary); }
+  .me-name { font-size:16px; font-weight:600; color:#222; }
+  .me-hint { font-size:11px; color:#aaa; margin-top:2px; }
+  .dose { display:flex; align-items:center; justify-content:space-between; border:1px solid #f2f2f2; border-radius:10px; padding:9px 10px; margin-bottom:7px; }
+  .dose .n { font-size:13px; color:#333; font-weight:600; }
+  .dose .m { font-size:11px; color:#999; margin-top:2px; }
+  .dose .slot { font-size:10px; color:#c7000b; margin-left:6px; }
+  .dose button { border:1px solid var(--primary); background:#fff; color:var(--primary); border-radius:14px; padding:4px 12px; font-size:11px; cursor:pointer; }
+  .dose button.done { border-color:#ddd; color:#aaa; }
+  .dose.missed .n { color:#bbb; }
+  .slotRow { display:flex; gap:6px; margin:0 0 8px 92px; flex-wrap:wrap; }
+  .slotRow button { border:1px solid #e6e6e6; background:#fff; border-radius:10px; padding:4px 8px; font-size:11px; color:#666; cursor:pointer; }
+  .slotRow button.on { border-color:var(--primary); color:var(--primary); background:#fff5f5; }
   .note { position:fixed; left:16px; bottom:14px; max-width:320px; font-size:11px; color:#777; background:#fff; border-radius:8px; padding:9px 12px; box-shadow:0 4px 16px rgba(0,0,0,.08); line-height:1.6; }
   .tabsTop { display:flex; gap:8px; justify-content:center; margin-bottom:10px; }
   .tabsTop button { background:#fff; border:1px solid #d8dde5; border-radius:16px; padding:6px 14px; font-size:12px; cursor:pointer; }
@@ -91,282 +93,318 @@
 <div>
   <div class="tabsTop">
     <button class="tab" data-screen="login">登录</button>
-    <button class="tab" data-screen="check">check 清单</button>
+    <button class="tab" data-screen="check">check</button>
   </div>
 
   <div class="phone">
     <div class="status"><span>9:41</span><span>check · 预览</span></div>
 
-    <!-- 登录 -->
     <div id="login" class="screen center">
-      <div class="brand" style="margin-bottom:16px">check</div>
+      <div class="brand" style="margin-bottom:14px">check</div>
       <div class="title">华为账号登录</div>
-      <div id="loginBanner" class="banner hidden"><p id="loginErr">华为账号服务暂时不可用</p><small id="loginCode">AUTH_003</small></div>
+      <div id="loginBanner" class="banner hidden"><p id="loginErr"></p><small id="loginCode"></small></div>
       <button class="btn" id="loginBtn">华为账号登录</button>
       <button class="link" id="guestBtn">游客进入预览</button>
-      <button class="ghost" onclick="showLoginError('AUTH_007')">演示：触发限流</button>
     </div>
 
-    <!-- check -->
     <div id="check" class="screen hidden">
       <div class="header"><span class="brand">check</span><span class="badge" id="identityBadge">华为用户</span></div>
+      <div class="listTabs" id="listTabs"></div>
       <div class="body" id="checkBody"></div>
       <div class="tabbar" id="tabbar"></div>
     </div>
   </div>
 </div>
 
-<div class="note">
-  <b>静态 UI 预览</b>：身高/体重/出生日期不设默认值；点击「我的」头像解锁积分页；数据存于浏览器 localStorage。
-</div>
+<div class="note"><b>静态 UI 预览</b>：顶部可切换「喝水 / 药物」清单；喝水单位可切换与自定义；药物按四时段打卡。数据存 localStorage。</div>
 
 <script>
-  const V = { MIN_A:1200, MAX_A:3500, MIN_T:1000, MAX_T:3000, CUP:250 };
-  // ---------- 算法（与 Go/TS 同构） ----------
-  function ageFromBirthDate(birthDate) {
-    if (!birthDate) return null;
-    const b = new Date(birthDate + 'T00:00:00Z');
-    const t = new Date(bizToday() + 'T00:00:00Z');
-    let age = t.getUTCFullYear() - b.getUTCFullYear();
-    const m = t.getUTCMonth() - b.getUTCMonth();
-    if (m < 0 || (m === 0 && t.getUTCDate() < b.getUTCDate())) age -= 1;
-    return age;
-  }
-  function waterGoal(p) {
-    const age = ageFromBirthDate(p.birthDate);
+  const UNITS = [
+    { id:'unit_ml', name:'毫升', ml:1, builtin:true },
+    { id:'unit_cup', name:'杯', ml:250, builtin:true },
+    { id:'unit_bottle', name:'农夫山泉', ml:550, builtin:true }
+  ];
+  const SLOTS = [['morning','早上'],['noon','中午'],['evening','傍晚'],['night','睡前']];
+  const V = { MIN_A:1200, MAX_A:3500, MIN_T:1000, MAX_T:3000 };
+
+  function vod(p) {
+    const age = ageFrom(p.birthDate);
     if (!p.heightCm || !p.weightG || age === null || !p.gender) return 0;
-    const sbw = 22 * p.heightCm * p.heightCm * 100;
-    let micro = Math.floor((7 * p.weightG * 1000 + 3 * sbw) / 10) * 32;
-    let ap = 1000;
-    if (age >= 80) ap = 900; else if (age >= 65) ap = 920; else if (age >= 50) ap = 950; else if (age >= 30) ap = 980;
-    const gp = p.gender === 'female' ? 950 : p.gender === 'other' ? 975 : 1000;
-    micro = Math.floor(micro * ap / 1000);
-    micro = Math.floor(micro * gp / 1000);
-    let ml = Math.round(Math.floor((micro + 500000) / 1000000) / 50) * 50;
-    const low = age < 18 ? V.MIN_T : V.MIN_A, high = age < 18 ? V.MAX_T : V.MAX_A;
+    const sbw = 22*p.heightCm*p.heightCm*100;
+    let micro = Math.floor((7*p.weightG*1000 + 3*sbw)/10)*32;
+    let ap = age>=80?900:age>=65?920:age>=50?950:age>=30?980:1000;
+    const gp = p.gender==='female'?950:p.gender==='other'?975:1000;
+    micro = Math.floor(micro*ap/1000); micro = Math.floor(micro*gp/1000);
+    let ml = Math.round(Math.floor((micro+500000)/1000000)/50)*50;
+    const low = age<18?V.MIN_T:V.MIN_A, high = age<18?V.MAX_T:V.MAX_A;
     return Math.min(high, Math.max(low, ml));
   }
-  function bizToday() { return new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10); }
-  function addDays(day, n) { const d = new Date(day + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
-  function weekStart(day) { const d = new Date(day + 'T00:00:00Z'); return addDays(day, -((d.getUTCDay() || 7) - 1)); }
-  function fmt(ml) { return ml >= 1000 ? (ml / 1000).toFixed(2).replace(/\.?0+$/, '') + ' L' : ml + ' ml'; }
+  function ageFrom(birth) {
+    if (!birth) return null;
+    const b = new Date(birth+'T00:00:00Z'), t = new Date(bizToday()+'T00:00:00Z');
+    let a = t.getUTCFullYear()-b.getUTCFullYear();
+    const m = t.getUTCMonth()-b.getUTCMonth();
+    if (m<0 || (m===0 && t.getUTCDate()<b.getUTCDate())) a--;
+    return a;
+  }
+  function bizToday(){ return new Date(Date.now()+8*3600*1000).toISOString().slice(0,10); }
+  function addDays(day,n){ const d=new Date(day+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
+  function weekStart(day){ const d=new Date(day+'T00:00:00Z'); return addDays(day,-((d.getUTCDay()||7)-1)); }
+  function nowSlot(){ const h=new Date(Date.now()+8*3600*1000).getUTCHours(); return h<11?'morning':h<15?'noon':h<20?'evening':'night'; }
+  function slotIndex(s){ return SLOTS.findIndex(x=>x[0]===s); }
 
-  const KEY = 'preview.check.v2';
+  const KEY='preview.check.v3';
   const state = {
-    mode: 'account', tab: 'today', notice: '', pointsUnlocked: false,
-    profile: { heightCm: 0, weightG: 0, birthDate: '', gender: '' },
-    goals: {}, records: [],
-    points: 0, streak: 0, checkedDates: [], owned: ['frame_pixel_cyan'], equipped: 'frame_pixel_cyan', ledger: []
+    mode:'account', list:'water', tab:'today', notice:'', pointsUnlocked:false,
+    profile:{ heightCm:0, weightG:0, birthDate:'', gender:'' },
+    goals:{}, records:[], unitId:'unit_ml',
+    units:[], lists:{ water:true, medication:true },
+    medItems:[], medDoses:[], draftSlots:['morning','noon'],
+    points:0, streak:0, checkedDates:[], owned:['frame_pixel_cyan'], equipped:'frame_pixel_cyan', ledger:[]
   };
-  try { const raw = localStorage.getItem(KEY); if (raw) Object.assign(state, JSON.parse(raw)); } catch {}
-  function persist() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+  try { const raw=localStorage.getItem(KEY); if (raw) Object.assign(state, JSON.parse(raw)); } catch {}
+  function persist(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
 
-  const FRAMES = [
-    { id:'frame_pixel_cyan', name:'青岚光环', price:0 }, { id:'frame_pixel_sakura', name:'樱瓣', price:100 },
-    { id:'frame_pixel_circuit', name:'电路', price:300 }, { id:'frame_pixel_dawn', name:'晨曦门扉', price:500 },
-    { id:'frame_pixel_starnest', name:'星巢', price:800 }, { id:'frame_pixel_cat', name:'猫爪', price:1200 }
-  ];
-  const $ = (id) => document.getElementById(id);
+  const $=id=>document.getElementById(id);
+  function unitById(id){ return state.units.find(u=>u.id===id) ?? UNITS.find(u=>u.id===id) ?? UNITS[0]; }
+  function allUnits(){ return [...UNITS, ...state.units]; }
+  function targetFor(day){ return state.goals[day] ?? vod(state.profile); }
+  function displayAmount(ml, unit){ return Math.round(ml/unit.ml); }
 
-  function show(name) {
-    ['login','check'].forEach((k) => $(k).classList.toggle('hidden', k !== name));
-    document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.screen === name));
-    if (name === 'check') render();
-  }
-  function showLoginError(code) {
-    const map = { AUTH_002:['已取消授权，可重新登录','AUTH_002'], AUTH_007:['操作过于频繁，请稍后再试','AUTH_007 · 429'] };
-    $('loginErr').textContent = map[code][0]; $('loginCode').textContent = map[code][1];
-    $('loginBanner').classList.remove('hidden');
+  function show(name){
+    ['login','check'].forEach(k=>$(k).classList.toggle('hidden',k!==name));
+    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.screen===name));
+    if (name==='check') render();
   }
 
-  function targetFor(day) { return state.goals[day] ?? waterGoal(state.profile); }
-
-  // ---------- 渲染 ----------
-  function render() {
-    $('identityBadge').textContent = state.mode === 'guest' ? '游客模式' : '华为用户';
-    const tabs = [['today','今日'],['stats','统计']];
+  function render(){
+    $('identityBadge').textContent = state.mode==='guest'?'游客模式':'华为用户';
+    const lists=[['water','喝水'],['medication','药物']].filter(([k])=>state.lists[k]);
+    $('listTabs').innerHTML = lists.map(([k,l])=>`<button class="${state.list===k?'on':''}" onclick="switchList('${k}')">${l}</button>`).join('');
+    if (!lists.some(([k])=>k===state.list)) state.list='water';
+    const tabs=[['today','今日'],['stats','统计']];
     if (state.pointsUnlocked) tabs.push(['points','积分']);
     tabs.push(['me','我的']);
-    $('tabbar').innerHTML = tabs.map(([k,l]) => `<button class="${state.tab===k?'on':''}" onclick="setTab('${k}')">${l}</button>`).join('');
-    if (!tabs.some(([k]) => k === state.tab)) state.tab = 'today';
-    if (state.tab === 'today') renderToday();
-    if (state.tab === 'stats') renderStats();
-    if (state.tab === 'points') renderPoints();
-    if (state.tab === 'me') renderMe();
+    $('tabbar').innerHTML = tabs.map(([k,l])=>`<button class="${state.tab===k?'on':''}" onclick="setTab('${k}')">${l}</button>`).join('');
+    if (!tabs.some(([k])=>k===state.tab)) state.tab='today';
+    if (state.tab==='today') state.list==='water'?renderWaterToday():renderMedToday();
+    else if (state.tab==='stats') state.list==='water'?renderWaterStats():renderMedStats();
+    else if (state.tab==='points') renderPoints();
+    else renderMe();
   }
-  function setTab(tab) { state.tab = tab; render(); }
+  function switchList(k){ state.list=k; state.tab='today'; render(); }
+  function setTab(t){ state.tab=t; render(); }
 
-  function renderToday() {
-    const today = bizToday(), target = targetFor(today);
-    const recs = state.records.filter((r) => r.day === today);
-    const total = recs.reduce((s, r) => s + r.ml, 0);
-    const ratio = target > 0 ? Math.min(1, total / target) : 0;
-    const segs = 60, active = Math.round(segs * ratio);
-    let ring = '';
-    for (let i = 0; i < segs; i++) ring += `<span class="seg" style="background:${i<active?'#c7000b':'#f0dcdd'};transform:rotate(${(i/segs)*360}deg) translateY(-84px)"></span>`;
+  // ---------- 喝水 ----------
+  function renderWaterToday(){
+    const today=bizToday(), target=targetFor(today), unit=unitById(state.unitId);
+    const recs=state.records.filter(r=>r.day===today);
+    const total=recs.reduce((s,r)=>s+r.ml,0);
+    const ratio=target>0?Math.min(1,total/target):0;
+    const segs=60, active=Math.round(segs*ratio);
+    let ring=''; for(let i=0;i<segs;i++) ring+=`<span class="seg" style="background:${i<active?'#c7000b':'#f0dcdd'};transform:rotate(${(i/segs)*360}deg) translateY(-80px)"></span>`;
+    const unitBtns = allUnits().map(u=>`<button class="${u.id===state.unitId?'on':''}" onclick="setUnit('${u.id}')">${u.name}${u.ml>1?' '+u.ml+'ml':''}</button>`).join('')
+      + `<button onclick="addUnit()">+ 自定义</button>`;
     $('checkBody').innerHTML = `
-      <div class="notice">${state.notice || ''}</div>
+      <div class="notice">${state.notice||''}</div>
       <div class="ring">${ring}<div class="center"><div class="pct">${Math.round(ratio*100)}%</div><div class="lbl">今日进度</div></div></div>
-      <div class="hero">${total} <small>/ ${target || '--'} ml</small></div>
-      <div class="sub">${target === 0 ? '请先在「我的」填写身高、体重、出生日期与性别' : total >= target ? '今日目标已达成' : '还差 ' + (target-total) + ' ml'}</div>
-      <div class="sub">约 ${Math.floor(total/V.CUP)} 杯（${V.CUP} ml/杯）</div>
+      <div class="hero">${total} <small>/ ${target||'--'} ml</small></div>
+      <div class="sub">${target===0?'请先在「我的」填写身体档案':total>=target?'今日目标已达成':'还差 '+(target-total)+' ml'}</div>
+      <div class="units">${unitBtns}</div>
+      <div class="sub">当前单位：${unit.name} · 约 ${displayAmount(total,unit)} ${unit.name}</div>
       <div class="actions">
-        <button class="btn" ${target===0?'disabled':''} onclick="addWater(250)">+250 ml</button>
-        <button class="btn outline" ${target===0?'disabled':''} onclick="addWater(500)">+500 ml</button>
+        <button class="btn" ${target===0?'disabled':''} onclick="addWater(1)">+1 ${unit.name}</button>
+        <button class="btn outline" ${target===0?'disabled':''} onclick="addWater(2)">+2 ${unit.name}</button>
       </div>
       <div class="section">今日记录</div>
-      ${recs.length===0 ? '<div class="empty">还没有记录</div>' : recs.map(r => `<div class="rec"><span>${r.ml} ml · ${r.time}</span><button onclick="removeRecord('${r.id}')">撤销</button></div>`).join('')}
-      <div class="hint">目标仅作日常参考，不构成医学建议。</div>`;
+      ${recs.length===0?'<div class="empty">还没有记录</div>':recs.map(r=>`<div class="rec"><span>${r.ml} ml · ${r.time}</span><button onclick="removeRecord('${r.id}')">撤销</button></div>`).join('')}
+      <div class="hint">记录以 ml 记账，切换单位不会改变历史数据。</div>`;
   }
-
-  function addWater(ml) {
-    const today = bizToday();
+  function setUnit(id){ state.unitId=id; persist(); render(); }
+  function addUnit(){
+    const name=prompt('单位名称（1-12 字），如「马克杯」'); if(!name) return;
+    const ml=Number(prompt('容量（ml，50-2000）','300')); 
+    if(!name || [...name].length>12 || !(ml>=50&&ml<=2000)){ state.notice='单位名称或容量不合法'; render(); return; }
+    if(allUnits().some(u=>u.name===name)){ state.notice='该单位名称已存在（CHECK_014）'; render(); return; }
+    state.units.push({ id:'unit_'+Date.now(), name, ml, builtin:false });
+    state.unitId=state.units[state.units.length-1].id;
+    state.notice=`已添加单位「${name}」`; persist(); render();
+  }
+  function addWater(count){
+    const today=bizToday(), unit=unitById(state.unitId), ml=count*unit.ml;
     state.records.push({ id:'wr_'+Date.now(), day:today, ml, time:new Date().toTimeString().slice(0,5) });
-    state.notice = `已记录 ${ml} ml`; persist(); render();
-    setTimeout(() => { state.notice=''; }, 1500);
+    state.notice=`已记录 ${count} ${unit.name}（${ml} ml）`; persist(); render();
+    setTimeout(()=>{state.notice='';},1500);
   }
-  function removeRecord(id) { state.records = state.records.filter(r => r.id !== id); persist(); render(); }
+  function removeRecord(id){ state.records=state.records.filter(r=>r.id!==id); persist(); render(); }
 
-  function renderStats() {
-    const today = bizToday(), start = weekStart(today);
-    const days = Array.from({length:7}, (_, i) => {
-      const day = addDays(start, i), target = targetFor(day);
-      const total = state.records.filter(r => r.day===day).reduce((s,r)=>s+r.ml,0);
-      return { day, target, total, achieved: target>0 && total>=target };
-    });
+  function renderWaterStats(){
+    const today=bizToday(), start=weekStart(today);
+    const days=Array.from({length:7},(_,i)=>{ const day=addDays(start,i), target=targetFor(day);
+      const total=state.records.filter(r=>r.day===day).reduce((s,r)=>s+r.ml,0);
+      return { day,target,total,achieved:target>0&&total>=target }; });
     let recorded=0,sum=0,achieved=0,elapsed=0;
-    days.forEach(d => { sum+=d.total; if(d.total>0) recorded++; if(d.achieved) achieved++; if(d.day<=today) elapsed++; });
-    const avg = recorded ? Math.round(sum/recorded) : null;
-    const max = Math.max(targetFor(today), ...days.map(d=>d.total), 1);
-    $('checkBody').innerHTML = `
+    days.forEach(d=>{ sum+=d.total; if(d.total>0) recorded++; if(d.achieved) achieved++; if(d.day<=today) elapsed++; });
+    const avg=recorded?Math.round(sum/recorded):null;
+    const max=Math.max(targetFor(today),...days.map(d=>d.total),1);
+    const unit=unitById(state.unitId);
+    $('checkBody').innerHTML=`
       <div class="stats">
-        <div class="stat"><b>${avg===null?'—':fmt(avg)}</b><span>周平均</span></div>
+        <div class="stat"><b>${avg===null?'—':displayAmount(avg,unit)+' '+unit.name}</b><span>周平均</span></div>
         <div class="stat"><b>${elapsed?Math.round(achieved/elapsed*100):0}%</b><span>达成率</span></div>
         <div class="stat"><b>${streak()}</b><span>连续天数</span></div>
       </div>
       <div class="section">本周饮水变化</div>
-      <div class="chart">${days.map(d => `<div class="col"><div class="v">${d.total||''}</div><div class="bar" style="height:${Math.max(4,Math.round(d.total/max*118))}px;background:${d.achieved?'#c7000b':d.total?'#f2a6ab':'#f0f0f0'}"></div><div class="d">${d.day.slice(5)}</div></div>`).join('')}</div>
+      <div class="chart">${days.map(d=>`<div class="col"><div class="v">${d.total||''}</div><div class="bar" style="height:${Math.max(4,Math.round(d.total/max*112))}px;background:${d.achieved?'#c7000b':d.total?'#f2a6ab':'#f0f0f0'}"></div><div class="d">${d.day.slice(5)}</div></div>`).join('')}</div>
       <div class="legend">目标线 ${targetFor(today)} ml · 柱高按最大值归一</div>
       <div class="section">每日明细</div>
-      ${days.map(d => `<div class="row"><span>${d.day}</span><span>${fmt(d.total)}</span><span style="color:${d.achieved?'#1a7a3c':'#bbb'}">${d.achieved?'达成':d.total?'未达成':'无记录'}</span></div>`).join('')}`;
+      ${days.map(d=>`<div class="row"><span>${d.day}</span><span>${d.total} ml</span><span style="color:${d.achieved?'#1a7a3c':'#bbb'}">${d.achieved?'达成':d.total?'未达成':'无记录'}</span></div>`).join('')}`;
   }
-  function streak() {
-    let n=0, day=bizToday();
-    for (let i=0;i<60;i++) {
-      const target=targetFor(day), total=state.records.filter(r=>r.day===day).reduce((s,r)=>s+r.ml,0);
-      if (target>0 && total>=target) n++; else break;
-      day = addDays(day,-1);
+  function streak(){ let n=0,day=bizToday(); for(let i=0;i<60;i++){ const t=targetFor(day), v=state.records.filter(r=>r.day===day).reduce((s,r)=>s+r.ml,0); if(t>0&&v>=t) n++; else break; day=addDays(day,-1);} return n; }
+
+  // ---------- 药物 ----------
+  function medViews(day){
+    const nowS=slotIndex(nowSlot());
+    const out=[];
+    for(const item of state.medItems){
+      if(item.status!=='active') continue;
+      for(const slot of item.slots){
+        let status='pending', doseId='';
+        const dose=state.medDoses.find(d=>d.itemId===item.id&&d.day===day&&d.slot===slot);
+        if(dose){ status=dose.late?'late':'taken'; doseId=dose.id; }
+        else if(day<bizToday() || (day===bizToday() && slotIndex(slot)<nowS)) status='missed';
+        out.push({ itemId:item.id, name:item.name, dosage:item.dosage, slot, status, doseId });
+      }
     }
-    return n;
+    return out;
+  }
+  function renderMedToday(){
+    const views=medViews(bizToday());
+    const taken=views.filter(v=>v.status==='taken'||v.status==='late').length;
+    $('checkBody').innerHTML=`
+      <div class="notice">${state.notice||''}</div>
+      <div class="hero" style="font-size:24px">${taken} <small>/ ${views.length} 次</small></div>
+      <div class="sub">今日服药完成率 ${views.length?Math.round(taken/views.length*100):0}%</div>
+      <div class="section">今日待服</div>
+      ${views.length===0?'<div class="empty">还没有药物条目，去「我的」添加</div>':views.map(v=>`
+        <div class="dose ${v.status==='missed'?'missed':''}">
+          <div><div class="n">${v.name}<span class="slot">${SLOTS.find(s=>s[0]===v.slot)[1]}</span></div><div class="m">${v.dosage}</div></div>
+          ${v.status==='taken'||v.status==='late'
+            ? `<button class="done" onclick="cancelDose('${v.doseId}')">${v.status==='late'?'补打':'已服'}</button>`
+            : `<button onclick="takeDose('${v.itemId}','${v.slot}')">${v.status==='missed'?'补打':'打卡'}</button>`}
+        </div>`).join('')}
+      <div class="hint">药物清单为完成式：按条目 × 时段打卡，不做剂量累计。</div>`;
+  }
+  function takeDose(itemId,slot){
+    const day=bizToday();
+    if(state.medDoses.some(d=>d.itemId===itemId&&d.day===day&&d.slot===slot)) return;
+    const nowS=slotIndex(nowSlot());
+    state.medDoses.push({ id:'dose_'+Date.now(), itemId, day, slot, late:slotIndex(slot)<nowS });
+    state.notice='已打卡'; persist(); render();
+  }
+  function cancelDose(id){ state.medDoses=state.medDoses.filter(d=>d.id!==id); persist(); render(); }
+  function renderMedStats(){
+    const days=Array.from({length:7},(_,i)=>addDays(bizToday(),-(6-i)));
+    let recorded=0, rateSum=0, takenAll=0, expectedAll=0;
+    const rows=days.map(day=>{
+      const views=medViews(day); const taken=views.filter(v=>v.status==='taken'||v.status==='late').length;
+      if(views.length>0){ rateSum+=taken/views.length; recorded++; }
+      takenAll+=taken; expectedAll+=views.length;
+      return { day, taken, total:views.length };
+    });
+    $('checkBody').innerHTML=`
+      <div class="stats">
+        <div class="stat"><b>${recorded?Math.round(rateSum/recorded*100):0}%</b><span>周均完成率</span></div>
+        <div class="stat"><b>${takenAll}</b><span>已服次数</span></div>
+        <div class="stat"><b>${expectedAll-takenAll}</b><span>未服/漏服</span></div>
+      </div>
+      <div class="section">近 7 天</div>
+      ${rows.map(r=>`<div class="row"><span>${r.day}</span><span>${r.taken}/${r.total}</span><span style="color:${r.total&&r.taken===r.total?'#1a7a3c':'#bbb'}">${r.total===0?'无条目':r.taken===r.total?'完成':'未完成'}</span></div>`).join('')}`;
   }
 
-  // ---------- 积分（点击头像后解锁） ----------
-  function renderPoints() {
-    const today = bizToday();
-    const checked = state.checkedDates.includes(today);
-    const gain = Math.min(10 + 2*state.streak, 30);
-    const frameUrl = (id) => `../server/assets/frames/${id}-3x.png`;
-    $('checkBody').innerHTML = `
-      <div class="hero" style="font-size:26px">${state.points} <small>积分</small></div>
+  // ---------- 积分 ----------
+  function renderPoints(){
+    const today=bizToday(), checked=state.checkedDates.includes(today);
+    const gain=Math.min(10+2*state.streak,30);
+    $('checkBody').innerHTML=`
+      <div class="hero" style="font-size:24px">${state.points} <small>积分</small></div>
       <div class="sub">连续签到 ${state.streak} 天</div>
-      <button class="btn" style="width:100%;margin-top:12px" ${checked?'disabled':''} onclick="checkIn()">${checked?'今日已签到':`签到 +${gain} 积分`}</button>
-
-      <div class="section">签到日历</div>
-      ${calendarHTML()}
-
-      <div class="section">像素头像框</div>
-      <div class="grid">${FRAMES.map(f => {
-        const owned = state.owned.includes(f.id);
-        return `<div class="frameCard"><img src="${frameUrl(f.id)}" alt="${f.name}" /><div class="n">${f.name}</div><div class="p">${f.price===0?'免费':f.price+' 积分'}</div>
-          <button class="${owned?'own':''}" onclick="${owned?`toggleEquip('${f.id}')`:`redeem('${f.id}')`}">${owned?(state.equipped===f.id?'卸下':'装备'):'兑换'}</button></div>`;
-      }).join('')}</div>
-
+      <button class="btn" style="width:100%;margin-top:10px" ${checked?'disabled':''} onclick="checkIn()">${checked?'今日已签到':`签到 +${gain} 积分`}</button>
+      <div class="section">签到日历</div>${calendarHTML()}
       <div class="section">积分流水</div>
       ${state.ledger.length===0?'<div class="empty">暂无记录</div>':state.ledger.map(e=>`<div class="rec"><span>${e.label}</span><span style="color:${e.amount>=0?'#1a7a3c':'#c7000b'}">${e.amount>=0?'+':''}${e.amount}</span></div>`).join('')}`;
   }
-
-  function calendarHTML() {
-    const today = bizToday();
-    const [y,m] = today.split('-').map(Number);
-    const first = new Date(Date.UTC(y, m-1, 1));
-    const dim = new Date(Date.UTC(y, m, 0)).getUTCDate();
-    const lead = (first.getUTCDay() + 6) % 7;
-    const dow = ['一','二','三','四','五','六','日'].map(d=>`<div class="dow">${d}</div>`).join('');
-    let cells = '';
-    for (let i=0;i<lead;i++) cells += '<div class="day blank"></div>';
-    for (let d=1; d<=dim; d++) {
-      const day = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      const done = state.checkedDates.includes(day);
-      cells += `<div class="day ${done?'done':''} ${day===today?'today':''}">${d}</div>`;
+  function calendarHTML(){
+    const today=bizToday(), [y,m]=today.split('-').map(Number);
+    const first=new Date(Date.UTC(y,m-1,1)), dim=new Date(Date.UTC(y,m,0)).getUTCDate();
+    const lead=(first.getUTCDay()+6)%7;
+    let cells=['一','二','三','四','五','六','日'].map(d=>`<div class="dow" style="font-size:10px;color:#bbb;text-align:center">${d}</div>`).join('');
+    for(let i=0;i<lead;i++) cells+='<div class="day" style="height:30px"></div>';
+    for(let d=1;d<=dim;d++){
+      const day=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const done=state.checkedDates.includes(day);
+      cells+=`<div class="day" style="height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;background:${done?'#c7000b':'#fafafa'};color:${done?'#fff':'#666'};${day===today?'outline:2px solid #ffd0d3':''}">${d}</div>`;
     }
-    return `<div class="calendar">${dow}${cells}</div>`;
+    return `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">${cells}</div>`;
   }
-
-  function checkIn() {
-    const today = bizToday();
-    if (state.checkedDates.includes(today)) return;
-    state.streak += 1;
-    const gain = Math.min(10 + 2*(state.streak-1), 30);
-    state.points += gain;
-    state.checkedDates.push(today);
-    state.ledger.unshift({ label:`签到 · 第 ${state.streak} 天`, amount: gain });
-    state.notice = `签到成功，获得 ${gain} 积分`;
-    persist(); render();
+  function checkIn(){
+    const today=bizToday(); if(state.checkedDates.includes(today)) return;
+    state.streak+=1; const gain=Math.min(10+2*(state.streak-1),30);
+    state.points+=gain; state.checkedDates.push(today);
+    state.ledger.unshift({ label:`签到 · 第 ${state.streak} 天`, amount:gain });
+    state.notice=`签到成功，获得 ${gain} 积分`; persist(); render();
   }
-  function redeem(id) {
-    const f = FRAMES.find(x => x.id === id);
-    if (state.owned.includes(id)) return;
-    if (state.points < f.price) { state.notice='积分不足，无法兑换（POINT_002）'; render(); setTimeout(()=>{state.notice='';},2000); return; }
-    state.points -= f.price; state.owned.push(id);
-    if (f.price>0) state.ledger.unshift({ label:`兑换 · ${f.name}`, amount:-f.price });
-    persist(); render();
-  }
-  function toggleEquip(id) { state.equipped = state.equipped===id ? null : id; persist(); render(); }
 
   // ---------- 我的 ----------
-  function renderMe() {
-    const p = state.profile, age = ageFromBirthDate(p.birthDate), goal = waterGoal(p);
-    $('checkBody').innerHTML = `
+  function renderMe(){
+    const p=state.profile, age=ageFrom(p.birthDate), goal=vod(p);
+    $('checkBody').innerHTML=`
       <div class="me-head" onclick="unlockPoints()">
         <div class="avatar">${state.mode==='guest'?'游':'华'}<span class="dot">★</span></div>
-        <div>
-          <div class="me-name">${state.mode==='guest'?'游客':'华为用户'}</div>
-          <div class="me-hint">点击头像解锁积分与签到 ›</div>
-        </div>
+        <div><div class="me-name">${state.mode==='guest'?'游客':'华为用户'}</div><div class="me-hint">点击头像解锁积分与签到 ›</div></div>
       </div>
-
-      <div class="section" style="margin-top:2px">身体档案</div>
+      <div class="section" style="margin-top:0">身体档案</div>
       <div class="field"><label>身高 (cm)</label><input id="fHeight" type="number" placeholder="请输入" value="${p.heightCm||''}" /></div>
       <div class="field"><label>体重 (kg)</label><input id="fWeight" type="number" placeholder="请输入" value="${p.weightG?Math.round(p.weightG/1000):''}" /></div>
       <div class="field"><label>出生日期</label><input id="fBirth" type="date" value="${p.birthDate||''}" /></div>
       <div class="field"><label>性别</label></div>
       <div class="genders">${[['male','男'],['female','女'],['other','其他']].map(([k,l])=>`<button class="${p.gender===k?'on':''}" onclick="setGender('${k}')">${l}</button>`).join('')}</div>
       <div class="hint">${age===null?'填写出生日期后自动计算年龄':`年龄：${age} 岁`} · 目标：${goal?goal+' ml':'待填写'}（变更次日生效）</div>
-      <button class="btn" style="margin-top:12px;width:100%" onclick="saveProfile()">保存档案</button>
-      <div class="hint">目标仅作日常参考，不构成医学建议。</div>
-      <button class="ghost" style="display:block;margin-top:12px" onclick="exitToLogin()">${state.mode==='guest'?'退出游客模式':'退出登录'}</button>`;
+      <button class="btn" style="margin-top:10px;width:100%" onclick="saveProfile()">保存档案</button>
+
+      <div class="section">药物条目</div>
+      ${state.medItems.length===0?'<div class="empty">还没有药物条目</div>':state.medItems.map(item=>`<div class="rec"><span>${item.name} · ${item.dosage}</span><button onclick="stopMed('${item.id}')">${item.status==='active'?'停用':'已停用'}</button></div>`).join('')}
+      <div class="field"><label>药名</label><input id="mName" placeholder="如：维生素D" /></div>
+      <div class="field"><label>剂量</label><input id="mDose" placeholder="如：1粒" /></div>
+      <div class="slotRow">${SLOTS.map(([k,l])=>`<button class="${state.draftSlots.includes(k)?'on':''}" onclick="toggleSlot('${k}')">${l}</button>`).join('')}</div>
+      <button class="btn" style="width:100%" onclick="addMed()">添加药物</button>
+      <div class="ghost" style="display:block;margin-top:10px" onclick="exitToLogin()">${state.mode==='guest'?'退出游客模式':'退出登录'}</div>`;
   }
-  function unlockPoints() { state.pointsUnlocked = true; state.tab = 'points'; state.notice = '已解锁积分与签到'; render(); }
-  function setGender(g) { state.profile.gender = g; render(); }
-  function saveProfile() {
-    const h = Number($('fHeight').value), w = Number($('fWeight').value)*1000, birth = $('fBirth').value;
-    const age = ageFromBirthDate(birth);
-    if (!(h>=100&&h<=250) || !(w>=20000&&w<=300000) || age===null || age<14 || age>120 || !state.profile.gender) {
-      state.notice='请完整填写合理的身高、体重、出生日期与性别'; render(); return;
-    }
-    state.profile = { heightCm:h, weightG:w, birthDate:birth, gender:state.profile.gender };
-    state.goals[addDays(bizToday(),1)] = waterGoal(state.profile);
-    state.notice = '身体档案已保存（次日生效）'; persist(); render();
+  function unlockPoints(){ state.pointsUnlocked=true; state.tab='points'; state.notice='已解锁积分与签到'; render(); }
+  function setGender(g){ state.profile.gender=g; render(); }
+  function saveProfile(){
+    const h=Number($('fHeight').value), w=Number($('fWeight').value)*1000, birth=$('fBirth').value, age=ageFrom(birth);
+    if(!(h>=100&&h<=250)||!(w>=20000&&w<=300000)||age===null||age<14||age>120||!state.profile.gender){ state.notice='请完整填写合理的身高、体重、出生日期与性别'; render(); return; }
+    state.profile={ heightCm:h, weightG:w, birthDate:birth, gender:state.profile.gender };
+    state.goals[addDays(bizToday(),1)]=vod(state.profile);
+    state.notice='身体档案已保存（次日生效）'; persist(); render();
   }
+  function toggleSlot(k){ state.draftSlots=state.draftSlots.includes(k)?state.draftSlots.filter(x=>x!==k):[...state.draftSlots,k]; render(); }
+  function addMed(){
+    const name=$('mName').value.trim(), dosage=$('mDose').value.trim();
+    if(!name||name.length>40||!dosage||dosage.length>20||state.draftSlots.length===0){ state.notice='药物信息填写有误（CHECK_018）'; render(); return; }
+    state.medItems.push({ id:'med_'+Date.now(), name, dosage, slots:[...state.draftSlots].sort((a,b)=>slotIndex(a)-slotIndex(b)), status:'active' });
+    state.notice=`已添加「${name}」`; persist(); render();
+  }
+  function stopMed(id){ const item=state.medItems.find(i=>i.id===id); if(item) item.status='stopped'; persist(); render(); }
 
   // ---------- 入口 ----------
-  $('loginBtn').onclick = () => { state.mode='account'; $('loginBanner').classList.add('hidden'); show('check'); };
-  $('guestBtn').onclick = () => { state.mode='guest'; show('check'); };
-  function exitToLogin() { persist(); show('login'); }
-  document.querySelectorAll('.tab').forEach(t => t.onclick = () => show(t.dataset.screen));
+  $('loginBtn').onclick=()=>{ state.mode='account'; show('check'); };
+  $('guestBtn').onclick=()=>{ state.mode='guest'; show('check'); };
+  function exitToLogin(){ persist(); show('login'); }
+  document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>show(t.dataset.screen));
 
-  render();
-  show('login');
+  render(); show('login');
 </script>
 </body>
 </html>

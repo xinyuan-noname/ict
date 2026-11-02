@@ -21,6 +21,16 @@ const (
 	Check010 CheckCode = "CHECK_010"
 	Check011 CheckCode = "CHECK_011"
 	Check012 CheckCode = "CHECK_012"
+	Check013 CheckCode = "CHECK_013"
+	Check014 CheckCode = "CHECK_014"
+	Check015 CheckCode = "CHECK_015"
+	Check016 CheckCode = "CHECK_016"
+	Check017 CheckCode = "CHECK_017"
+	Check018 CheckCode = "CHECK_018"
+	Check019 CheckCode = "CHECK_019"
+	Check020 CheckCode = "CHECK_020"
+	Check021 CheckCode = "CHECK_021"
+	Check022 CheckCode = "CHECK_022"
 )
 
 var checkDictionary = map[CheckCode]entry{
@@ -36,6 +46,16 @@ var checkDictionary = map[CheckCode]entry{
 	Check010: {400, "日期格式有误，请重试", false},
 	Check011: {409, "记录已存在", false},
 	Check012: {413, "请求内容过大", false},
+	Check013: {400, "单位名称或容量不合法", false},
+	Check014: {409, "该单位名称已存在", false},
+	Check015: {409, "该单位已被使用，只能停用", false},
+	Check016: {404, "单位不存在", false},
+	Check017: {409, "该清单尚未启用", false},
+	Check018: {400, "药物信息填写有误", false},
+	Check019: {404, "药物条目不存在", false},
+	Check020: {409, "该时段已打卡", true},
+	Check021: {409, "已超过补打时间", false},
+	Check022: {500, "清除药物数据失败，请稍后重试", true},
 }
 
 type CheckError struct {
@@ -90,5 +110,7 @@ func WriteCheck(w http.ResponseWriter, code CheckCode, traceID string, retryAfte
 
 func CheckCodes() []CheckCode {
 	return []CheckCode{Check001, Check002, Check003, Check004, Check005, Check006,
-		Check007, Check008, Check009, Check010, Check011, Check012}
+		Check007, Check008, Check009, Check010, Check011, Check012,
+		Check013, Check014, Check015, Check016, Check017, Check018,
+		Check019, Check020, Check021, Check022}
 }
