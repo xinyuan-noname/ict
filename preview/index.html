@@ -5,159 +5,173 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>check · 清单 / 喝水 / 像素头像框 预览</title>
 <style>
-  :root { --primary:#c7000b; --danger-bg:#fdecec; --danger:#a61b1b; --text:#333; --muted:#666; --ok:#1a7a3c; }
-  * { box-sizing: border-box; }
-  body { margin:0; font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif; background:#eef0f4; display:flex; justify-content:center; padding:24px 16px; }
-  .phone { width:390px; height:760px; background:#fff; border-radius:28px; box-shadow:0 18px 50px rgba(0,0,0,.18); overflow:hidden; display:flex; flex-direction:column; }
-  .status { height:32px; display:flex; align-items:center; justify-content:space-between; padding:0 18px; font-size:12px; color:#888; flex:0 0 auto; }
-  .screen { flex:1; overflow-y:auto; display:flex; flex-direction:column; padding:20px; }
+  :root { --primary:#c7000b; --danger-bg:#fdecec; --danger:#a61b1b; --text:#333; --muted:#888; --ok:#1a7a3c; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin:0; font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif; background:#eef0f4; display:flex; justify-content:center; padding:20px 16px; }
+  .phone { width:390px; height:780px; background:#fff; border-radius:28px; box-shadow:0 18px 50px rgba(0,0,0,.18); overflow:hidden; display:flex; flex-direction:column; }
+  .status { height:30px; flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; padding:0 18px; font-size:12px; color:#aaa; }
+  .screen { flex:1; display:flex; flex-direction:column; overflow:hidden; }
   .hidden { display:none !important; }
-  .center { align-items:center; justify-content:center; }
+  .center { align-items:center; justify-content:center; padding:24px; }
+  .brand { font-size:22px; font-weight:700; color:var(--primary); letter-spacing:1px; }
   .title { font-size:24px; font-weight:600; color:var(--text); margin-bottom:28px; }
-  .banner { width:100%; background:var(--danger-bg); border-radius:8px; padding:12px; margin-bottom:12px; }
-  .banner p { margin:0; color:var(--danger); font-size:14px; }
-  .banner small { display:block; color:#7a7a7a; font-size:12px; margin-top:4px; }
-  .btn { background:var(--primary); color:#fff; border:none; border-radius:24px; padding:14px 44px; font-size:16px; font-weight:600; cursor:pointer; }
+  .btn { background:var(--primary); color:#fff; border:none; border-radius:24px; padding:13px 44px; font-size:16px; font-weight:600; cursor:pointer; }
   .btn:disabled { opacity:.55; cursor:not-allowed; }
-  .link { background:none; border:none; color:var(--primary); font-size:15px; padding:10px; cursor:pointer; }
-  .ghost { background:none; border:none; color:#999; font-size:15px; padding:10px; cursor:pointer; }
-  .avatar-wrap { position:relative; width:96px; height:96px; margin-bottom:14px; }
-  .avatar { position:absolute; inset:10px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:18px; overflow:hidden; }
-  .avatar img { width:100%; height:100%; object-fit:cover; }
-  .frame { position:absolute; inset:0; width:96px; height:96px; image-rendering: pixelated; pointer-events:none; }
-  .name { font-size:22px; font-weight:600; color:var(--text); margin-bottom:8px; }
-  .meta { color:var(--muted); font-size:14px; margin-bottom:4px; }
-  .points { color:var(--primary); font-size:26px; font-weight:700; margin:6px 0; }
-  .entry { margin-top:16px; width:100%; background:#fff5f5; border:1px solid var(--primary); border-radius:16px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
-  .entry b { color:var(--primary); font-size:15px; }
-  .entry span { color:#c7000b; font-size:13px; }
-  .row { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-  .back { color:#666; background:none; border:none; font-size:15px; cursor:pointer; }
-  .h2 { font-size:18px; font-weight:600; color:#222; }
-  .summary { display:flex; align-items:center; gap:14px; background:#fafafa; border-radius:14px; padding:12px; margin-bottom:14px; }
-  .notice { color:var(--ok); font-size:14px; margin:6px 0; min-height:20px; }
-  .checkin { background:var(--primary); color:#fff; border:none; border-radius:24px; padding:13px; font-size:16px; font-weight:600; width:100%; cursor:pointer; }
-  .checkin.done { background:#d9d9d9; color:#666; cursor:default; }
+  .link { background:none; border:none; color:var(--primary); font-size:14px; padding:8px; cursor:pointer; }
+  .ghost { background:none; border:none; color:#999; font-size:14px; padding:8px; cursor:pointer; }
+  .banner { width:100%; background:var(--danger-bg); border-radius:8px; padding:10px 12px; margin-bottom:12px; }
+  .banner p { margin:0; color:var(--danger); font-size:13px; }
+  .banner small { color:#7a7a7a; font-size:11px; }
+  .header { display:flex; align-items:center; justify-content:space-between; padding:10px 20px 6px; }
+  .badge { font-size:11px; color:#999; border:1px solid #eee; border-radius:10px; padding:2px 8px; }
+  .body { flex:1; overflow-y:auto; padding:8px 20px 20px; }
+  .notice { color:var(--ok); font-size:12px; min-height:18px; margin:4px 0; }
+  .hero { text-align:center; font-size:30px; font-weight:700; color:#222; }
+  .hero small { font-size:14px; color:#aaa; font-weight:400; }
+  .sub { text-align:center; font-size:12px; color:var(--muted); margin-top:4px; }
+  .ring { position:relative; width:196px; height:196px; margin:6px auto 4px; }
+  .ring .seg { position:absolute; left:96px; top:96px; width:4px; height:13px; border-radius:2px; transform-origin:2px 2px; }
+  .ring .center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .ring .pct { font-size:30px; font-weight:700; color:var(--primary); }
+  .ring .lbl { font-size:11px; color:#aaa; }
+  .actions { display:flex; gap:12px; justify-content:center; margin:16px 0 4px; }
+  .actions .btn { padding:11px 26px; font-size:14px; }
+  .actions .outline { background:#fff; color:var(--primary); border:1px solid var(--primary); border-radius:24px; padding:11px 26px; font-size:14px; font-weight:600; cursor:pointer; }
+  .section { font-size:14px; font-weight:600; color:#333; margin:20px 0 8px; }
+  .empty { color:#bbb; font-size:12px; }
+  .rec { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px dashed #f2f2f2; font-size:13px; color:#555; }
+  .rec button { background:none; border:none; color:var(--primary); font-size:12px; cursor:pointer; }
+  .stats { display:flex; margin-top:6px; }
+  .stat { flex:1; text-align:center; }
+  .stat b { display:block; font-size:20px; color:#222; }
+  .stat span { font-size:11px; color:#aaa; }
+  .chart { display:flex; align-items:flex-end; justify-content:space-between; height:180px; margin-top:10px; }
+  .col { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; }
+  .col .v { font-size:10px; color:#aaa; height:14px; }
+  .col .bar { width:20px; border-radius:4px; background:#f0dcdd; }
+  .col .d { font-size:10px; color:#aaa; margin-top:4px; }
+  .legend { font-size:11px; color:#bbb; text-align:center; margin-top:8px; }
+  .row { display:flex; align-items:center; padding:8px 0; border-bottom:1px solid #f6f6f6; font-size:12px; color:#666; }
+  .row span:first-child { flex:0 0 90px; }
+  .row span:nth-child(2) { flex:1; }
+  .field { display:flex; align-items:center; margin-bottom:10px; }
+  .field label { width:96px; font-size:13px; color:#666; }
+  .field input { flex:1; border:1px solid #e6e6e6; border-radius:8px; padding:8px 10px; font-size:14px; outline:none; }
+  .genders { display:flex; gap:8px; margin:2px 0 8px 96px; }
+  .genders button { flex:1; border:1px solid #e6e6e6; background:#fff; border-radius:8px; padding:7px 0; font-size:13px; color:#666; cursor:pointer; }
+  .genders button.on { border-color:var(--primary); color:var(--primary); background:#fff5f5; font-weight:600; }
+  .hint { font-size:11px; color:#aaa; margin-top:6px; }
+  .danger { color:#bbb; font-size:12px; margin-top:12px; }
+  .tabbar { display:flex; border-top:1px solid #f0f0f0; padding:6px 0 10px; flex:0 0 auto; }
+  .tabbar button { flex:1; border:none; background:none; font-size:13px; color:#aaa; padding:6px 0; cursor:pointer; }
+  .tabbar button.on { color:var(--primary); font-weight:600; }
+  .card { border:1px solid #f0f0f0; border-radius:12px; padding:12px; margin-top:12px; }
+  .card .t { font-size:13px; color:#333; font-weight:600; }
+  .card .d { font-size:11px; color:#aaa; margin-top:3px; }
+  .avatar { width:88px; height:88px; border-radius:44px; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:15px; margin-bottom:12px; }
+  .pixel { width:96px; height:96px; image-rendering:pixelated; }
   .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
-  .card { background:#fafafa; border-radius:12px; padding:12px; display:flex; flex-direction:column; align-items:center; }
-  .card .thumb { width:72px; height:72px; image-rendering: pixelated; }
-  .card .n { font-size:14px; font-weight:600; margin-top:6px; }
-  .card .p { font-size:12px; color:#888; margin-top:2px; }
-  .card button { margin-top:8px; border-radius:16px; padding:5px 14px; font-size:12px; cursor:pointer; border:1px solid var(--primary); background:#fff; color:var(--primary); }
-  .card button.owned { border-color:#bbb; color:#888; }
-  .card button:disabled { border-color:#ddd; color:#ccc; cursor:not-allowed; }
-  .ledger { margin-top:14px; }
-  .ledger h3 { font-size:14px; color:#555; margin:0 0 8px; }
-  .li { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px dashed #eee; font-size:13px; }
-  .li .amt.plus { color:var(--ok); }
-  .li .amt.minus { color:var(--primary); }
-  .empty { color:#999; font-size:13px; text-align:center; padding:16px 0; }
-  .tabs { display:flex; gap:8px; margin-bottom:14px; justify-content:center; }
-  .tab { background:#fff; border:1px solid #d8dde5; border-radius:16px; padding:6px 14px; font-size:13px; cursor:pointer; color:#555; }
-  .tab.active { background:var(--primary); border-color:var(--primary); color:#fff; }
-  .guest-entry { margin-top:14px; background:none; border:none; color:#999; font-size:13px; cursor:pointer; }
-  .guest-badge { display:inline-block; border:1px solid var(--primary); color:var(--primary); background:#fff1f0; border-radius:12px; padding:2px 10px; font-size:12px; }
-  .note { position:fixed; left:16px; bottom:16px; max-width:330px; font-size:12px; color:#666; background:#fff; border-radius:8px; padding:10px 12px; box-shadow:0 4px 16px rgba(0,0,0,.08); line-height:1.6; }
+  .frameCard { background:#fafafa; border-radius:12px; padding:10px; text-align:center; }
+  .frameCard img { width:64px; height:64px; image-rendering:pixelated; }
+  .frameCard .n { font-size:13px; font-weight:600; margin-top:4px; }
+  .frameCard .p { font-size:11px; color:#999; }
+  .frameCard button { margin-top:6px; border:1px solid var(--primary); background:#fff; color:var(--primary); border-radius:14px; padding:4px 12px; font-size:11px; cursor:pointer; }
+  .frameCard button.own { border-color:#ddd; color:#999; }
+  .note { position:fixed; left:16px; bottom:16px; max-width:320px; font-size:11px; color:#777; background:#fff; border-radius:8px; padding:9px 12px; box-shadow:0 4px 16px rgba(0,0,0,.08); line-height:1.6; }
 </style>
 </head>
 <body>
 <div>
-  <div class="tabs">
-    <button class="tab active" data-tab="login">登录页</button>
-    <button class="tab" data-tab="home">主页</button>
-    <button class="tab" data-tab="rewards">签到 / 头像框</button>
+  <div class="tabs" style="display:flex;gap:8px;justify-content:center;margin-bottom:12px">
+    <button class="tab" data-screen="login" style="background:#fff;border:1px solid #d8dde5;border-radius:16px;padding:6px 14px;font-size:12px;cursor:pointer">登录</button>
+    <button class="tab" data-screen="check" style="background:#fff;border:1px solid #d8dde5;border-radius:16px;padding:6px 14px;font-size:12px;cursor:pointer">check 清单</button>
+    <button class="tab" data-screen="rewards" style="background:#fff;border:1px solid #d8dde5;border-radius:16px;padding:6px 14px;font-size:12px;cursor:pointer">签到/头像框</button>
   </div>
 
   <div class="phone">
-    <div class="status"><span>9:41</span><span>ICTApp · 预览</span></div>
+    <div class="status"><span>9:41</span><span>check · 预览</span></div>
 
     <!-- 登录 -->
     <div id="login" class="screen center">
+      <div class="brand" style="margin-bottom:18px">check</div>
       <div class="title">华为账号登录</div>
-      <div id="errorBanner" class="banner hidden">
-        <p id="errorText">华为账号服务暂时不可用，请稍后重试</p>
-        <small id="errorCode">AUTH_003 · traceId: 9f2c1a7e4b6d</small>
-      </div>
-      <button id="loginBtn" class="btn">华为账号登录</button>
-      <button class="link" onclick="showError('AUTH_002')">演示：用户取消授权</button>
-      <button class="ghost" onclick="showError('AUTH_007')">演示：触发限流</button>
-      <button class="guest-entry" id="guestEntryBtn">游客进入预览</button>
+      <div id="loginBanner" class="banner hidden"><p id="loginErr">华为账号服务暂时不可用</p><small id="loginCode">AUTH_003</small></div>
+      <button class="btn" id="loginBtn">华为账号登录</button>
+      <button class="link" id="guestBtn">游客进入预览</button>
+      <button class="ghost" onclick="showLoginError('AUTH_007')">演示：触发限流</button>
     </div>
 
-    <!-- 游客主页（无签到/积分/商城） -->
-    <div id="guest" class="screen center hidden">
-      <div class="avatar" style="position:static;margin-bottom:14px">
-        <span style="font-size:14px;line-height:1.2;text-align:center">游客</span>
+    <!-- check 清单 -->
+    <div id="check" class="screen hidden">
+      <div class="header">
+        <span class="brand">check</span>
+        <span class="badge" id="identityBadge">华为用户</span>
       </div>
-      <div class="name">游客</div>
-      <span class="guest-badge">游客模式</span>
-      <div class="meta" style="margin:12px 0 26px;text-align:center">数据仅保存在本机，不会上传服务器</div>
-      <button class="btn" onclick="show('login')">登录华为账号</button>
-      <button class="ghost" onclick="show('login')">退出游客模式</button>
-    </div>
-
-    <!-- 主页 -->
-    <div id="home" class="screen hidden">
-      <div class="avatar-wrap">
-        <div class="avatar"><img id="homeAvatarImg" alt="" style="display:none"/><span id="homeAvatarText">华为</span></div>
-        <img id="homeFrame" class="frame" alt="" style="display:none"/>
+      <div class="body" id="checkBody"></div>
+      <div class="tabbar">
+        <button data-tab="today" class="on">今日</button>
+        <button data-tab="stats">统计</button>
+        <button data-tab="me">我的</button>
       </div>
-      <div class="name">华小为</div>
-      <div class="meta">平台：android</div>
-      <div class="meta">用户标识：u_53299f4b…</div>
-      <div class="points"><span id="homePoints">0</span> 积分</div>
-      <div class="entry" onclick="show('rewards')">
-        <b id="homeEntryText">每日签到 · 今日可签到</b>
-        <span id="homeStreak">连签 0 天 ›</span>
-      </div>
-      <button class="link" onclick="alert('已刷新用户资料（预览）')">刷新资料</button>
-      <button class="ghost" onclick="show('login')">退出登录</button>
     </div>
 
     <!-- 签到 / 头像框 -->
     <div id="rewards" class="screen hidden">
-      <div class="row">
-        <button class="back" onclick="show('home')">‹ 返回</button>
-        <div class="h2">每日签到</div>
+      <div class="header">
+        <button class="ghost" onclick="show('check')">‹ 返回</button>
+        <span style="font-size:15px;font-weight:600">签到与头像框</span>
         <span style="width:48px"></span>
       </div>
-
-      <div class="summary">
-        <div class="avatar-wrap" style="margin:0;width:72px;height:72px">
-          <div class="avatar" style="inset:8px"><span style="font-size:14px">华为</span></div>
-          <img id="rewardFrame" class="frame" alt="" style="width:72px;height:72px;display:none"/>
-        </div>
-        <div>
-          <div class="points" style="font-size:22px;margin:0"><span id="points">0</span> 积分</div>
-          <div class="meta" id="streakText">连续签到 0 天</div>
-          <div class="meta">Asia/Shanghai</div>
-        </div>
-      </div>
-
-      <div id="rewardBanner" class="banner hidden">
-        <p id="rewardError">积分不足，无法兑换</p>
-        <small id="rewardErrorCode">POINT_002</small>
-      </div>
-      <div id="notice" class="notice"></div>
-
-      <button id="checkinBtn" class="checkin">签到 +10 积分</button>
-
-      <div class="h2" style="margin-top:14px;font-size:15px">像素头像框</div>
-      <div class="grid" id="grid"></div>
-
-      <div class="ledger">
-        <h3>积分流水</h3>
-        <div id="ledger"><div class="empty">暂无记录</div></div>
-      </div>
+      <div class="body" id="rewardBody"></div>
     </div>
   </div>
 </div>
 
 <div class="note">
-  <b>静态 UI 预览</b>：布局与文案取自 <code>app/src/screens/*.tsx</code> 与签到规格，头像框使用 <code>server/assets/frames</code> 的真实 PNG（最近邻放大）。不调用真实接口；真机预览需构建 APK。
+  <b>静态 UI 预览</b>：布局/文案取自 <code>app/src/screens/CheckShell.tsx</code>，目标量用与 Go/TS 相同的 water-goal-v1 计算，数据保存在浏览器 localStorage，不调用接口。
 </div>
 
 <script>
+  // ---------- 与 Go/TS 同构的目标算法 ----------
+  const V = { MIN_A: 1200, MAX_A: 3500, MIN_T: 1000, MAX_T: 3000, CUP: 250 };
+  function waterGoal(p) {
+    const { heightCm: h, weightG: w, age, gender } = p;
+    const sbw = 22 * h * h * 100;
+    const weight = w * 1000;
+    const eff = Math.floor((7 * weight + 3 * sbw) / 10);
+    let micro = eff * 32;
+    let ap = 1000;
+    if (age >= 80) ap = 900; else if (age >= 65) ap = 920; else if (age >= 50) ap = 950; else if (age >= 30) ap = 980;
+    let gp = gender === 'female' ? 950 : gender === 'other' ? 975 : 1000;
+    micro = Math.floor(micro * ap / 1000);
+    micro = Math.floor(micro * gp / 1000);
+    let ml = Math.floor((micro + 500000) / 1000000);
+    ml = Math.round(ml / 50) * 50;
+    const low = age < 18 ? V.MIN_T : V.MIN_A;
+    const high = age < 18 ? V.MAX_T : V.MAX_A;
+    return Math.min(high, Math.max(low, ml));
+  }
+  function bizToday() {
+    return new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+  }
+  function addDays(day, n) {
+    const d = new Date(day + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10);
+  }
+  function weekStart(day) {
+    const d = new Date(day + 'T00:00:00Z');
+    const w = d.getUTCDay() || 7;
+    return addDays(day, -(w - 1));
+  }
+  function fmt(ml) { return ml >= 1000 ? (ml / 1000).toFixed(2).replace(/\.?0+$/, '') + ' L' : ml + ' ml'; }
+
+  // ---------- 状态 ----------
+  const KEY = 'preview.check.v1';
+  const state = {
+    mode: 'account', tab: 'today', notice: '',
+    profile: { heightCm: 175, weightG: 70000, age: 30, gender: 'male' },
+    goals: {},
+    records: []
+  };
   const FRAMES = [
     { id: 'frame_pixel_cyan', name: '青岚光环', price: 0 },
     { id: 'frame_pixel_sakura', name: '樱瓣', price: 100 },
@@ -166,158 +180,238 @@
     { id: 'frame_pixel_starnest', name: '星巢', price: 800 },
     { id: 'frame_pixel_cat', name: '猫爪', price: 1200 }
   ];
-  const state = { points: 0, streak: 0, checkedIn: false, owned: new Set(['frame_pixel_cyan']), equipped: 'frame_pixel_cyan', ledger: [] };
+  const rewards = { points: 0, streak: 0, checkedIn: false, owned: new Set(['frame_pixel_cyan']), equipped: 'frame_pixel_cyan', ledger: [] };
+
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) Object.assign(state, JSON.parse(raw));
+  } catch { /* ignore */ }
+  function persist() {
+    try { localStorage.setItem(KEY, JSON.stringify({ mode: state.mode, profile: state.profile, goals: state.goals, records: state.records })); } catch { /* ignore */ }
+  }
 
   const $ = (id) => document.getElementById(id);
-  const frameUrl = (id) => `../server/assets/frames/${id}-3x.png`;
-  const messages = {
-    AUTH_002: ['已取消授权，可重新登录', 'AUTH_002（客户端本地事件）'],
-    AUTH_003: ['华为账号服务暂时不可用，请稍后重试', 'AUTH_003 · HTTP 503'],
-    AUTH_007: ['操作过于频繁，请稍后再试', 'AUTH_007 · HTTP 429 · Retry-After: 42s']
-  };
-
+  function targetFor(day) {
+    return state.goals[day] ?? waterGoal(state.profile);
+  }
   function show(name) {
-    ['login', 'home', 'rewards', 'guest'].forEach((key) => $(key).classList.toggle('hidden', key !== name));
-    document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === name));
-    if (name === 'home') renderHome();
+    ['login', 'check', 'rewards'].forEach((k) => $(k).classList.toggle('hidden', k !== name));
+    document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.screen === name));
+    if (name === 'check') renderCheck();
     if (name === 'rewards') renderRewards();
   }
-
-  function showError(code) {
-    const [text, meta] = messages[code];
-    $('errorText').textContent = text;
-    $('errorCode').textContent = meta;
-    $('errorBanner').classList.remove('hidden');
+  function showLoginError(code) {
+    const map = { AUTH_002: ['已取消授权，可重新登录', 'AUTH_002'], AUTH_003: ['华为账号服务暂时不可用', 'AUTH_003 · 503'], AUTH_007: ['操作过于频繁，请稍后再试', 'AUTH_007 · 429 · Retry-After: 42s'] };
+    $('loginErr').textContent = map[code][0];
+    $('loginCode').textContent = map[code][1];
+    $('loginBanner').classList.remove('hidden');
   }
 
-  function showRewardError(text, code) {
-    $('rewardError').textContent = text;
-    $('rewardErrorCode').textContent = code;
-    $('rewardBanner').classList.remove('hidden');
-    setTimeout(() => $('rewardBanner').classList.add('hidden'), 2600);
+  // ---------- check：今日 ----------
+  function renderCheck() {
+    $('identityBadge').textContent = state.mode === 'guest' ? '游客模式' : '华为用户';
+    document.querySelectorAll('.tabbar button').forEach((b) => b.classList.toggle('on', b.dataset.tab === state.tab));
+    if (state.tab === 'today') renderToday();
+    if (state.tab === 'stats') renderStats();
+    if (state.tab === 'me') renderMe();
   }
 
-  function renderHome() {
-    $('homePoints').textContent = state.points;
-    $('homeStreak').textContent = `连签 ${state.streak} 天 ›`;
-    $('homeEntryText').textContent = state.checkedIn ? '每日签到 · 今日已签到' : '每日签到 · 今日可签到';
-    const frame = $('homeFrame');
-    if (state.equipped) {
-      frame.src = frameUrl(state.equipped);
-      frame.style.display = 'block';
-    } else {
-      frame.style.display = 'none';
+  function renderToday() {
+    const today = bizToday();
+    const target = targetFor(today);
+    const recs = state.records.filter((r) => r.day === today);
+    const total = recs.reduce((s, r) => s + r.ml, 0);
+    const ratio = target > 0 ? Math.min(1, total / target) : 0;
+    const segs = 60, active = Math.round(segs * ratio);
+    let ring = '';
+    for (let i = 0; i < segs; i++) {
+      const angle = (i / segs) * 360;
+      ring += `<span class="seg" style="background:${i < active ? '#c7000b' : '#f0dcdd'};transform:rotate(${angle}deg) translateY(-86px)"></span>`;
     }
+    $('checkBody').innerHTML = `
+      <div class="notice">${state.notice || ''}</div>
+      <div class="ring">${ring}<div class="center"><div class="pct">${Math.round(ratio * 100)}%</div><div class="lbl">今日进度</div></div></div>
+      <div class="hero">${total} <small>/ ${target} ml</small></div>
+      <div class="sub">${target === 0 ? '请先在「我的」填写身体档案' : total >= target ? '今日目标已达成' : '还差 ' + (target - total) + ' ml'}</div>
+      <div class="sub">约 ${Math.floor(total / V.CUP)} 杯（${V.CUP} ml/杯）</div>
+      <div class="actions">
+        <button class="btn" onclick="addWater(250)">+250 ml</button>
+        <button class="btn outline" onclick="addWater(500)">+500 ml</button>
+      </div>
+      <div class="section">今日记录</div>
+      ${recs.length === 0 ? '<div class="empty">还没有记录</div>' : recs.map((r) => `
+        <div class="rec"><span>${r.ml} ml · ${r.time}</span><button onclick="removeRecord('${r.id}')">撤销</button></div>`).join('')}
+      <div class="hint">目标仅作日常参考，不构成医学建议。</div>`;
   }
 
+  function addWater(ml) {
+    const today = bizToday();
+    state.records.push({ id: 'wr_' + Date.now(), day: today, ml, time: new Date().toTimeString().slice(0, 5) });
+    state.notice = `已记录 ${ml} ml`;
+    persist(); renderCheck();
+    setTimeout(() => { state.notice = ''; }, 1800);
+  }
+  function removeRecord(id) {
+    state.records = state.records.filter((r) => r.id !== id);
+    persist(); renderCheck();
+  }
+
+  // ---------- check：统计 ----------
+  function renderStats() {
+    const today = bizToday();
+    const start = weekStart(today);
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const day = addDays(start, i);
+      const target = targetFor(day);
+      const total = state.records.filter((r) => r.day === day).reduce((s, r) => s + r.ml, 0);
+      return { day, target, total, achieved: target > 0 && total >= target };
+    });
+    let recorded = 0, sum = 0, achieved = 0, elapsed = 0;
+    days.forEach((d) => {
+      sum += d.total; if (d.total > 0) recorded += 1;
+      if (d.achieved) achieved += 1;
+      if (d.day <= today) elapsed += 1;
+    });
+    const avg = recorded ? Math.round(sum / recorded) : null;
+    const max = Math.max(targetFor(today), ...days.map((d) => d.total), 1);
+    const bars = days.map((d) => `
+      <div class="col">
+        <div class="v">${d.total || ''}</div>
+        <div class="bar" style="height:${Math.max(4, Math.round(d.total / max * 120))}px;background:${d.achieved ? '#c7000b' : d.total ? '#f2a6ab' : '#f0f0f0'}"></div>
+        <div class="d">${d.day.slice(5)}</div>
+      </div>`).join('');
+    const rows = days.map((d) => `
+      <div class="row"><span>${d.day}</span><span>${fmt(d.total)}</span><span style="color:${d.achieved ? '#1a7a3c' : '#bbb'}">${d.achieved ? '达成' : d.total ? '未达成' : '无记录'}</span></div>`).join('');
+
+    $('checkBody').innerHTML = `
+      <div class="stats">
+        <div class="stat"><b>${avg === null ? '—' : fmt(avg)}</b><span>周平均</span></div>
+        <div class="stat"><b>${elapsed ? Math.round(achieved / elapsed * 100) : 0}%</b><span>达成率</span></div>
+        <div class="stat"><b>${streak()}</b><span>连续天数</span></div>
+      </div>
+      <div class="section">本周饮水变化</div>
+      <div class="chart">${bars}</div>
+      <div class="legend">目标线 ${targetFor(today)} ml · 柱高按最大值归一</div>
+      <div class="section">每日明细</div>
+      ${rows}`;
+  }
+
+  function streak() {
+    let n = 0, day = bizToday();
+    for (let i = 0; i < 60; i++) {
+      const target = targetFor(day);
+      const total = state.records.filter((r) => r.day === day).reduce((s, r) => s + r.ml, 0);
+      if (target > 0 && total >= target) n += 1; else break;
+      day = addDays(day, -1);
+    }
+    return n;
+  }
+
+  // ---------- check：我的 ----------
+  function renderMe() {
+    const p = state.profile;
+    const goal = waterGoal(p);
+    $('checkBody').innerHTML = `
+      <div class="section" style="margin-top:4px">身体档案</div>
+      <div class="field"><label>身高 (cm)</label><input id="fHeight" type="number" value="${p.heightCm}" /></div>
+      <div class="field"><label>体重 (kg)</label><input id="fWeight" type="number" value="${Math.round(p.weightG / 1000)}" /></div>
+      <div class="field"><label>年龄</label><input id="fAge" type="number" value="${p.age}" /></div>
+      <div class="field"><label>性别</label></div>
+      <div class="genders">
+        ${[['male', '男'], ['female', '女'], ['other', '其他']].map(([k, label]) => `
+          <button class="${p.gender === k ? 'on' : ''}" onclick="setGender('${k}')">${label}</button>`).join('')}
+      </div>
+      <div class="hint">目标：${goal} ml（档案变更次日生效）</div>
+      <button class="btn" style="margin-top:12px;width:100%" onclick="saveProfile()">保存档案</button>
+      <div class="section">身份</div>
+      <div class="card">
+        <div class="t">${state.mode === 'guest' ? '游客模式 · 本机数据' : '华为账号 · 云端数据'}</div>
+        <div class="d">${state.mode === 'guest' ? '数据仅保存在本机，不会上传服务器' : '数据已保存在云端'}</div>
+      </div>
+      <button class="link" style="margin-top:10px" onclick="show('rewards')">签到与头像框 ›</button>
+      <button class="ghost" style="display:block;margin-top:4px" onclick="exitToLogin()">${state.mode === 'guest' ? '退出游客模式' : '退出登录'}</button>`;
+  }
+
+  function setGender(g) { state.profile.gender = g; renderCheck(); }
+  function saveProfile() {
+    const h = Number($('fHeight').value), w = Number($('fWeight').value) * 1000, a = Number($('fAge').value);
+    if (!(h >= 100 && h <= 250) || !(w >= 20000 && w <= 300000) || !(a >= 14 && a <= 120)) {
+      state.notice = '身体数据超出合理范围，请检查';
+      renderCheck(); return;
+    }
+    state.profile = { heightCm: h, weightG: w, age: a, gender: state.profile.gender };
+    const effective = addDays(bizToday(), 1);
+    state.goals[effective] = waterGoal(state.profile);
+    state.notice = '身体档案已保存（次日生效）';
+    persist(); renderCheck();
+  }
+
+  // ---------- 签到 / 头像框 ----------
   function renderRewards() {
-    $('points').textContent = state.points;
-    $('streakText').textContent = `连续签到 ${state.streak} 天`;
-    const btn = $('checkinBtn');
-    if (state.checkedIn) {
-      btn.textContent = '今日已签到';
-      btn.classList.add('done');
-      btn.disabled = true;
-    } else {
-      const gain = Math.min(10 + 2 * state.streak, 30);
-      btn.textContent = `签到 +${gain} 积分`;
-      btn.classList.remove('done');
-      btn.disabled = false;
-    }
-
-    const rf = $('rewardFrame');
-    if (state.equipped) {
-      rf.src = frameUrl(state.equipped);
-      rf.style.display = 'block';
-    } else {
-      rf.style.display = 'none';
-    }
-
-    const grid = $('grid');
-    grid.innerHTML = '';
-    for (const f of FRAMES) {
-      const owned = state.owned.has(f.id);
-      const equipped = state.equipped === f.id;
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.innerHTML = `
-        <img class="thumb" src="${frameUrl(f.id)}" alt="${f.name}" />
+    const frameUrl = (id) => `../server/assets/frames/${id}-3x.png`;
+    const points = rewards.points;
+    const equipped = rewards.equipped;
+    const cards = FRAMES.map((f) => {
+      const owned = rewards.owned.has(f.id);
+      return `<div class="frameCard">
+        <img src="${frameUrl(f.id)}" alt="${f.name}" />
         <div class="n">${f.name}</div>
         <div class="p">${f.price === 0 ? '免费' : f.price + ' 积分'}</div>
-        <button class="${owned ? 'owned' : ''}" data-id="${f.id}" data-owned="${owned}" data-equipped="${equipped}">
-          ${owned ? (equipped ? '卸下' : '装备') : '兑换'}
-        </button>`;
-      card.querySelector('button').addEventListener('click', () => owned ? toggleEquip(f.id) : redeem(f));
-      grid.appendChild(card);
-    }
+        <button class="${owned ? 'own' : ''}" onclick="${owned ? `toggleEquip('${f.id}')` : `redeem('${f.id}')`}">
+          ${owned ? (equipped === f.id ? '卸下' : '装备') : '兑换'}
+        </button>
+      </div>`;
+    }).join('');
 
-    const ledger = $('ledger');
-    if (state.ledger.length === 0) {
-      ledger.innerHTML = '<div class="empty">暂无记录</div>';
-    } else {
-      ledger.innerHTML = state.ledger.map((e) => `
-        <div class="li">
-          <span>${e.label}</span>
-          <span class="amt ${e.amount >= 0 ? 'plus' : 'minus'}">${e.amount >= 0 ? '+' : ''}${e.amount}</span>
-        </div>`).join('');
-    }
+    $('rewardBody').innerHTML = `
+      <div class="hero" style="font-size:24px">${points} <small>积分</small></div>
+      <div class="sub">连续签到 ${rewards.streak} 天</div>
+      <button class="btn" style="width:100%;margin-top:12px" ${rewards.checkedIn ? 'disabled' : ''} onclick="checkIn()">
+        ${rewards.checkedIn ? '今日已签到' : `签到 +${Math.min(10 + 2 * rewards.streak, 30)} 积分`}
+      </button>
+      <div class="section">像素头像框</div>
+      <div class="grid">${cards}</div>
+      <div class="section">积分流水</div>
+      ${rewards.ledger.length === 0 ? '<div class="empty">暂无记录</div>'
+        : rewards.ledger.map((e) => `<div class="rec"><span>${e.label}</span><span style="color:${e.amount >= 0 ? '#1a7a3c' : '#c7000b'}">${e.amount >= 0 ? '+' : ''}${e.amount}</span></div>`).join('')}`;
   }
-
-  function pushLedger(label, amount) {
-    state.ledger.unshift({ label, amount });
-  }
-
   function checkIn() {
-    if (state.checkedIn) return;
-    state.streak += 1;
-    const gain = Math.min(10 + 2 * (state.streak - 1), 30);
-    state.points += gain;
-    state.checkedIn = true;
-    pushLedger(`签到 · 第 ${state.streak} 天`, gain);
-    $('notice').textContent = `签到成功，获得 ${gain} 积分`;
+    if (rewards.checkedIn) return;
+    rewards.streak += 1;
+    const gain = Math.min(10 + 2 * (rewards.streak - 1), 30);
+    rewards.points += gain; rewards.checkedIn = true;
+    rewards.ledger.unshift({ label: `签到 · 第 ${rewards.streak} 天`, amount: gain });
     renderRewards();
-    renderHome();
   }
-
-  function redeem(frame) {
-    if (state.owned.has(frame.id)) return;
-    if (state.points < frame.price) {
-      showRewardError('积分不足，无法兑换', 'POINT_002 · HTTP 409');
-      return;
-    }
-    state.points -= frame.price;
-    state.owned.add(frame.id);
-    if (frame.price > 0) pushLedger(`兑换 · ${frame.name}`, -frame.price);
-    $('notice').textContent = frame.price === 0 ? `已获得 ${frame.name}` : `兑换成功，消耗 ${frame.price} 积分`;
+  function redeem(id) {
+    const f = FRAMES.find((x) => x.id === id);
+    if (rewards.owned.has(id)) return;
+    if (rewards.points < f.price) { show('check'); state.notice = '积分不足，无法兑换（POINT_002）'; renderCheck(); setTimeout(() => { state.notice = ''; }, 2200); return; }
+    rewards.points -= f.price; rewards.owned.add(id);
+    if (f.price > 0) rewards.ledger.unshift({ label: `兑换 · ${f.name}`, amount: -f.price });
     renderRewards();
-    renderHome();
   }
-
   function toggleEquip(id) {
-    state.equipped = state.equipped === id ? null : id;
-    $('notice').textContent = state.equipped ? `已装备 ${FRAMES.find((f) => f.id === id).name}` : '已卸下头像框';
+    rewards.equipped = rewards.equipped === id ? null : id;
     renderRewards();
-    renderHome();
   }
 
-  document.querySelectorAll('.tab').forEach((tab) => tab.addEventListener('click', () => show(tab.dataset.tab)));
-  $('checkinBtn').addEventListener('click', checkIn);
-  $('guestEntryBtn').addEventListener('click', () => show('guest'));
+  // ---------- 入口 ----------
+  $('loginBtn').onclick = () => {
+    state.mode = 'account';
+    $('loginBanner').classList.add('hidden');
+    show('check');
+  };
+  $('guestBtn').onclick = () => {
+    state.mode = 'guest';
+    show('check');
+  };
+  function exitToLogin() { state.mode = 'guest'; persist(); show('login'); }
 
-  $('loginBtn').addEventListener('click', () => {
-    const btn = $('loginBtn');
-    btn.disabled = true;
-    btn.textContent = '正在唤起华为账号…';
-    $('errorBanner').classList.add('hidden');
-    setTimeout(() => {
-      btn.disabled = false;
-      btn.textContent = '华为账号登录';
-      show('home');
-    }, 800);
-  });
+  document.querySelectorAll('.tab').forEach((t) => t.onclick = () => show(t.dataset.screen));
+  document.querySelectorAll('.tabbar button').forEach((b) => b.onclick = () => { state.tab = b.dataset.tab; renderCheck(); });
 
-  renderHome();
-  renderRewards();
+  show('login');
 </script>
 </body>
 </html>
