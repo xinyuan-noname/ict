@@ -313,9 +313,9 @@
       <div class="sliderBox">
         <div class="sliderTop"><span>拖动选择毫升</span><b id="mlValue">${state.lastMl||250}</b></div>
         <input id="mlSlider" class="slider" type="range" min="50" max="1500" step="50" value="${state.lastMl||250}"
-          oninput="document.getElementById('mlValue').textContent=this.value"
-          onchange="commitMl(this.value)" />
-        <div class="hint" style="text-align:center">拖动后松手即记录</div>
+          oninput="document.getElementById('mlValue').textContent=this.value;document.getElementById('mlBtnValue').textContent=this.value" />
+        <button class="btn" style="width:100%" onclick="commitMl(document.getElementById('mlSlider').value)">确认记录 <span id="mlBtnValue">${state.lastMl||250}</span> ml</button>
+        <div class="hint" style="text-align:center">拖动选择后点「确认记录」</div>
       </div>
       <div class="section">今日记录</div>
       ${recs.length===0?'<div class="empty">还没有记录</div>':recs.map(r=>`<div class="rec"><span>${r.unitName?`${r.amount} ${r.unitName} · `:''}${r.ml} ml · ${r.time}</span><button onclick="removeRecord('${r.id}')">撤销</button></div>`).join('')}
@@ -348,7 +348,7 @@
     state.notice=`已记录 ${count} ${unit.name}（${ml} ml）`; persist(); render();
     setTimeout(()=>{state.notice='';},1500);
   }
-  // 拖动滑块松手即记录（不依赖是否已填写身体档案）
+  // 拖动滑块选择数值，点「确认记录」后入账（不依赖是否已填写身体档案）
   function commitMl(value){
     const ml=Number(value);
     if(!(ml>=50&&ml<=1500)) return;
