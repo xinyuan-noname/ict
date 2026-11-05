@@ -76,12 +76,11 @@ export function settlePk(scoreA: number, scoreB: number, rateA: number, rateB: n
 }
 
 export const ITEM_CATALOG = [
-  { itemId: 'item_fish', name: '小鱼干', kind: 'food', price: 30, effects: { satiety: 20, exp: 10 } },
-  { itemId: 'item_carrot', name: '胡萝卜', kind: 'food', price: 20, effects: { satiety: 15, exp: 5 } },
-  { itemId: 'item_nut', name: '坚果', kind: 'food', price: 25, effects: { satiety: 15, exp: 8 } },
-  { itemId: 'item_points', name: '加点工具', kind: 'tool', price: 120, effects: { points: 1 } },
-  { itemId: 'item_ball', name: '毛线球', kind: 'toy', price: 40, effects: { mood: 20, intimacy: 3 } },
-  { itemId: 'item_whistle', name: '训练哨', kind: 'toy', price: 80, effects: { mood: 10, intimacy: 8 } }
+  { itemId: 'item_fish', name: '小鱼干', kind: 'food', price: 30, effects: { satiety: 20, exp: 10, points: 2 } },
+  { itemId: 'item_carrot', name: '胡萝卜', kind: 'food', price: 20, effects: { satiety: 15, exp: 5, points: 1 } },
+  { itemId: 'item_nut', name: '坚果', kind: 'food', price: 25, effects: { satiety: 15, exp: 8, points: 1 } },
+  { itemId: 'item_ball', name: '毛线球', kind: 'toy', price: 40, effects: { mood: 20, intimacy: 3, points: 1 } },
+  { itemId: 'item_whistle', name: '训练哨', kind: 'toy', price: 80, effects: { mood: 10, intimacy: 8, points: 2 } }
 ] as const;
 
 export function validInviteCode(code: string): boolean {

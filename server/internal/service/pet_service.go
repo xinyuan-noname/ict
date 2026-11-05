@@ -222,16 +222,18 @@ func (s *PetService) UseItem(ctx context.Context, userID, itemID, idemKey, expec
 }
 
 func applyEffects(p *domain.Pet, def domain.ItemDef) {
+	// 使用道具直接获得加点，无需专门的加点工具
+	if def.Effects.Points > 0 {
+		p.Points += def.Effects.Points
+		if p.Points > domain.PetMaxPoints {
+			p.Points = domain.PetMaxPoints
+		}
+	}
 	switch def.Kind {
 	case "food":
 		domain.Feed(p, def.Effects.Satiety, def.Effects.Exp)
 	case "toy":
 		domain.Play(p, def.Effects.Mood, def.Effects.Intimacy)
-	case "tool":
-		p.Points = p.Points + def.Effects.Points
-		if p.Points > domain.PetMaxPoints {
-			p.Points = domain.PetMaxPoints
-		}
 	}
 }
 

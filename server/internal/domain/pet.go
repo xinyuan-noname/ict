@@ -186,12 +186,11 @@ type ItemDef struct {
 
 func ItemCatalog() []ItemDef {
 	return []ItemDef{
-		{ItemID: "item_fish", Name: "小鱼干", Kind: "food", Price: 30, Effects: ItemEffects{Satiety: 20, Exp: 10}, Status: "on_sale"},
-		{ItemID: "item_carrot", Name: "胡萝卜", Kind: "food", Price: 20, Effects: ItemEffects{Satiety: 15, Exp: 5}, Status: "on_sale"},
-		{ItemID: "item_nut", Name: "坚果", Kind: "food", Price: 25, Effects: ItemEffects{Satiety: 15, Exp: 8}, Status: "on_sale"},
-		{ItemID: "item_points", Name: "加点工具", Kind: "tool", Price: 120, Effects: ItemEffects{Points: 1}, Status: "on_sale"},
-		{ItemID: "item_ball", Name: "毛线球", Kind: "toy", Price: 40, Effects: ItemEffects{Mood: 20, Intimacy: 3}, Status: "on_sale"},
-		{ItemID: "item_whistle", Name: "训练哨", Kind: "toy", Price: 80, Effects: ItemEffects{Mood: 10, Intimacy: 8}, Status: "on_sale"},
+		{ItemID: "item_fish", Name: "小鱼干", Kind: "food", Price: 30, Effects: ItemEffects{Satiety: 20, Exp: 10, Points: 2}, Status: "on_sale"},
+		{ItemID: "item_carrot", Name: "胡萝卜", Kind: "food", Price: 20, Effects: ItemEffects{Satiety: 15, Exp: 5, Points: 1}, Status: "on_sale"},
+		{ItemID: "item_nut", Name: "坚果", Kind: "food", Price: 25, Effects: ItemEffects{Satiety: 15, Exp: 8, Points: 1}, Status: "on_sale"},
+		{ItemID: "item_ball", Name: "毛线球", Kind: "toy", Price: 40, Effects: ItemEffects{Mood: 20, Intimacy: 3, Points: 1}, Status: "on_sale"},
+		{ItemID: "item_whistle", Name: "训练哨", Kind: "toy", Price: 80, Effects: ItemEffects{Mood: 10, Intimacy: 8, Points: 2}, Status: "on_sale"},
 	}
 }
 

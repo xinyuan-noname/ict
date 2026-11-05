@@ -58,7 +58,7 @@ describe('pet model', () => {
   });
 
   it('道具目录与邀请码', () => {
-    expect(ITEM_CATALOG).toHaveLength(6);
+    expect(ITEM_CATALOG).toHaveLength(5);
     expect(ITEM_CATALOG.filter((i) => i.kind === 'food')).toHaveLength(3);
     expect(validInviteCode('A1B2C3')).toBe(true);
     expect(validInviteCode('abc123')).toBe(false);

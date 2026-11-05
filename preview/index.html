@@ -505,12 +505,11 @@
 
   // ---------- 宠物 / 好友 / PK ----------
   const PET_ITEMS = [
-    { id:'item_fish', name:'小鱼干', kind:'food', price:30, satiety:20, exp:10 },
-    { id:'item_carrot', name:'胡萝卜', kind:'food', price:20, satiety:15, exp:5 },
-    { id:'item_nut', name:'坚果', kind:'food', price:25, satiety:15, exp:8 },
-    { id:'item_points', name:'加点工具', kind:'tool', price:120, points:1 },
-    { id:'item_ball', name:'毛线球', kind:'toy', price:40, mood:20, intimacy:3 },
-    { id:'item_whistle', name:'训练哨', kind:'toy', price:80, mood:10, intimacy:8 }
+    { id:'item_fish', name:'小鱼干', kind:'food', price:30, satiety:20, exp:10, points:2 },
+    { id:'item_carrot', name:'胡萝卜', kind:'food', price:20, satiety:15, exp:5, points:1 },
+    { id:'item_nut', name:'坚果', kind:'food', price:25, satiety:15, exp:8, points:1 },
+    { id:'item_ball', name:'毛线球', kind:'toy', price:40, mood:20, intimacy:3, points:1 },
+    { id:'item_whistle', name:'训练哨', kind:'toy', price:80, mood:10, intimacy:8, points:2 }
   ];
   const PET_KEY='preview.pet.v1';
   const petState={ pet:null, inv:{}, friends:[], invites:[], pk:[] };
@@ -600,14 +599,14 @@
     if(!p) return;
     if((petState.inv[id]||0)<=0){ alert('道具数量不足（ITEM_002）'); return; }
     petState.inv[id]--;
+    // 使用道具直接获得加点（无需专门的加点工具）
+    if(it.points){ p.points=Math.min(200,p.points+it.points); }
     if(it.kind==='food'){
       p.satiety=Math.min(100,p.satiety+it.satiety); p.exp+=it.exp;
       while(p.exp>=100&&p.level<50){ p.exp-=100; p.level++; }
       p.intimacy=Math.min(100,p.intimacy+1);
     } else if(it.kind==='toy'){
       p.mood=Math.min(100,p.mood+it.mood); p.intimacy=Math.min(100,p.intimacy+it.intimacy);
-    } else {
-      p.points=Math.min(200,p.points+(it.points||1));
     }
     petPersist(); renderPet();
   }

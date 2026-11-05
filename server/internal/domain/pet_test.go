@@ -101,8 +101,8 @@ func TestAllocateAndRename(t *testing.T) {
 
 func TestItemCatalog(t *testing.T) {
 	items := ItemCatalog()
-	if len(items) != 6 {
-		t.Fatalf("want 6 items, got %d", len(items))
+	if len(items) != 5 {
+		t.Fatalf("want 5 items, got %d", len(items))
 	}
 	kinds := map[string]int{}
 	for _, it := range items {
@@ -110,8 +110,11 @@ func TestItemCatalog(t *testing.T) {
 		if it.Price <= 0 {
 			t.Fatalf("price must be positive: %+v", it)
 		}
+		if it.Effects.Points <= 0 {
+			t.Fatalf("every item should grant points now: %+v", it)
+		}
 	}
-	if kinds["food"] != 3 || kinds["tool"] != 1 || kinds["toy"] != 2 {
+	if kinds["food"] != 3 || kinds["toy"] != 2 || kinds["tool"] != 0 {
 		t.Fatalf("unexpected kinds: %v", kinds)
 	}
 }
