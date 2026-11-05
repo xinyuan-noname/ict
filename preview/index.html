@@ -42,6 +42,7 @@
   .units { display:flex; gap:6px; justify-content:center; margin:12px 0 0; flex-wrap:wrap; }
   .units button { border:1px solid #eee; background:#fff; border-radius:14px; padding:4px 10px; font-size:11px; color:#777; cursor:pointer; }
   .units button .plus { margin-left:6px; color:var(--primary); font-weight:700; font-size:13px; }
+  .units button .ui { margin-right:4px; font-size:13px; }
   .units button:active { border-color:var(--primary); background:#fff5f5; }
   .units button.on { border-color:var(--primary); color:var(--primary); font-weight:600; background:#fff5f5; }
   .actions { display:flex; gap:8px; justify-content:center; margin:12px 0 0; }
@@ -251,7 +252,11 @@
     const ratio=target>0?Math.min(1,total/target):0;
     const segs=60, active=Math.round(segs*ratio);
     let ring=''; for(let i=0;i<segs;i++) ring+=`<span class="seg" style="background:${i<active?'#c7000b':'#f0dcdd'};transform:rotate(${(i/segs)*360}deg) translateY(-80px)"></span>`;
-    const unitBtns = allUnits().filter(u=>u.id!=='unit_ml').map(u=>`<button onclick="logUnit('${u.id}')">${u.name}${u.ml>1?' '+u.ml+'ml':''}<span class="plus">+</span></button>`).join('')
+    const UNIT_ICONS={ unit_cup:'☕', unit_bottle:'🍶', unit_ml:'💧' };
+    const unitBtns = allUnits().filter(u=>u.id!=='unit_ml').map(u=>{
+      const icon = UNIT_ICONS[u.id] || '✏️';
+      return `<button onclick="logUnit('${u.id}')"><span class="ui">${icon}</span>${u.name}${u.ml>1?' '+u.ml+'ml':''}<span class="plus">+</span></button>`;
+    }).join('')
       + `<button onclick="toggleUnitForm()">+ 自定义</button>`;
     $('checkBody').innerHTML = `
       <div class="notice">${state.notice||''}</div>
