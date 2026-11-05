@@ -84,6 +84,12 @@
   .medForm { border:1px solid #f0f0f0; border-radius:12px; padding:12px; margin-top:10px; background:#fff; }
   .medForm .t { font-size:13px; font-weight:600; color:#333; margin-bottom:8px; }
   .mcField label { width:64px; }
+  .modalMask { position:fixed; inset:0; background:rgba(0,0,0,.38); display:flex; align-items:flex-end; justify-content:center; z-index:50; }
+  .modal { width:390px; max-height:82vh; background:#fff; border-radius:20px 20px 0 0; display:flex; flex-direction:column; overflow:hidden; animation:slideUp .18s ease-out; }
+  @keyframes slideUp { from { transform:translateY(24px); opacity:.6; } to { transform:translateY(0); opacity:1; } }
+  .modalHead { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid #f2f2f2; font-size:15px; font-weight:600; color:#222; }
+  .modalClose { border:none; background:none; font-size:16px; color:#999; cursor:pointer; padding:4px 8px; }
+  .modalBody { padding:14px 16px 22px; overflow-y:auto; }
   .row { display:flex; padding:6px 0; border-bottom:1px solid #f6f6f6; font-size:12px; color:#666; }
   .row span:first-child { flex:0 0 86px; }
   .row span:nth-child(2) { flex:1; }
@@ -179,6 +185,7 @@
   </div>
 </div>
 
+<div id="modalRoot"></div>
 <div class="note"><b>静态 UI 预览</b>：顶部可切换「喝水 / 药物」清单；喝水单位可切换与自定义；药物按四时段打卡。数据存 localStorage。</div>
 
 <script>
@@ -269,6 +276,11 @@
     else if (state.tab==='stats') state.list==='water'?renderWaterStats():renderMedStats();
     else if (state.tab==='points') renderPoints();
     else renderMe();
+    // 药物管理以弹出对话框呈现
+    const modalRoot=$('modalRoot');
+    // 仅在药物今日页允许对话框开启
+    if (!(state.tab==='today' && state.list==='medication')) state.medManage=false;
+    if(modalRoot) modalRoot.innerHTML = state.medManage ? medManageModal() : '';
   }
   function switchList(k){ if(state.list===k) return; state.list=k; render(); }
   function setTab(t){ state.tab=t; render(); }
@@ -474,12 +486,11 @@
             : `<button onclick="takeDose('${v.itemId}','${v.slot}')">${v.status==='missed'?'补打':'打卡'}</button>`}
         </div>`).join('')}
       <div class="hint">药物清单为完成式：按条目 × 时段打卡，不做剂量累计。</div>
-      <button class="btn outline" style="width:100%;margin-top:8px" onclick="toggleMedManage()">${state.medManage?'收起药物管理':'管理药物'}</button>
-      ${state.medManage?medManageHTML():''}`;
+      <button class="btn outline" style="width:100%;margin-top:8px" onclick="toggleMedManage()">管理药物</button>`;
   }
 
   function toggleMedManage(){ state.medManage=!state.medManage; render(); }
-  function medManageHTML(){
+  function medManageModal(){
     const cards = state.medItems.map(item=>`
       <div class="medCard">
         <div class="mcTop">
@@ -492,14 +503,23 @@
       </div>`).join('');
 
     return `
-      <div class="section">药物管理</div>
-      <div class="medGrid">${state.medItems.length?cards:'<div class="empty">还没有药物条目</div>'}</div>
-      <div class="medForm">
-        <div class="t">新增药物</div>
-        <div class="field mcField"><label>药名</label><input id="mName" placeholder="如：维生素D" /></div>
-        <div class="field mcField"><label>剂量</label><input id="mDose" placeholder="如：1粒" /></div>
-        <div class="slotRow" style="margin-left:0">${SLOTS.map(([k,l])=>`<button class="${state.draftSlots.includes(k)?'on':''}" onclick="toggleSlot('${k}')">${l}</button>`).join('')}</div>
-        <button class="btn" style="width:100%" onclick="addMed()">添加药物</button>
+      <div class="modalMask" onclick="if(event.target===this)toggleMedManage()">
+        <div class="modal">
+          <div class="modalHead">
+            <span>药物管理</span>
+            <button class="modalClose" onclick="toggleMedManage()">✕</button>
+          </div>
+          <div class="modalBody">
+            <div class="medGrid">${state.medItems.length?cards:'<div class="empty">还没有药物条目</div>'}</div>
+            <div class="medForm">
+              <div class="t">新增药物</div>
+              <div class="field mcField"><label>药名</label><input id="mName" placeholder="如：维生素D" /></div>
+              <div class="field mcField"><label>剂量</label><input id="mDose" placeholder="如：1粒" /></div>
+              <div class="slotRow" style="margin-left:0">${SLOTS.map(([k,l])=>`<button class="${state.draftSlots.includes(k)?'on':''}" onclick="toggleSlot('${k}')">${l}</button>`).join('')}</div>
+              <button class="btn" style="width:100%" onclick="addMed()">添加药物</button>
+            </div>
+          </div>
+        </div>
       </div>`;
   }
   function takeDose(itemId,slot){
