@@ -66,6 +66,10 @@
   .col .bar { width:18px; border-radius:4px; background:#f0dcdd; }
   .col .d { font-size:10px; color:#aaa; margin-top:3px; }
   .legend { font-size:11px; color:#bbb; text-align:center; margin-top:6px; }
+  .rangeTabs { display:flex; gap:6px; margin:6px 0 10px; }
+  .rangeTabs button { flex:1; border:1px solid #eee; background:#fff; border-radius:12px; padding:6px 0; font-size:12px; color:#888; cursor:pointer; }
+  .rangeTabs button.on { background:var(--primary); border-color:var(--primary); color:#fff; font-weight:600; }
+  .chartWrap { background:#fff; border-radius:12px; overflow:hidden; }
   .row { display:flex; padding:6px 0; border-bottom:1px solid #f6f6f6; font-size:12px; color:#666; }
   .row span:first-child { flex:0 0 86px; }
   .row span:nth-child(2) { flex:1; }
@@ -209,7 +213,7 @@
   };
   try { const raw=localStorage.getItem(KEY); if (raw) Object.assign(state, JSON.parse(raw)); } catch {}
   // UI 临时状态不持久化：自定义单位、药物管理面板默认收起
-  state.unitForm=false; state.medManage=false; state.petItemsOpen=false; state.notice=''; state.tab='today'; state.list='water';
+  state.unitForm=false; state.medManage=false; state.petItemsOpen=false; state.statsRange='week'; state.notice=''; state.tab='today'; state.list='water';
   function persist(){
     const data={ mode:state.mode, profile:state.profile, goals:state.goals, records:state.records,
       unitId:state.unitId, units:state.units, lists:state.lists, medItems:state.medItems, medDoses:state.medDoses,
@@ -328,26 +332,96 @@
   function removeRecord(id){ state.records=state.records.filter(r=>r.id!==id); persist(); render(); }
 
   function renderWaterStats(){
-    const today=bizToday(), start=weekStart(today);
-    const days=Array.from({length:7},(_,i)=>{ const day=addDays(start,i), target=targetFor(day);
-      const total=state.records.filter(r=>r.day===day).reduce((s,r)=>s+r.ml,0);
-      return { day,target,total,achieved:target>0&&total>=target }; });
-    let recorded=0,sum=0,achieved=0,elapsed=0;
-    days.forEach(d=>{ sum+=d.total; if(d.total>0) recorded++; if(d.achieved) achieved++; if(d.day<=today) elapsed++; });
-    const avg=recorded?Math.round(sum/recorded):null;
-    const max=Math.max(targetFor(today),...days.map(d=>d.total),1);
-    const unit=unitById(state.unitId);
+    const range=state.statsRange||'week';
+    const today=bizToday();
+    const series=buildSeries(range,today);
+    const values=series.map(s=>s.value);
+    const target=targetFor(today);
+    const recorded=series.filter(s=>s.value>0);
+    const avg=recorded.length?Math.round(recorded.reduce((a,s)=>a+s.value,0)/recorded.length):null;
+    const achieved=series.filter(s=>s.achieved).length;
+    const elapsed=series.filter(s=>s.day<=today).length;
+    const rangeLabel={week:'周记',month:'月记',quarter:'季度记'}[range];
+
     $('checkBody').innerHTML=`
+      <div class="rangeTabs">
+        ${[['week','周记'],['month','月记'],['quarter','季度记']].map(([k,l])=>`<button class="${range===k?'on':''}" onclick="setStatsRange('${k}')">${l}</button>`).join('')}
+      </div>
       <div class="stats">
-        <div class="stat"><b>${avg===null?'—':displayAmount(avg,unit)+' '+unit.name}</b><span>周平均</span></div>
+        <div class="stat"><b>${avg===null?'—':avg+' ml'}</b><span>${rangeLabel}平均</span></div>
         <div class="stat"><b>${elapsed?Math.round(achieved/elapsed*100):0}%</b><span>达成率</span></div>
         <div class="stat"><b>${streak()}</b><span>连续天数</span></div>
       </div>
-      <div class="section">本周饮水变化</div>
-      <div class="chart">${days.map(d=>`<div class="col"><div class="v">${d.total||''}</div><div class="bar" style="height:${Math.max(4,Math.round(d.total/max*112))}px;background:${d.achieved?'#c7000b':d.total?'#f2a6ab':'#f0f0f0'}"></div><div class="d">${d.day.slice(5)}</div></div>`).join('')}</div>
-      <div class="legend">目标线 ${targetFor(today)} ml · 柱高按最大值归一</div>
-      <div class="section">每日明细</div>
-      ${days.map(d=>`<div class="row"><span>${d.day}</span><span>${d.total} ml</span><span style="color:${d.achieved?'#1a7a3c':'#bbb'}">${d.achieved?'达成':d.total?'未达成':'无记录'}</span></div>`).join('')}`;
+      <div class="section">${rangeLabel}饮水趋势</div>
+      ${lineChart(series,target)}
+      <div class="legend">红线为目标 ${target} ml · 灰点为无记录</div>
+      <div class="section">明细</div>
+      ${series.map(s=>`<div class="row"><span>${s.label}</span><span>${s.value} ml</span><span style="color:${s.achieved?'#1a7a3c':'#bbb'}">${s.achieved?'达成':s.value?'未达成':'无记录'}</span></div>`).join('')}`;
+  }
+
+  function setStatsRange(r){ state.statsRange=r; render(); }
+
+  // 生成区间数据：周=7 天、月=30 天、季度=13 周（周平均）
+  function buildSeries(range,today){
+    if(range==='month'){
+      return Array.from({length:30},(_,i)=>{
+        const day=addDays(today,-29+i);
+        const target=targetFor(day);
+        const value=state.records.filter(r=>r.day===day).reduce((s,r)=>s+r.ml,0);
+        return { label:day.slice(5), day, value, achieved:target>0&&value>=target };
+      });
+    }
+    if(range==='quarter'){
+      return Array.from({length:13},(_,i)=>{
+        const ws=addDays(weekStart(today),-(12-i)*7);
+        const days=Array.from({length:7},(_,d)=>addDays(ws,d)).filter(d=>d<=today);
+        const recorded=days.filter(d=>state.records.some(r=>r.day===d));
+        const sum=days.reduce((a,d)=>a+state.records.filter(r=>r.day===d).reduce((s,r)=>s+r.ml,0),0);
+        const value=recorded.length?Math.round(sum/recorded.length):0;
+        const target=targetFor(today);
+        return { label:ws.slice(5), day:ws, value, achieved:target>0&&value>=target };
+      });
+    }
+    return Array.from({length:7},(_,i)=>{
+      const day=addDays(weekStart(today),i);
+      const target=targetFor(day);
+      const value=state.records.filter(r=>r.day===day).reduce((s,r)=>s+r.ml,0);
+      return { label:day.slice(5), day, value, achieved:target>0&&value>=target };
+    });
+  }
+
+  // 内联 SVG 折线图（无第三方依赖）
+  function lineChart(series,target){
+    const W=340,H=170,padX=12,padTop=16,padBottom=26;
+    const max=Math.max(target,...series.map(s=>s.value),1);
+    const usableH=H-padTop-padBottom;
+    const stepX=series.length>1?(W-padX*2)/(series.length-1):0;
+    const pts=series.map((s,i)=>({
+      x:padX+i*stepX,
+      y:padTop+usableH-(s.value/max)*usableH,
+      v:s.value
+    }));
+    const line=pts.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+    const area=`${padX},${padTop+usableH} ${line} ${(padX+stepX*(series.length-1)).toFixed(1)},${padTop+usableH}`;
+    const targetY=padTop+usableH-(target/max)*usableH;
+    const dots=series.map((s,i)=>`<circle cx="${pts[i].x.toFixed(1)}" cy="${pts[i].y.toFixed(1)}" r="${s.value>0?3:2}" fill="${s.achieved?'#c7000b':'#f2a6ab'}" />`).join('');
+    const labels=series.map((s,i)=>{
+      const show=series.length<=8 || i===0 || i===series.length-1 || i%Math.ceil(series.length/6)===0;
+      return show?`<text x="${pts[i].x.toFixed(1)}" y="${H-8}" font-size="9" fill="#aaa" text-anchor="middle">${s.label.slice(3)}</text>`:'';
+    }).join('');
+    return `<div class="chartWrap">
+      <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="饮水趋势折线图">
+        <defs><linearGradient id="waterFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#c7000b" stop-opacity="0.22"/>
+          <stop offset="100%" stop-color="#c7000b" stop-opacity="0.02"/>
+        </linearGradient></defs>
+        <polygon points="${area}" fill="url(#waterFill)"/>
+        <line x1="${padX}" y1="${targetY.toFixed(1)}" x2="${W-padX}" y2="${targetY.toFixed(1)}" stroke="#c7000b" stroke-width="1" stroke-dasharray="4 4" opacity="0.6"/>
+        <polyline points="${line}" fill="none" stroke="#c7000b" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+        ${dots}
+        ${labels}
+      </svg>
+    </div>`;
   }
   function streak(){ let n=0,day=bizToday(); for(let i=0;i<60;i++){ const t=targetFor(day), v=state.records.filter(r=>r.day===day).reduce((s,r)=>s+r.ml,0); if(t>0&&v>=t) n++; else break; day=addDays(day,-1);} return n; }
 
