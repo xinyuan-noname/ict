@@ -70,8 +70,11 @@
   .genders button.on { border-color:var(--primary); color:var(--primary); background:#fff5f5; font-weight:600; }
   .hint { font-size:11px; color:#aaa; margin-top:5px; }
   .tabbar { display:flex; border-top:1px solid #f0f0f0; padding:4px 0 8px; flex:0 0 auto; }
-  .tabbar button { flex:1; border:none; background:none; font-size:12px; color:#aaa; padding:6px 0; cursor:pointer; }
+  .tabbar button { flex:1; border:none; background:none; font-size:11px; color:#aaa; padding:5px 0; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .tabbar button .ti { font-size:16px; line-height:1; }
   .tabbar button.on { color:var(--primary); font-weight:600; }
+  .header-pet { background:#fff; border:1px solid #eee; border-radius:14px; padding:4px 10px; font-size:12px; color:#555; cursor:pointer; }
+  .header-pet:active { border-color:var(--primary); color:var(--primary); }
   .me-head { display:flex; align-items:center; gap:12px; padding:4px 0 12px; cursor:pointer; }
   .avatar { width:64px; height:64px; border-radius:32px; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:600; position:relative; }
   .avatar .dot { position:absolute; right:-2px; bottom:-2px; width:19px; height:19px; border-radius:10px; background:#fff; color:var(--primary); font-size:10px; display:flex; align-items:center; justify-content:center; border:1px solid var(--primary); }
@@ -111,7 +114,13 @@
     </div>
 
     <div id="check" class="screen hidden">
-      <div class="header"><span class="brand">check</span><span class="badge" id="identityBadge">华为用户</span></div>
+      <div class="header">
+        <span class="brand">check</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="header-pet" onclick="show('pet')">🐾 宠物</button>
+          <span class="badge" id="identityBadge">华为用户</span>
+        </div>
+      </div>
       <div class="listTabs" id="listTabs"></div>
       <div class="body" id="checkBody"></div>
       <div class="tabbar" id="tabbar"></div>
@@ -205,10 +214,11 @@
     const lists=[['water','喝水'],['medication','药物']].filter(([k])=>state.lists[k]);
     $('listTabs').innerHTML = lists.map(([k,l])=>`<button class="${state.list===k?'on':''}" onclick="switchList('${k}')">${l}</button>`).join('');
     if (!lists.some(([k])=>k===state.list)) state.list='water';
-    const tabs=[['today','今日'],['stats','统计'],['pet','宠物']];
+    const tabs=[['today','今日'],['stats','统计']];
     if (state.pointsUnlocked) tabs.push(['points','积分']);
     tabs.push(['me','我的']);
-    $('tabbar').innerHTML = tabs.map(([k,l])=>`<button class="${state.tab===k?'on':''}" onclick="switchTab('${k}')">${l}</button>`).join('');
+    const ICONS={ today:'💧', stats:'📈', points:'⭐', me:'👤', pet:'🐾' };
+    $('tabbar').innerHTML = tabs.map(([k,l])=>`<button class="${state.tab===k?'on':''}" onclick="switchTab('${k}')"><span class="ti">${ICONS[k]||''}</span><span>${l}</span></button>`).join('');
     if (!tabs.some(([k])=>k===state.tab)) state.tab='today';
     if (state.tab==='today') state.list==='water'?renderWaterToday():renderMedToday();
     else if (state.tab==='stats') state.list==='water'?renderWaterStats():renderMedStats();
