@@ -19,6 +19,9 @@
   .btn:disabled { opacity:.55; cursor:not-allowed; }
   .link { background:none; border:none; color:var(--primary); font-size:13px; padding:7px; cursor:pointer; }
   .ghost { background:none; border:none; color:#999; font-size:13px; padding:7px; cursor:pointer; }
+  .logout { width:100%; margin-top:14px; background:#fff; border:1px solid var(--primary); color:var(--primary); border-radius:24px; padding:11px; font-size:14px; font-weight:600; cursor:pointer; }
+  .logout:active { background:#fff5f5; }
+  .pet-name { width:100%; border:1px solid #e6e6e6; border-radius:10px; padding:9px 12px; font-size:14px; margin:12px 0 4px; outline:none; }
   .banner { width:100%; background:var(--danger-bg); border-radius:8px; padding:9px 12px; margin-bottom:10px; }
   .banner p { margin:0; color:var(--danger); font-size:12px; }
   .header { display:flex; align-items:center; justify-content:space-between; padding:6px 18px 2px; }
@@ -225,13 +228,17 @@
     const segs=60, active=Math.round(segs*ratio);
     let ring=''; for(let i=0;i<segs;i++) ring+=`<span class="seg" style="background:${i<active?'#c7000b':'#f0dcdd'};transform:rotate(${(i/segs)*360}deg) translateY(-80px)"></span>`;
     const unitBtns = allUnits().map(u=>`<button class="${u.id===state.unitId?'on':''}" onclick="setUnit('${u.id}')">${u.name}${u.ml>1?' '+u.ml+'ml':''}</button>`).join('')
-      + `<button onclick="addUnit()">+ 自定义</button>`;
+      + `<button onclick="toggleUnitForm()">+ 自定义</button>`;
     $('checkBody').innerHTML = `
       <div class="notice">${state.notice||''}</div>
       <div class="ring">${ring}<div class="center"><div class="pct">${Math.round(ratio*100)}%</div><div class="lbl">今日进度</div></div></div>
       <div class="hero">${total} <small>/ ${target||'--'} ml</small></div>
       <div class="sub">${target===0?'请先在「我的」填写身体档案':total>=target?'今日目标已达成':'还差 '+(target-total)+' ml'}</div>
       <div class="units">${unitBtns}</div>
+      ${state.unitForm?`
+        <div class="field" style="margin-top:8px"><label>单位名称</label><input id="uName" maxlength="12" placeholder="如 马克杯" /></div>
+        <div class="field"><label>容量 (ml)</label><input id="uMl" type="number" placeholder="50-2000" /></div>
+        <button class="btn" style="width:100%;margin-top:4px" onclick="addUnit()">添加单位</button>`:''}
       <div class="sub">当前单位：${unit.name} · 约 ${displayAmount(total,unit)} ${unit.name}</div>
       <div class="actions">
         <button class="btn" ${target===0?'disabled':''} onclick="addWater(1)">+1 ${unit.name}</button>
@@ -243,14 +250,16 @@
   }
   function setUnit(id){ state.unitId=id; persist(); render(); }
   function addUnit(){
-    const name=prompt('单位名称（1-12 字），如「马克杯」'); if(!name) return;
-    const ml=Number(prompt('容量（ml，50-2000）','300')); 
-    if(!name || [...name].length>12 || !(ml>=50&&ml<=2000)){ state.notice='单位名称或容量不合法'; render(); return; }
+    const name=(($('uName') && $('uName').value) || '').trim();
+    const ml=Number(($('uMl') && $('uMl').value) || 0);
+    if(!name || [...name].length>12 || !(ml>=50&&ml<=2000)){ state.notice='单位名称或容量不合法（CHECK_013）'; render(); return; }
     if(allUnits().some(u=>u.name===name)){ state.notice='该单位名称已存在（CHECK_014）'; render(); return; }
     state.units.push({ id:'unit_'+Date.now(), name, ml, builtin:false });
     state.unitId=state.units[state.units.length-1].id;
+    state.unitForm=false;
     state.notice=`已添加单位「${name}」`; persist(); render();
   }
+  function toggleUnitForm(){ state.unitForm=!state.unitForm; render(); }
   function addWater(count){
     const today=bizToday(), unit=unitById(state.unitId), ml=count*unit.ml;
     state.records.push({ id:'wr_'+Date.now(), day:today, ml, time:new Date().toTimeString().slice(0,5) });
@@ -399,10 +408,6 @@
         <div class="avatar">${state.mode==='guest'?'游':'华'}<span class="dot">★</span></div>
         <div><div class="me-name">${state.mode==='guest'?'游客':'华为用户'}</div><div class="me-hint">点击头像解锁积分与签到 ›</div></div>
       </div>
-      <div class="actions" style="justify-content:flex-start;margin:0 0 6px">
-        <button class="btn outline" onclick="show('pet')">宠物</button>
-        <button class="btn outline" onclick="show('friends')">好友 / PK</button>
-      </div>
       <div class="section" style="margin-top:0">身体档案</div>
       <div class="field"><label>身高 (cm)</label><input id="fHeight" type="number" placeholder="请输入" value="${p.heightCm||''}" /></div>
       <div class="field"><label>体重 (kg)</label><input id="fWeight" type="number" placeholder="请输入" value="${p.weightG?Math.round(p.weightG/1000):''}" /></div>
@@ -412,7 +417,7 @@
       <div class="hint">${age===null?'填写出生日期后自动计算年龄':`年龄：${age} 岁`} · 目标：${goal?goal+' ml':'待填写'}（变更次日生效）</div>
       <button class="btn" style="margin-top:10px;width:100%" onclick="saveProfile()">保存档案</button>
       <div class="hint">目标仅作日常参考，不构成医学建议。</div>
-      <div class="ghost" style="display:block;margin-top:10px" onclick="exitToLogin()">${state.mode==='guest'?'退出游客模式':'退出登录'}</div>`;
+      <button class="logout" onclick="exitToLogin()">${state.mode==='guest'?'退出游客模式':'退出登录'}</button>`;
   }
 
   function unlockPoints(){ state.pointsUnlocked=true; state.tab='points'; state.notice='已解锁积分与签到'; render(); }
@@ -460,8 +465,10 @@
     const p=petState.pet;
     if(!p){
       $('petBody').innerHTML=`
+        <div class="notice">${state.notice||''}</div>
         <div class="hero" style="font-size:22px;margin-top:8px">领养一只宠物</div>
-        <div class="sub">选择品种（2.5D 像素精灵）</div>
+        <div class="sub">先给宠物起名字，再选品种</div>
+        <input id="petName" class="pet-name" placeholder="名字（1-12 字，可留空用默认名）" maxlength="12" />
         <div class="grid" style="grid-template-columns:1fr 1fr 1fr">
           ${[['cat','猫'],['dog','狗'],['parrot','鹦鹉']].map(([k,l])=>`<div class="frameCard" onclick="adoptPet('${k}')"><img class="pixel" style="width:64px;height:64px" src="${spriteUrl(k,'front',0)}" /><div class="n">${l}</div><button>领养</button></div>`).join('')}
         </div>
@@ -485,7 +492,8 @@
         const qty=petState.inv[it.id]||0;
         return `<div class="rec"><span>${it.name} · ${it.price} 积分 · 库存 ${qty}</span>
           <span><button onclick="redeemItem('${it.id}')">兑换</button> <button onclick="useItem('${it.id}')">使用</button></span></div>`;
-      }).join('')}`;
+      }).join('')}
+      <button class="btn outline" style="width:100%;margin-top:12px" onclick="show('friends')">好友 / PK</button>`;
 
     // 8 FPS 帧序列；减少动效时固定首帧
     if(!window.matchMedia || !window.matchMedia('(prefers-reduced-motion: reduce)').matches){
@@ -499,8 +507,11 @@
   }
 
   function adoptPet(species){
-    const name=prompt('给宠物起个名字（1-12 字）', species==='cat'?'咪咪':species==='dog'?'旺财':'小绿');
-    if(!name || [...name].length>12){ show('pet'); return; }
+    const input=$('petName');
+    const raw=(input && input.value ? input.value : '').trim();
+    const fallback = species==='cat'?'咪咪':species==='dog'?'旺财':'小绿';
+    const name = raw || fallback;
+    if([...name].length>12){ state.notice='名字最多 12 个字'; renderPet(); return; }
     petState.pet={ species, name, level:1, exp:0, satiety:60, mood:60, intimacy:10, points:0, str:0, agi:0, wis:0 };
     petPersist(); state.notice='领养成功'; renderPet();
   }
