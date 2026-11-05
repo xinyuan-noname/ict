@@ -83,6 +83,21 @@
   .mcBtn:disabled { border-color:#e5e5e5; color:#bbb; cursor:default; }
   .medForm { border:1px solid #f0f0f0; border-radius:12px; padding:12px; margin-top:10px; background:#fff; }
   .medForm .t { font-size:13px; font-weight:600; color:#333; margin-bottom:8px; }
+  .todayStats { display:flex; gap:8px; margin:10px 0 4px; }
+  .todayStats .ts { flex:1; background:#fafafa; border-radius:12px; padding:9px 6px; text-align:center; }
+  .todayStats .ts b { display:block; font-size:16px; color:var(--primary); font-weight:700; }
+  .todayStats .ts span { font-size:10px; color:#999; }
+  .taskGrid { display:grid; gap:8px; }
+  .taskCard { border:1px solid #f0f0f0; border-radius:12px; padding:10px 12px; background:#fff; }
+  .tkTop { display:flex; justify-content:space-between; align-items:center; }
+  .tkName { font-size:13px; font-weight:600; color:#333; }
+  .tkPts { font-size:12px; color:var(--primary); font-weight:700; }
+  .tkBar { height:6px; background:#f2f2f2; border-radius:3px; margin:8px 0 4px; overflow:hidden; }
+  .tkBar div { height:6px; background:var(--primary); border-radius:3px; }
+  .tkMeta { font-size:10px; color:#aaa; }
+  .tkBtn { margin-top:8px; width:100%; border:1px solid var(--primary); background:#fff; color:var(--primary); border-radius:10px; padding:5px; font-size:11px; font-weight:600; cursor:pointer; }
+  .tkBtn:disabled { border-color:#e5e5e5; color:#bbb; cursor:default; }
+  .tkBtn.claimed { border-color:#e5e5e5; color:#bbb; background:#fafafa; cursor:default; }
   .mcField label { width:64px; }
   .modalMask { position:fixed; inset:0; background:rgba(0,0,0,.38); display:flex; align-items:flex-end; justify-content:center; z-index:50; }
   .modal { width:390px; max-height:82vh; background:#fff; border-radius:20px 20px 0 0; display:flex; flex-direction:column; overflow:hidden; animation:slideUp .18s ease-out; }
@@ -230,7 +245,7 @@
     goals:{}, records:[], unitId:'unit_ml',
     units:[], lists:{ water:true, medication:true },
     medItems:[], medDoses:[], draftSlots:['morning','noon'],
-    points:0, streak:0, checkedDates:[], owned:['frame_pixel_cyan'], equipped:'frame_pixel_cyan', ledger:[]
+    points:0, streak:0, checkedDates:[], owned:['frame_pixel_cyan'], equipped:'frame_pixel_cyan', ledger:[], claimedTasks:[]
   };
   try { const raw=localStorage.getItem(KEY); if (raw) Object.assign(state, JSON.parse(raw)); } catch {}
   // UI 临时状态不持久化：自定义单位、药物管理面板默认收起
@@ -239,7 +254,7 @@
     const data={ mode:state.mode, profile:state.profile, goals:state.goals, records:state.records,
       unitId:state.unitId, units:state.units, lists:state.lists, medItems:state.medItems, medDoses:state.medDoses,
       points:state.points, streak:state.streak, checkedDates:state.checkedDates, owned:state.owned,
-      equipped:state.equipped, ledger:state.ledger, lastMl:state.lastMl, pointsUnlocked:state.pointsUnlocked };
+      equipped:state.equipped, ledger:state.ledger, lastMl:state.lastMl, pointsUnlocked:state.pointsUnlocked, claimedTasks:state.claimedTasks };
     try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {}
   }
 
@@ -303,6 +318,11 @@
       <div class="ring">${ring}<div class="center"><div class="pct">${Math.round(ratio*100)}%</div><div class="lbl">今日进度</div></div></div>
       <div class="hero">${total} <small>/ ${target||'--'} ml</small></div>
       <div class="sub">${vod(state.profile)<=0?'默认目标 2000 ml · 完善身体档案后按身高体重计算':total>=target?'今日目标已达成':'还差 '+(target-total)+' ml'}</div>
+      <div class="todayStats">
+        <div class="ts"><b>${total}</b><span>今日总量 ml</span></div>
+        <div class="ts"><b>${Math.max(0,target-total)}</b><span>还需 ml</span></div>
+        <div class="ts"><b>${streak()}</b><span>连续达标</span></div>
+      </div>
       <div class="units">${unitBtns}</div>
       ${state.unitForm?`
         <div class="field" style="margin-top:8px"><label>单位名称</label><input id="uName" maxlength="12" placeholder="如 马克杯" /></div>
@@ -557,9 +577,52 @@
       <div class="hero" style="font-size:24px">${state.points} <small>积分</small></div>
       <div class="sub">连续签到 ${state.streak} 天</div>
       <button class="btn" style="width:100%;margin-top:10px" ${checked?'disabled':''} onclick="checkIn()">${checked?'今日已签到':`签到 +${gain} 积分`}</button>
+      <div class="section">每日任务</div>
+      ${tasksHTML()}
       <div class="section">签到日历</div>${calendarHTML()}
       <div class="section">积分流水</div>
       ${state.ledger.length===0?'<div class="empty">暂无记录</div>':state.ledger.map(e=>`<div class="rec"><span>${e.label}</span><span style="color:${e.amount>=0?'#1a7a3c':'#c7000b'}">${e.amount>=0?'+':''}${e.amount}</span></div>`).join('')}`;
+  }
+
+  // 每日任务：连续达标一定次数后领取积分
+  const DAILY_TASKS = [
+    { id:'task_daily', name:'今日饮水达标', metric:'today', need:1, points:10 },
+    { id:'task_streak3', name:'连续达标 3 天', metric:'streak', need:3, points:30 },
+    { id:'task_streak7', name:'连续达标 7 天', metric:'streak', need:7, points:80 }
+  ];
+  function todayProgress(){
+    const today=bizToday();
+    const total=state.records.filter(r=>r.day===today).reduce((s,r)=>s+r.ml,0);
+    const target=targetFor(today);
+    return { total, target, achieved: target>0 && total>=target ? 1 : 0 };
+  }
+  function taskKeyOf(t){ return t.metric==='today' ? `${t.id}:${bizToday()}` : `${t.id}:milestone`; }
+  function tasksHTML(){
+    const tp=todayProgress(), st=streak();
+    return `<div class="taskGrid">${DAILY_TASKS.map(t=>{
+      const progress = t.metric==='today' ? tp.achieved : st;
+      const claimed = state.claimedTasks.includes(taskKeyOf(t));
+      const canClaim = !claimed && progress>=t.need;
+      return `<div class="taskCard">
+        <div class="tkTop"><span class="tkName">${t.name}</span><span class="tkPts">+${t.points}</span></div>
+        <div class="tkBar"><div style="width:${Math.min(100,progress/t.need*100)}%"></div></div>
+        <div class="tkMeta">进度 ${Math.min(progress,t.need)}/${t.need}${claimed?' · 已领取':''}</div>
+        <button class="tkBtn ${claimed?'claimed':''}" ${canClaim?'':'disabled'} onclick="claimTask('${t.id}')">${claimed?'已领取':canClaim?`领取 +${t.points}`:'未达成'}</button>
+      </div>`;
+    }).join('')}</div>`;
+  }
+  function claimTask(id){
+    const task=DAILY_TASKS.find(t=>t.id===id); if(!task) return;
+    const key=taskKeyOf(task);
+    if(state.claimedTasks.includes(key)) return;
+    const tp=todayProgress(), st=streak();
+    const progress = task.metric==='today' ? tp.achieved : st;
+    if(progress<task.need){ alert('任务尚未达成'); return; }
+    state.points += task.points;
+    state.claimedTasks.push(key);
+    state.ledger.unshift({ label:`任务 · ${task.name}`, amount:task.points });
+    state.notice=`任务完成，获得 ${task.points} 积分`;
+    persist(); render();
   }
   function calendarHTML(){
     const today=bizToday(), [y,m]=today.split('-').map(Number);
