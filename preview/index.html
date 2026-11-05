@@ -231,7 +231,7 @@
     $('listTabs').innerHTML = lists.map(([k,l])=>`<button class="${state.list===k?'on':''}" onclick="switchList('${k}')">${l}</button>`).join('');
     if (!lists.some(([k])=>k===state.list)) state.list='water';
     const tabs=[['today','check'],['stats','统计']];
-    if (state.pointsUnlocked) tabs.push(['points','积分']);
+    tabs.push(['points','积分']);
     tabs.push(['me','我的']);
     const ICONS={ today:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>', stats:'📈', points:'⭐', me:'👤', pet:'🐾' };
     $('tabbar').innerHTML = tabs.map(([k,l])=>`<button class="${state.tab===k?'on':''}" onclick="switchTab('${k}')">${ICONS[k]?`<span class="ti">${ICONS[k]}</span>`:''}<span>${l}</span></button>`).join('');
@@ -455,9 +455,9 @@
   function renderMe(){
     const p=state.profile, age=ageFrom(p.birthDate), goal=vod(p)||2000;
     $('checkBody').innerHTML=`
-      <div class="me-head" onclick="unlockPoints()">
-        <div class="avatar">${state.mode==='guest'?'游':'华'}<span class="dot">★</span></div>
-        <div><div class="me-name">${state.mode==='guest'?'游客':'华为用户'}</div><div class="me-hint">点击头像解锁积分与签到 ›</div></div>
+      <div class="me-head">
+        <div class="avatar">${state.mode==='guest'?'游':'华'}</div>
+        <div><div class="me-name">${state.mode==='guest'?'游客':'华为用户'}</div><div class="me-hint">积分 ${state.points} · 连续签到 ${state.streak} 天</div></div>
       </div>
       <div class="section" style="margin-top:0">身体档案</div>
       <div class="field"><label>身高 (cm)</label><input id="fHeight" type="number" placeholder="请输入" value="${p.heightCm||''}" /></div>
@@ -471,7 +471,7 @@
       <button class="logout" onclick="exitToLogin()">${state.mode==='guest'?'退出游客模式':'退出登录'}</button>`;
   }
 
-  function unlockPoints(){ state.pointsUnlocked=true; state.tab='points'; state.notice='已解锁积分与签到'; render(); }
+  function unlockPoints(){ state.tab='points'; render(); }
   function setGender(g){ state.profile.gender=g; render(); }
   function saveProfile(){
     const h=Number($('fHeight').value), w=Number($('fWeight').value)*1000, birth=$('fBirth').value, age=ageFrom(birth);
