@@ -241,7 +241,7 @@
     const ratio=target>0?Math.min(1,total/target):0;
     const segs=60, active=Math.round(segs*ratio);
     let ring=''; for(let i=0;i<segs;i++) ring+=`<span class="seg" style="background:${i<active?'#c7000b':'#f0dcdd'};transform:rotate(${(i/segs)*360}deg) translateY(-80px)"></span>`;
-    const unitBtns = allUnits().filter(u=>u.id!=='unit_ml').map(u=>`<button class="${u.id===state.unitId?'on':''}" onclick="setUnit('${u.id}')">${u.name}${u.ml>1?' '+u.ml+'ml':''}</button>`).join('')
+    const unitBtns = allUnits().filter(u=>u.id!=='unit_ml').map(u=>`<button class="${u.id===state.unitId?'on':''}" onclick="logUnit('${u.id}')">${u.name}${u.ml>1?' '+u.ml+'ml':''}</button>`).join('')
       + `<button onclick="toggleUnitForm()">+ 自定义</button>`;
     $('checkBody').innerHTML = `
       <div class="notice">${state.notice||''}</div>
@@ -269,6 +269,15 @@
       <div class="hint">记录以 ml 记账，切换单位不会改变历史数据。</div>`;
   }
   function setUnit(id){ state.unitId=id; persist(); render(); }
+  // 点击单位按钮直接记录 1 个该单位
+  function logUnit(id){
+    state.unitId=id;
+    const unit=unitById(id);
+    const today=bizToday();
+    state.records.push({ id:'wr_'+Date.now(), day:today, ml:unit.ml, time:new Date().toTimeString().slice(0,5) });
+    state.notice=`已记录 1 ${unit.name}（${unit.ml} ml）`;
+    persist(); render();
+  }
   function addUnit(){
     const name=(($('uName') && $('uName').value) || '').trim();
     const ml=Number(($('uMl') && $('uMl').value) || 0);
