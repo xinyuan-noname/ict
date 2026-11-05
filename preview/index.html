@@ -217,8 +217,8 @@
     const tabs=[['today','check'],['stats','统计']];
     if (state.pointsUnlocked) tabs.push(['points','积分']);
     tabs.push(['me','我的']);
-    const ICONS={ today:'💧', stats:'📈', points:'⭐', me:'👤', pet:'🐾' };
-    $('tabbar').innerHTML = tabs.map(([k,l])=>`<button class="${state.tab===k?'on':''}" onclick="switchTab('${k}')"><span class="ti">${ICONS[k]||''}</span><span>${l}</span></button>`).join('');
+    const ICONS={ today:'', stats:'📈', points:'⭐', me:'👤', pet:'🐾' };
+    $('tabbar').innerHTML = tabs.map(([k,l])=>`<button class="${state.tab===k?'on':''}" onclick="switchTab('${k}')">${ICONS[k]?`<span class="ti">${ICONS[k]}</span>`:''}<span>${l}</span></button>`).join('');
     if (!tabs.some(([k])=>k===state.tab)) state.tab='today';
     if (state.tab==='today') state.list==='water'?renderWaterToday():renderMedToday();
     else if (state.tab==='stats') state.list==='water'?renderWaterStats():renderMedStats();
