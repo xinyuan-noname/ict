@@ -70,6 +70,20 @@
   .rangeTabs button { flex:1; border:1px solid #eee; background:#fff; border-radius:12px; padding:6px 0; font-size:12px; color:#888; cursor:pointer; }
   .rangeTabs button.on { background:var(--primary); border-color:var(--primary); color:#fff; font-weight:600; }
   .chartWrap { background:#fff; border-radius:12px; overflow:hidden; }
+  .medGrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .medCard { background:#fafafa; border:1px solid #f0f0f0; border-radius:12px; padding:10px; }
+  .mcTop { display:flex; align-items:center; justify-content:space-between; }
+  .mcName { font-size:13px; font-weight:600; color:#333; }
+  .mcStatus { font-size:10px; padding:1px 6px; border-radius:8px; background:#eef8f1; color:#1a7a3c; }
+  .mcStatus.stopped { background:#f2f2f2; color:#999; }
+  .mcDose { font-size:11px; color:#888; margin-top:3px; }
+  .mcSlots { display:flex; flex-wrap:wrap; gap:3px; margin-top:6px; }
+  .chip { font-size:10px; background:#fff; border:1px solid #eee; border-radius:8px; padding:1px 6px; color:#666; }
+  .mcBtn { margin-top:8px; width:100%; border:1px solid var(--primary); background:#fff; color:var(--primary); border-radius:10px; padding:4px; font-size:11px; cursor:pointer; }
+  .mcBtn:disabled { border-color:#e5e5e5; color:#bbb; cursor:default; }
+  .medForm { border:1px solid #f0f0f0; border-radius:12px; padding:12px; margin-top:10px; background:#fff; }
+  .medForm .t { font-size:13px; font-weight:600; color:#333; margin-bottom:8px; }
+  .mcField label { width:64px; }
   .row { display:flex; padding:6px 0; border-bottom:1px solid #f6f6f6; font-size:12px; color:#666; }
   .row span:first-child { flex:0 0 86px; }
   .row span:nth-child(2) { flex:1; }
@@ -466,15 +480,27 @@
 
   function toggleMedManage(){ state.medManage=!state.medManage; render(); }
   function medManageHTML(){
+    const cards = state.medItems.map(item=>`
+      <div class="medCard">
+        <div class="mcTop">
+          <span class="mcName">${item.name}</span>
+          <span class="mcStatus ${item.status}">${item.status==='active'?'服用中':'已停用'}</span>
+        </div>
+        <div class="mcDose">${item.dosage}</div>
+        <div class="mcSlots">${item.slots.map(s=>`<span class="chip">${SLOTS.find(x=>x[0]===s)[1]}</span>`).join('')}</div>
+        <button class="mcBtn" ${item.status!=='active'?'disabled':''} onclick="stopMed('${item.id}')">${item.status==='active'?'停用':'已停用'}</button>
+      </div>`).join('');
+
     return `
       <div class="section">药物管理</div>
-      ${state.medItems.length===0?'<div class="empty">还没有药物条目</div>':state.medItems.map(item=>`
-        <div class="rec"><span>${item.name} · ${item.dosage} · ${item.slots.map(s=>SLOTS.find(x=>x[0]===s)[1]).join('/')}</span>
-        <button onclick="stopMed('${item.id}')">${item.status==='active'?'停用':'已停用'}</button></div>`).join('')}
-      <div class="field"><label>药名</label><input id="mName" placeholder="如：维生素D" /></div>
-      <div class="field"><label>剂量</label><input id="mDose" placeholder="如：1粒" /></div>
-      <div class="slotRow">${SLOTS.map(([k,l])=>`<button class="${state.draftSlots.includes(k)?'on':''}" onclick="toggleSlot('${k}')">${l}</button>`).join('')}</div>
-      <button class="btn" style="width:100%" onclick="addMed()">添加药物</button>`;
+      <div class="medGrid">${state.medItems.length?cards:'<div class="empty">还没有药物条目</div>'}</div>
+      <div class="medForm">
+        <div class="t">新增药物</div>
+        <div class="field mcField"><label>药名</label><input id="mName" placeholder="如：维生素D" /></div>
+        <div class="field mcField"><label>剂量</label><input id="mDose" placeholder="如：1粒" /></div>
+        <div class="slotRow" style="margin-left:0">${SLOTS.map(([k,l])=>`<button class="${state.draftSlots.includes(k)?'on':''}" onclick="toggleSlot('${k}')">${l}</button>`).join('')}</div>
+        <button class="btn" style="width:100%" onclick="addMed()">添加药物</button>
+      </div>`;
   }
   function takeDose(itemId,slot){
     const day=bizToday();
