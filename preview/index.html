@@ -213,7 +213,8 @@
   const $=id=>document.getElementById(id);
   function unitById(id){ return state.units.find(u=>u.id===id) ?? UNITS.find(u=>u.id===id) ?? UNITS[0]; }
   function allUnits(){ return [...UNITS, ...state.units]; }
-  function targetFor(day){ return state.goals[day] ?? vod(state.profile); }
+  // 未填写完整身体档案时，默认目标 2000 ml
+  function targetFor(day){ const saved=state.goals[day]; if(saved) return saved; const calc=vod(state.profile); return calc>0?calc:2000; }
   function displayAmount(ml, unit){ return Math.round(ml/unit.ml); }
 
   function show(name){
@@ -260,7 +261,7 @@
       <div class="notice">${state.notice||''}</div>
       <div class="ring">${ring}<div class="center"><div class="pct">${Math.round(ratio*100)}%</div><div class="lbl">今日进度</div></div></div>
       <div class="hero">${total} <small>/ ${target||'--'} ml</small></div>
-      <div class="sub">${target===0?'请先在「我的」填写身体档案':total>=target?'今日目标已达成':'还差 '+(target-total)+' ml'}</div>
+      <div class="sub">${vod(state.profile)<=0?'默认目标 2000 ml · 完善身体档案后按身高体重计算':total>=target?'今日目标已达成':'还差 '+(target-total)+' ml'}</div>
       <div class="units">${unitBtns}</div>
       ${state.unitForm?`
         <div class="field" style="margin-top:8px"><label>单位名称</label><input id="uName" maxlength="12" placeholder="如 马克杯" /></div>
@@ -452,7 +453,7 @@
 
   // ---------- 我的 ----------
   function renderMe(){
-    const p=state.profile, age=ageFrom(p.birthDate), goal=vod(p);
+    const p=state.profile, age=ageFrom(p.birthDate), goal=vod(p)||2000;
     $('checkBody').innerHTML=`
       <div class="me-head" onclick="unlockPoints()">
         <div class="avatar">${state.mode==='guest'?'游':'华'}<span class="dot">★</span></div>
