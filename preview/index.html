@@ -214,7 +214,7 @@
     const lists=[['water','喝水'],['medication','药物']].filter(([k])=>state.lists[k]);
     $('listTabs').innerHTML = lists.map(([k,l])=>`<button class="${state.list===k?'on':''}" onclick="switchList('${k}')">${l}</button>`).join('');
     if (!lists.some(([k])=>k===state.list)) state.list='water';
-    const tabs=[['today','今日'],['stats','统计']];
+    const tabs=[['today','check'],['stats','统计']];
     if (state.pointsUnlocked) tabs.push(['points','积分']);
     tabs.push(['me','我的']);
     const ICONS={ today:'💧', stats:'📈', points:'⭐', me:'👤', pet:'🐾' };
