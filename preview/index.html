@@ -470,7 +470,7 @@
         <div class="dose ${v.status==='missed'?'missed':''}">
           <div><div class="n">${v.name}<span class="slot">${SLOTS.find(s=>s[0]===v.slot)[1]}</span></div><div class="m">${v.dosage}</div></div>
           ${v.status==='taken'||v.status==='late'
-            ? `<button class="done" onclick="cancelDose('${v.doseId}')">${v.status==='late'?'补打':'已服'}</button>`
+            ? `<button class="done" onclick="cancelDose('${v.doseId}')">撤回</button>`
             : `<button onclick="takeDose('${v.itemId}','${v.slot}')">${v.status==='missed'?'补打':'打卡'}</button>`}
         </div>`).join('')}
       <div class="hint">药物清单为完成式：按条目 × 时段打卡，不做剂量累计。</div>
