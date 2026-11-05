@@ -19,8 +19,10 @@ import (
 	"ict/server/internal/domain"
 	"ict/server/internal/handler"
 	"ict/server/internal/middleware"
+	"ict/server/internal/platform/apperr"
 	"ict/server/internal/platform/logx"
 	"ict/server/internal/platform/ratelimit"
+	"ict/server/internal/port"
 	"ict/server/internal/service"
 )
 
@@ -143,8 +145,23 @@ func main() {
 		Limiter: ratelimit.New(60, time.Minute),
 	}
 
+	petStore, perr := filestore.OpenPet(cfg.DatabaseDSN+".pet.json", filestore.Options{
+		Namespace: cfg.StorageNamespace,
+		Mode:      cfg.AuthMode,
+	})
+	if perr != nil {
+		logger.Error(context.Background(), "pet storage open failed", "event", "boot_failure", "reason", perr.Error())
+		os.Exit(1)
+	}
+	petService := &service.PetService{
+		Store: petStore, Points: pointsAdapter{store: rewardStore},
+		WaterRate: waterRateAdapter{svc: checkService}, Clock: portClock{},
+		Logger: logger, Invites: petStore,
+	}
+
 	srv := &handler.Server{Deps: handler.Deps{
-		Cfg: cfg, Auth: authService, Reward: rewardService, Check: checkService, Sessions: sessions, Provider: provider,
+		Cfg: cfg, Auth: authService, Reward: rewardService, Check: checkService,
+		Pet: petService, Sessions: sessions, Provider: provider,
 		Storage: store, Log: logger, StartedAt: time.Now(),
 	}}
 
@@ -205,4 +222,66 @@ func (portClock) Now() time.Time { return time.Now().UTC() }
 
 type port_AuditSink interface {
 	Emit(event domain.AuthEvent)
+}
+
+// pointsAdapter 复用奖励域积分账户（不新建账户，不改码表语义）。
+type pointsAdapter struct {
+	store *filestore.RewardStore
+}
+
+func (a pointsAdapter) Spend(ctx context.Context, userID string, amount int, ref string) error {
+	if amount <= 0 {
+		return nil
+	}
+	err := a.store.Do(ctx, userID, func(tx *port.RewardTx) error {
+		if tx.Account.Balance < amount {
+			return apperr.NewReward(apperr.Point002, nil)
+		}
+		tx.Account.Balance -= amount
+		tx.Entries = append(tx.Entries, domain.PointsEntry{
+			EntryID: domain.NewEntryID(), UserID: userID, Type: domain.EntryRewardSpend,
+			Amount: -amount, BalanceAfter: tx.Account.Balance, OccurredAt: time.Now().UTC(),
+			RefID: ref, RuleVersion: domain.RuleVersion,
+		})
+		return nil
+	})
+	if err != nil {
+		return apperr.NewReward(apperr.Point005, err)
+	}
+	return nil
+}
+
+func (a pointsAdapter) Grant(ctx context.Context, userID string, amount int, ref string) error {
+	if amount <= 0 {
+		return nil
+	}
+	err := a.store.Do(ctx, userID, func(tx *port.RewardTx) error {
+		applied, _ := domain.ApplyCap(tx.Account.Balance, amount)
+		tx.Account.Balance += applied
+		if applied > 0 {
+			tx.Entries = append(tx.Entries, domain.PointsEntry{
+				EntryID: domain.NewEntryID(), UserID: userID, Type: domain.EntryCheckInEarn,
+				Amount: applied, BalanceAfter: tx.Account.Balance, OccurredAt: time.Now().UTC(),
+				RefID: ref, RuleVersion: domain.RuleVersion,
+			})
+		}
+		return nil
+	})
+	if err != nil {
+		return apperr.NewReward(apperr.Point005, err)
+	}
+	return nil
+}
+
+// waterRateAdapter 提供 PK 计分所需的本周喝水达成率。
+type waterRateAdapter struct {
+	svc *service.CheckService
+}
+
+func (a waterRateAdapter) WeekRate(ctx context.Context, userID string) (float64, error) {
+	stats, err := a.svc.Week(ctx, userID, "")
+	if err != nil {
+		return 0, err
+	}
+	return stats.AchievementRate, nil
 }

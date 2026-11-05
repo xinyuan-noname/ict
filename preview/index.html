@@ -113,6 +113,24 @@
       <div class="body" id="checkBody"></div>
       <div class="tabbar" id="tabbar"></div>
     </div>
+
+    <div id="pet" class="screen hidden">
+      <div class="header">
+        <button class="ghost" onclick="show('check')">‹ 返回</button>
+        <span class="brand" style="font-size:17px">宠物</span>
+        <span style="width:48px"></span>
+      </div>
+      <div class="body" id="petBody"></div>
+    </div>
+
+    <div id="friends" class="screen hidden">
+      <div class="header">
+        <button class="ghost" onclick="show('check')">‹ 返回</button>
+        <span class="brand" style="font-size:17px">好友 / PK</span>
+        <span style="width:48px"></span>
+      </div>
+      <div class="body" id="friendsBody"></div>
+    </div>
   </div>
 </div>
 
@@ -172,9 +190,11 @@
   function displayAmount(ml, unit){ return Math.round(ml/unit.ml); }
 
   function show(name){
-    ['login','check'].forEach(k=>$(k).classList.toggle('hidden',k!==name));
+    ['login','check','pet','friends'].forEach(k=>$(k).classList.toggle('hidden',k!==name));
     document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.screen===name));
     if (name==='check') render();
+    if (name==='pet') renderPet();
+    if (name==='friends') renderFriends();
   }
 
   function render(){
@@ -363,6 +383,10 @@
         <div class="avatar">${state.mode==='guest'?'游':'华'}<span class="dot">★</span></div>
         <div><div class="me-name">${state.mode==='guest'?'游客':'华为用户'}</div><div class="me-hint">点击头像解锁积分与签到 ›</div></div>
       </div>
+      <div class="actions" style="justify-content:flex-start;margin:0 0 6px">
+        <button class="btn outline" onclick="show('pet')">宠物</button>
+        <button class="btn outline" onclick="show('friends')">好友 / PK</button>
+      </div>
       <div class="section" style="margin-top:0">身体档案</div>
       <div class="field"><label>身高 (cm)</label><input id="fHeight" type="number" placeholder="请输入" value="${p.heightCm||''}" /></div>
       <div class="field"><label>体重 (kg)</label><input id="fWeight" type="number" placeholder="请输入" value="${p.weightG?Math.round(p.weightG/1000):''}" /></div>
@@ -403,6 +427,152 @@
   $('guestBtn').onclick=()=>{ state.mode='guest'; show('check'); };
   function exitToLogin(){ persist(); show('login'); }
   document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>show(t.dataset.screen));
+
+  // ---------- 宠物 / 好友 / PK ----------
+  const PET_ITEMS = [
+    { id:'item_fish', name:'小鱼干', kind:'food', price:30, satiety:20, exp:10 },
+    { id:'item_carrot', name:'胡萝卜', kind:'food', price:20, satiety:15, exp:5 },
+    { id:'item_nut', name:'坚果', kind:'food', price:25, satiety:15, exp:8 },
+    { id:'item_points', name:'加点工具', kind:'tool', price:120, points:1 },
+    { id:'item_ball', name:'毛线球', kind:'toy', price:40, mood:20, intimacy:3 },
+    { id:'item_whistle', name:'训练哨', kind:'toy', price:80, mood:10, intimacy:8 }
+  ];
+  const PET_KEY='preview.pet.v1';
+  const petState={ pet:null, inv:{}, friends:[], invites:[], pk:[] };
+  try { const raw=localStorage.getItem(PET_KEY); if(raw) Object.assign(petState, JSON.parse(raw)); } catch {}
+  function petPersist(){ try{ localStorage.setItem(PET_KEY, JSON.stringify(petState)); }catch{} }
+  let petTimer=null;
+  function spriteUrl(species,dir,frame){ return `../server/assets/pets/${species}-${dir}-${frame}.png`; }
+
+  function renderPet(){
+    if(petTimer){ clearInterval(petTimer); petTimer=null; }
+    const p=petState.pet;
+    if(!p){
+      $('petBody').innerHTML=`
+        <div class="hero" style="font-size:22px;margin-top:8px">领养一只宠物</div>
+        <div class="sub">选择品种（2.5D 像素精灵）</div>
+        <div class="grid" style="grid-template-columns:1fr 1fr 1fr">
+          ${[['cat','猫'],['dog','狗'],['parrot','鹦鹉']].map(([k,l])=>`<div class="frameCard" onclick="adoptPet('${k}')"><img class="pixel" style="width:64px;height:64px" src="${spriteUrl(k,'front',0)}" /><div class="n">${l}</div><button>领养</button></div>`).join('')}
+        </div>
+        <div class="hint">3D 建模本期降级为 2.5D 像素精灵（4 方向 × 4 帧）。</div>`;
+      return;
+    }
+    const attr=(label,val,max)=>`<div style="display:flex;align-items:center;gap:8px;margin:4px 0"><span style="width:60px;font-size:11px;color:#888">${label}</span><div style="flex:1;height:8px;background:#f2f2f2;border-radius:4px"><div style="width:${Math.min(100,val/max*100)}%;height:8px;background:#c7000b;border-radius:4px"></div></div><span style="width:42px;font-size:11px;color:#666;text-align:right">${val}/${max}</span></div>`;
+    $('petBody').innerHTML=`
+      <div style="text-align:center"><img id="petSprite" src="${spriteUrl(p.species,'front',0)}" style="width:140px;height:140px;image-rendering:pixelated" /></div>
+      <div class="hero" style="font-size:20px">${p.name} <small>Lv.${p.level}</small></div>
+      <div class="sub">${({cat:'猫',dog:'狗',parrot:'鹦鹉'})[p.species]} · 亲密度 ${p.intimacy}</div>
+      ${attr('经验',p.exp,100)}${attr('饱食度',p.satiety,100)}${attr('心情',p.mood,100)}
+      <div class="hint">可分配点：${p.points} · 力 ${p.str}/50 · 敏 ${p.agi}/50 · 智 ${p.wis}/50</div>
+      <div class="actions" style="justify-content:center">
+        <button class="btn" onclick="allocAttr('str')">加力</button>
+        <button class="btn outline" onclick="allocAttr('agi')">加敏</button>
+        <button class="btn outline" onclick="allocAttr('wis')">加智</button>
+      </div>
+      <div class="section">道具（积分 ${state.points}）</div>
+      ${PET_ITEMS.map(it=>{
+        const qty=petState.inv[it.id]||0;
+        return `<div class="rec"><span>${it.name} · ${it.price} 积分 · 库存 ${qty}</span>
+          <span><button onclick="redeemItem('${it.id}')">兑换</button> <button onclick="useItem('${it.id}')">使用</button></span></div>`;
+      }).join('')}`;
+
+    // 8 FPS 帧序列；减少动效时固定首帧
+    if(!window.matchMedia || !window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+      let frame=0;
+      petTimer=setInterval(()=>{
+        frame=(frame+1)%4;
+        const img=$('petSprite');
+        if(img) img.src=spriteUrl(p.species,'front',frame);
+      },125);
+    }
+  }
+
+  function adoptPet(species){
+    const name=prompt('给宠物起个名字（1-12 字）', species==='cat'?'咪咪':species==='dog'?'旺财':'小绿');
+    if(!name || [...name].length>12){ show('pet'); return; }
+    petState.pet={ species, name, level:1, exp:0, satiety:60, mood:60, intimacy:10, points:0, str:0, agi:0, wis:0 };
+    petPersist(); state.notice='领养成功'; renderPet();
+  }
+  function redeemItem(id){
+    const it=PET_ITEMS.find(x=>x.id===id);
+    if(state.points<it.price){ state.notice='积分不足，无法兑换（POINT_002）'; alert(state.notice); return; }
+    state.points-=it.price; petState.inv[id]=(petState.inv[id]||0)+1;
+    petState.ledgerUnused=true; state.ledger.unshift({ label:`兑换 · ${it.name}`, amount:-it.price });
+    persist(); petPersist(); renderPet();
+  }
+  function useItem(id){
+    const it=PET_ITEMS.find(x=>x.id===id); const p=petState.pet;
+    if(!p) return;
+    if((petState.inv[id]||0)<=0){ alert('道具数量不足（ITEM_002）'); return; }
+    petState.inv[id]--;
+    if(it.kind==='food'){
+      p.satiety=Math.min(100,p.satiety+it.satiety); p.exp+=it.exp;
+      while(p.exp>=100&&p.level<50){ p.exp-=100; p.level++; }
+      p.intimacy=Math.min(100,p.intimacy+1);
+    } else if(it.kind==='toy'){
+      p.mood=Math.min(100,p.mood+it.mood); p.intimacy=Math.min(100,p.intimacy+it.intimacy);
+    } else {
+      p.points=Math.min(200,p.points+(it.points||1));
+    }
+    petPersist(); renderPet();
+  }
+  function allocAttr(a){
+    const p=petState.pet; if(!p) return;
+    if(p.points<=0){ alert('没有可分配的点数（PET_005）'); return; }
+    if(p[a]>=50){ alert('该属性已达上限（PET_006）'); return; }
+    p[a]++; p.points--; petPersist(); renderPet();
+  }
+
+  function renderFriends(){
+    const rank=(p)=>Math.round((p.weekRate*60 + p.intimacy/100*40)*100)/100;
+    $('friendsBody').innerHTML=`
+      <div class="section" style="margin-top:4px">邀请好友</div>
+      <button class="btn" style="width:100%" onclick="genInvite()">生成邀请码</button>
+      ${petState.invites.map(c=>`<div class="rec"><span>邀请码 ${c}</span><span class="hint">24h 有效</span></div>`).join('')}
+      <div class="field" style="margin-top:8px"><label>输入邀请码</label><input id="inviteInput" placeholder="如 A1B2C3" maxlength="6" /></div>
+      <button class="btn outline" style="width:100%" onclick="acceptInvite()">接受邀请</button>
+
+      <div class="section">好友（${petState.friends.length}/50）</div>
+      ${petState.friends.length===0?'<div class="empty">还没有好友</div>':petState.friends.map(f=>`
+        <div class="rec"><span>${f.name} · ${f.weekRate?Math.round(f.weekRate*100)+'%':'暂无数据'}</span>
+          <button onclick="challenge('${f.id}')">发起 PK</button></div>`).join('')}
+
+      <div class="section">PK 记录</div>
+      ${petState.pk.length===0?'<div class="empty">暂无对局</div>':petState.pk.map(m=>`
+        <div class="rec"><span>${m.aName} vs ${m.bName}</span><span>${m.scoreA} : ${m.scoreB} · ${m.result==='draw'?'平局':m.result==='a'?m.aName+' 胜':m.bName+' 胜'}</span></div>`).join('')}
+      <div class="hint">PK 分数 = 本周喝水达成率 × 60 + 亲密度 × 40；每日 3 次，同好友每日 1 场。</div>`;
+  }
+  function genInvite(){
+    const alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code=''; for(let i=0;i<6;i++) code+=alphabet[Math.floor(Math.random()*alphabet.length)];
+    petState.invites=[code]; petPersist(); renderFriends();
+  }
+  function acceptInvite(){
+    const code=($('inviteInput').value||'').trim().toUpperCase();
+    if(!/^[A-Z0-9]{6}$/.test(code)){ alert('邀请码格式有误（FRIEND_001）'); return; }
+    if(petState.friends.some(f=>f.code===code)){ alert('你们已经是好友了（FRIEND_004）'); return; }
+    if(petState.friends.length>=50){ alert('好友数量已达上限（FRIEND_003）'); return; }
+    petState.friends.push({ id:'f_'+Date.now(), name:'好友 '+code.slice(-2), code, weekRate:0.6, intimacy:40 });
+    petPersist(); renderFriends();
+  }
+  function challenge(fid){
+    const f=petState.friends.find(x=>x.id===fid); if(!f) return;
+    const p=petState.pet;
+    if(!p){ alert('请先领养宠物'); return; }
+    const today=bizToday();
+    if(petState.pk.filter(m=>m.day===today).length>=3){ alert('今日 PK 次数已用完（PK_004）'); return; }
+    if(petState.pk.some(m=>m.day===today&&m.friendId===fid)){ alert('今日已与该好友 PK 过（PK_007）'); return; }
+    const myRate=state.records.length?0.6:0;
+    const scoreA=Math.round((myRate*60+p.intimacy/100*40)*100)/100;
+    const scoreB=Math.round((f.weekRate*60+f.intimacy/100*40)*100)/100;
+    let result='draw'; if(scoreA>scoreB) result='a'; else if(scoreB>scoreA) result='b';
+    else if(myRate>f.weekRate) result='a'; else if(f.weekRate>myRate) result='b';
+    petState.pk.unshift({ day:today, friendId:fid, aName:p.name, bName:f.name, scoreA, scoreB, result });
+    if(result==='a'){ state.points+=20; state.ledger.unshift({label:'PK 胜利',amount:20}); }
+    else if(result==='b'){ state.points+=5; state.ledger.unshift({label:'PK 失败',amount:5}); }
+    else { state.points+=10; state.ledger.unshift({label:'PK 平局',amount:10}); }
+    persist(); petPersist(); renderFriends();
+  }
 
   render(); show('login');
 </script>

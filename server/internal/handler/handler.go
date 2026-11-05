@@ -21,6 +21,7 @@ type Deps struct {
 	Auth      *service.AuthService
 	Reward    *service.RewardService
 	Check     *service.CheckService
+	Pet       *service.PetService
 	Sessions  *service.SessionService
 	Provider  interface{ Probe(context.Context) string }
 	Storage   interface{ Ping(context.Context) error }
@@ -72,6 +73,25 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("POST /v1/check/medication/doses", s.checkTakeDose)
 	mux.HandleFunc("DELETE /v1/check/medication/doses/{doseId}", s.checkCancelDose)
 	mux.HandleFunc("GET /v1/check/medication/week", s.checkMedWeek)
+
+	// 宠物 / 道具 / 好友 / PK。
+	mux.HandleFunc("GET /v1/pet", s.petGet)
+	mux.HandleFunc("POST /v1/pet/adopt", s.petAdopt)
+	mux.HandleFunc("PATCH /v1/pet", s.petPatch)
+	mux.HandleFunc("POST /v1/pet/feed", s.petFeed)
+	mux.HandleFunc("POST /v1/pet/play", s.petPlay)
+	mux.HandleFunc("GET /v1/items", s.itemList)
+	mux.HandleFunc("POST /v1/items/{itemId}/redeem", s.itemRedeem)
+	mux.HandleFunc("POST /v1/items/{itemId}/use", s.itemUse)
+	mux.HandleFunc("GET /v1/friends", s.friendList)
+	mux.HandleFunc("POST /v1/friends/invite", s.friendInvite)
+	mux.HandleFunc("POST /v1/friends/accept", s.friendAccept)
+	mux.HandleFunc("DELETE /v1/friends/{friendId}", s.friendDelete)
+	mux.HandleFunc("POST /v1/friends/{friendId}/block", s.friendBlock)
+	mux.HandleFunc("POST /v1/pk/challenges", s.pkChallenge)
+	mux.HandleFunc("POST /v1/pk/challenges/{pkId}/accept", s.pkAccept)
+	mux.HandleFunc("GET /v1/pk/challenges/{pkId}", s.pkGet)
+	mux.HandleFunc("GET /v1/pk/history", s.pkHistory)
 
 	// 像素头像框静态资源（开发/自托管；生产可由 CDN 覆盖）。
 	frames := http.FileServer(http.Dir("assets/frames"))

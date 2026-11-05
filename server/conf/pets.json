@@ -1,0 +1,70 @@
+{
+  "canvas": 96,
+  "grid": 24,
+  "fps": 8,
+  "species": [
+    {
+      "id": "cat",
+      "frames": [
+        "/assets/pets/cat-front-0.png",
+        "/assets/pets/cat-front-1.png",
+        "/assets/pets/cat-front-2.png",
+        "/assets/pets/cat-front-3.png",
+        "/assets/pets/cat-back-0.png",
+        "/assets/pets/cat-back-1.png",
+        "/assets/pets/cat-back-2.png",
+        "/assets/pets/cat-back-3.png",
+        "/assets/pets/cat-left-0.png",
+        "/assets/pets/cat-left-1.png",
+        "/assets/pets/cat-left-2.png",
+        "/assets/pets/cat-left-3.png",
+        "/assets/pets/cat-right-0.png",
+        "/assets/pets/cat-right-1.png",
+        "/assets/pets/cat-right-2.png",
+        "/assets/pets/cat-right-3.png"
+      ]
+    },
+    {
+      "id": "dog",
+      "frames": [
+        "/assets/pets/dog-front-0.png",
+        "/assets/pets/dog-front-1.png",
+        "/assets/pets/dog-front-2.png",
+        "/assets/pets/dog-front-3.png",
+        "/assets/pets/dog-back-0.png",
+        "/assets/pets/dog-back-1.png",
+        "/assets/pets/dog-back-2.png",
+        "/assets/pets/dog-back-3.png",
+        "/assets/pets/dog-left-0.png",
+        "/assets/pets/dog-left-1.png",
+        "/assets/pets/dog-left-2.png",
+        "/assets/pets/dog-left-3.png",
+        "/assets/pets/dog-right-0.png",
+        "/assets/pets/dog-right-1.png",
+        "/assets/pets/dog-right-2.png",
+        "/assets/pets/dog-right-3.png"
+      ]
+    },
+    {
+      "id": "parrot",
+      "frames": [
+        "/assets/pets/parrot-front-0.png",
+        "/assets/pets/parrot-front-1.png",
+        "/assets/pets/parrot-front-2.png",
+        "/assets/pets/parrot-front-3.png",
+        "/assets/pets/parrot-back-0.png",
+        "/assets/pets/parrot-back-1.png",
+        "/assets/pets/parrot-back-2.png",
+        "/assets/pets/parrot-back-3.png",
+        "/assets/pets/parrot-left-0.png",
+        "/assets/pets/parrot-left-1.png",
+        "/assets/pets/parrot-left-2.png",
+        "/assets/pets/parrot-left-3.png",
+        "/assets/pets/parrot-right-0.png",
+        "/assets/pets/parrot-right-1.png",
+        "/assets/pets/parrot-right-2.png",
+        "/assets/pets/parrot-right-3.png"
+      ]
+    }
+  ]
+}
