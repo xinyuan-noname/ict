@@ -266,7 +266,7 @@
         <div class="field" style="margin-top:8px"><label>单位名称</label><input id="uName" maxlength="12" placeholder="如 马克杯" /></div>
         <div class="field"><label>容量 (ml)</label><input id="uMl" type="number" placeholder="50-2000" /></div>
         <button class="btn" style="width:100%;margin-top:4px" onclick="addUnit()">添加单位</button>`:''}
-      <div class="sub">当前单位：${unit.name} · 约 ${displayAmount(total,unit)} ${unit.name}</div>
+      
       
       <div class="sliderBox">
         <div class="sliderTop"><span>拖动选择毫升</span><b id="mlValue">${state.lastMl||250}</b></div>
@@ -276,7 +276,7 @@
         <div class="hint" style="text-align:center">拖动后松手即记录</div>
       </div>
       <div class="section">今日记录</div>
-      ${recs.length===0?'<div class="empty">还没有记录</div>':recs.map(r=>`<div class="rec"><span>${r.ml} ml · ${r.time}</span><button onclick="removeRecord('${r.id}')">撤销</button></div>`).join('')}
+      ${recs.length===0?'<div class="empty">还没有记录</div>':recs.map(r=>`<div class="rec"><span>${r.unitName?`${r.amount} ${r.unitName} · `:''}${r.ml} ml · ${r.time}</span><button onclick="removeRecord('${r.id}')">撤销</button></div>`).join('')}
       <div class="hint">记录以 ml 记账，切换单位不会改变历史数据。</div>`;
   }
   function setUnit(id){ state.unitId=id; persist(); render(); }
@@ -285,7 +285,7 @@
     state.unitId=id;
     const unit=unitById(id);
     const today=bizToday();
-    state.records.push({ id:'wr_'+Date.now(), day:today, ml:unit.ml, time:new Date().toTimeString().slice(0,5) });
+    state.records.push({ id:'wr_'+Date.now(), day:today, ml:unit.ml, time:new Date().toTimeString().slice(0,5), unitName:unit.name, amount:1 });
     state.notice=`已记录 1 ${unit.name}（${unit.ml} ml）`;
     persist(); render();
   }
@@ -312,8 +312,8 @@
     if(!(ml>=50&&ml<=1500)) return;
     state.lastMl=ml;
     const today=bizToday();
-    state.records.push({ id:'wr_'+Date.now(), day:today, ml, time:new Date().toTimeString().slice(0,5) });
-    state.notice=`已记录 ${ml} ml`;
+    state.records.push({ id:'wr_'+Date.now(), day:today, ml, time:new Date().toTimeString().slice(0,5), unitName:'毫升', amount:ml });
+    state.notice=`已记录 ${ml} 毫升`;
     persist(); render();
   }
   function removeRecord(id){ state.records=state.records.filter(r=>r.id!==id); persist(); render(); }
