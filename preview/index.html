@@ -202,10 +202,10 @@
     const lists=[['water','喝水'],['medication','药物']].filter(([k])=>state.lists[k]);
     $('listTabs').innerHTML = lists.map(([k,l])=>`<button class="${state.list===k?'on':''}" onclick="switchList('${k}')">${l}</button>`).join('');
     if (!lists.some(([k])=>k===state.list)) state.list='water';
-    const tabs=[['today','今日'],['stats','统计']];
+    const tabs=[['today','今日'],['stats','统计'],['pet','宠物']];
     if (state.pointsUnlocked) tabs.push(['points','积分']);
     tabs.push(['me','我的']);
-    $('tabbar').innerHTML = tabs.map(([k,l])=>`<button class="${state.tab===k?'on':''}" onclick="setTab('${k}')">${l}</button>`).join('');
+    $('tabbar').innerHTML = tabs.map(([k,l])=>`<button class="${state.tab===k?'on':''}" onclick="switchTab('${k}')">${l}</button>`).join('');
     if (!tabs.some(([k])=>k===state.tab)) state.tab='today';
     if (state.tab==='today') state.list==='water'?renderWaterToday():renderMedToday();
     else if (state.tab==='stats') state.list==='water'?renderWaterStats():renderMedStats();
@@ -214,6 +214,7 @@
   }
   function switchList(k){ state.list=k; state.tab='today'; render(); }
   function setTab(t){ state.tab=t; render(); }
+  function switchTab(t){ if(t==='pet'){ show('pet'); return; } state.tab=t; render(); }
 
   // ---------- 喝水 ----------
   function renderWaterToday(){
@@ -313,7 +314,22 @@
             ? `<button class="done" onclick="cancelDose('${v.doseId}')">${v.status==='late'?'补打':'已服'}</button>`
             : `<button onclick="takeDose('${v.itemId}','${v.slot}')">${v.status==='missed'?'补打':'打卡'}</button>`}
         </div>`).join('')}
-      <div class="hint">药物清单为完成式：按条目 × 时段打卡，不做剂量累计。</div>`;
+      <div class="hint">药物清单为完成式：按条目 × 时段打卡，不做剂量累计。</div>
+      <button class="btn outline" style="width:100%;margin-top:8px" onclick="toggleMedManage()">${state.medManage?'收起药物管理':'管理药物'}</button>
+      ${state.medManage?medManageHTML():''}`;
+  }
+
+  function toggleMedManage(){ state.medManage=!state.medManage; render(); }
+  function medManageHTML(){
+    return `
+      <div class="section">药物管理</div>
+      ${state.medItems.length===0?'<div class="empty">还没有药物条目</div>':state.medItems.map(item=>`
+        <div class="rec"><span>${item.name} · ${item.dosage} · ${item.slots.map(s=>SLOTS.find(x=>x[0]===s)[1]).join('/')}</span>
+        <button onclick="stopMed('${item.id}')">${item.status==='active'?'停用':'已停用'}</button></div>`).join('')}
+      <div class="field"><label>药名</label><input id="mName" placeholder="如：维生素D" /></div>
+      <div class="field"><label>剂量</label><input id="mDose" placeholder="如：1粒" /></div>
+      <div class="slotRow">${SLOTS.map(([k,l])=>`<button class="${state.draftSlots.includes(k)?'on':''}" onclick="toggleSlot('${k}')">${l}</button>`).join('')}</div>
+      <button class="btn" style="width:100%" onclick="addMed()">添加药物</button>`;
   }
   function takeDose(itemId,slot){
     const day=bizToday();
@@ -395,15 +411,10 @@
       <div class="genders">${[['male','男'],['female','女'],['other','其他']].map(([k,l])=>`<button class="${p.gender===k?'on':''}" onclick="setGender('${k}')">${l}</button>`).join('')}</div>
       <div class="hint">${age===null?'填写出生日期后自动计算年龄':`年龄：${age} 岁`} · 目标：${goal?goal+' ml':'待填写'}（变更次日生效）</div>
       <button class="btn" style="margin-top:10px;width:100%" onclick="saveProfile()">保存档案</button>
-
-      <div class="section">药物条目</div>
-      ${state.medItems.length===0?'<div class="empty">还没有药物条目</div>':state.medItems.map(item=>`<div class="rec"><span>${item.name} · ${item.dosage}</span><button onclick="stopMed('${item.id}')">${item.status==='active'?'停用':'已停用'}</button></div>`).join('')}
-      <div class="field"><label>药名</label><input id="mName" placeholder="如：维生素D" /></div>
-      <div class="field"><label>剂量</label><input id="mDose" placeholder="如：1粒" /></div>
-      <div class="slotRow">${SLOTS.map(([k,l])=>`<button class="${state.draftSlots.includes(k)?'on':''}" onclick="toggleSlot('${k}')">${l}</button>`).join('')}</div>
-      <button class="btn" style="width:100%" onclick="addMed()">添加药物</button>
+      <div class="hint">目标仅作日常参考，不构成医学建议。</div>
       <div class="ghost" style="display:block;margin-top:10px" onclick="exitToLogin()">${state.mode==='guest'?'退出游客模式':'退出登录'}</div>`;
   }
+
   function unlockPoints(){ state.pointsUnlocked=true; state.tab='points'; state.notice='已解锁积分与签到'; render(); }
   function setGender(g){ state.profile.gender=g; render(); }
   function saveProfile(){
