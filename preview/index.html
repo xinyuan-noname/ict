@@ -252,10 +252,8 @@
     const ratio=target>0?Math.min(1,total/target):0;
     const segs=60, active=Math.round(segs*ratio);
     let ring=''; for(let i=0;i<segs;i++) ring+=`<span class="seg" style="background:${i<active?'#c7000b':'#f0dcdd'};transform:rotate(${(i/segs)*360}deg) translateY(-80px)"></span>`;
-    const UNIT_ICONS={ unit_cup:'☕', unit_bottle:'🍶', unit_ml:'💧' };
     const unitBtns = allUnits().filter(u=>u.id!=='unit_ml').map(u=>{
-      const icon = UNIT_ICONS[u.id] || '✏️';
-      return `<button onclick="logUnit('${u.id}')"><span class="ui">${icon}</span>${u.name}${u.ml>1?' '+u.ml+'ml':''}<span class="plus">+</span></button>`;
+      return `<button onclick="logUnit('${u.id}')">${u.name}${u.ml>1?' '+u.ml+'ml':''}<span class="plus">+</span></button>`;
     }).join('')
       + `<button onclick="toggleUnitForm()">+ 自定义</button>`;
     $('checkBody').innerHTML = `
