@@ -241,6 +241,9 @@
     $('identityBadge').textContent = state.mode==='guest'?'游客模式':'华为用户';
     const lists=[['water','喝水'],['medication','药物']].filter(([k])=>state.lists[k]);
     $('listTabs').innerHTML = lists.map(([k,l])=>`<button class="${state.list===k?'on':''}" onclick="switchList('${k}')">${l}</button>`).join('');
+    // 清单切换仅在有清单内容的页（check/统计）展示，避免在积分/我的页误切
+    const showLists = state.tab==='today' || state.tab==='stats';
+    $('listTabs').style.display = showLists ? 'flex' : 'none';
     if (!lists.some(([k])=>k===state.list)) state.list='water';
     const tabs=[['today','check'],['stats','统计']];
     tabs.push(['points','积分']);
@@ -253,7 +256,7 @@
     else if (state.tab==='points') renderPoints();
     else renderMe();
   }
-  function switchList(k){ state.list=k; state.tab='today'; render(); }
+  function switchList(k){ if(state.list===k) return; state.list=k; render(); }
   function setTab(t){ state.tab=t; render(); }
   function switchTab(t){ if(t==='pet'){ show('pet'); return; } state.tab=t; render(); }
 
