@@ -197,7 +197,15 @@
     points:0, streak:0, checkedDates:[], owned:['frame_pixel_cyan'], equipped:'frame_pixel_cyan', ledger:[]
   };
   try { const raw=localStorage.getItem(KEY); if (raw) Object.assign(state, JSON.parse(raw)); } catch {}
-  function persist(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+  // UI 临时状态不持久化：自定义单位、药物管理面板默认收起
+  state.unitForm=false; state.medManage=false; state.notice=''; state.tab='today'; state.list='water';
+  function persist(){
+    const data={ mode:state.mode, profile:state.profile, goals:state.goals, records:state.records,
+      unitId:state.unitId, units:state.units, lists:state.lists, medItems:state.medItems, medDoses:state.medDoses,
+      points:state.points, streak:state.streak, checkedDates:state.checkedDates, owned:state.owned,
+      equipped:state.equipped, ledger:state.ledger, lastMl:state.lastMl, pointsUnlocked:state.pointsUnlocked };
+    try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {}
+  }
 
   const $=id=>document.getElementById(id);
   function unitById(id){ return state.units.find(u=>u.id===id) ?? UNITS.find(u=>u.id===id) ?? UNITS[0]; }
