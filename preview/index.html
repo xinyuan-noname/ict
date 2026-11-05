@@ -98,6 +98,14 @@
   .slotRow button { border:1px solid #e6e6e6; background:#fff; border-radius:10px; padding:4px 8px; font-size:11px; color:#666; cursor:pointer; }
   .slotRow button.on { border-color:var(--primary); color:var(--primary); background:#fff5f5; }
   .note { position:fixed; left:16px; bottom:14px; max-width:320px; font-size:11px; color:#777; background:#fff; border-radius:8px; padding:9px 12px; box-shadow:0 4px 16px rgba(0,0,0,.08); line-height:1.6; }
+  .iconBtn { background:#fff; border:1px solid #eee; border-radius:16px; padding:7px 14px; font-size:13px; color:#555; cursor:pointer; }
+  .iconBtn:active { border-color:var(--primary); color:var(--primary); }
+  .itemGrid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; }
+  .itemCard { background:#fafafa; border-radius:10px; padding:8px 6px; text-align:center; }
+  .itemCard .n { font-size:12px; font-weight:600; color:#333; }
+  .itemCard .p { font-size:10px; color:#999; margin:2px 0 5px; }
+  .itemBtns { display:flex; gap:4px; justify-content:center; }
+  .itemBtns button { border:1px solid var(--primary); background:#fff; color:var(--primary); border-radius:10px; padding:3px 6px; font-size:10px; cursor:pointer; }
   .tabsTop { display:flex; gap:8px; justify-content:center; margin-bottom:10px; }
   .tabsTop button { background:#fff; border:1px solid #d8dde5; border-radius:16px; padding:6px 14px; font-size:12px; cursor:pointer; }
 </style>
@@ -201,7 +209,7 @@
   };
   try { const raw=localStorage.getItem(KEY); if (raw) Object.assign(state, JSON.parse(raw)); } catch {}
   // UI 临时状态不持久化：自定义单位、药物管理面板默认收起
-  state.unitForm=false; state.medManage=false; state.notice=''; state.tab='today'; state.list='water';
+  state.unitForm=false; state.medManage=false; state.petItemsOpen=false; state.notice=''; state.tab='today'; state.list='water';
   function persist(){
     const data={ mode:state.mode, profile:state.profile, goals:state.goals, records:state.records,
       unitId:state.unitId, units:state.units, lists:state.lists, medItems:state.medItems, medDoses:state.medDoses,
@@ -538,13 +546,11 @@
         <button class="btn outline" onclick="allocAttr('agi')">加敏</button>
         <button class="btn outline" onclick="allocAttr('wis')">加智</button>
       </div>
-      <div class="section">道具（积分 ${state.points}）</div>
-      ${PET_ITEMS.map(it=>{
-        const qty=petState.inv[it.id]||0;
-        return `<div class="rec"><span>${it.name} · ${it.price} 积分 · 库存 ${qty}</span>
-          <span><button onclick="redeemItem('${it.id}')">兑换</button> <button onclick="useItem('${it.id}')">使用</button></span></div>`;
-      }).join('')}
-      <button class="btn outline" style="width:100%;margin-top:12px" onclick="show('friends')">好友 / PK</button>`;
+      <div class="actions" style="justify-content:center;margin:10px 0 0">
+        <button class="iconBtn" onclick="togglePetItems()">🎒 道具</button>
+        <button class="iconBtn" onclick="show('friends')">👥 好友 / PK</button>
+      </div>
+      ${state.petItemsOpen?itemGridHTML():''}`;
 
     // 8 FPS 帧序列；减少动效时固定首帧
     if(!window.matchMedia || !window.matchMedia('(prefers-reduced-motion: reduce)').matches){
@@ -555,6 +561,22 @@
         if(img) img.src=spriteUrl(p.species,'front',frame);
       },125);
     }
+  }
+
+  function togglePetItems(){ state.petItemsOpen=!state.petItemsOpen; renderPet(); }
+  // 道具面板：3 列网格（6 个道具 → 2 行 3 列）
+  function itemGridHTML(){
+    return `<div class="itemGrid">${PET_ITEMS.map(it=>{
+      const qty=petState.inv[it.id]||0;
+      return `<div class="itemCard">
+        <div class="n">${it.name}</div>
+        <div class="p">${it.price} 分 · 库存 ${qty}</div>
+        <div class="itemBtns">
+          <button onclick="redeemItem('${it.id}')">兑换</button>
+          <button onclick="useItem('${it.id}')">使用</button>
+        </div>
+      </div>`;
+    }).join('')}</div>`;
   }
 
   function adoptPet(species){
