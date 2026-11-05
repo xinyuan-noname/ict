@@ -45,6 +45,10 @@
   .actions { display:flex; gap:8px; justify-content:center; margin:12px 0 0; }
   .actions .btn { padding:10px 22px; font-size:13px; }
   .actions .outline { background:#fff; color:var(--primary); border:1px solid var(--primary); border-radius:24px; padding:10px 22px; font-size:13px; font-weight:600; cursor:pointer; }
+  .sliderBox { margin:12px 0 4px; background:#fafafa; border-radius:14px; padding:12px; }
+  .sliderTop { display:flex; justify-content:space-between; align-items:center; font-size:12px; color:#888; margin-bottom:6px; }
+  .sliderTop b { color:var(--primary); font-size:18px; }
+  .slider { width:100%; accent-color:var(--primary); margin:4px 0 10px; cursor:pointer; }
   .section { font-size:13px; font-weight:600; color:#333; margin:16px 0 6px; }
   .empty { color:#bbb; font-size:12px; }
   .rec { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed #f2f2f2; font-size:13px; color:#555; }
@@ -254,6 +258,12 @@
         <button class="btn" ${target===0?'disabled':''} onclick="addWater(1)">+1 ${unit.name}</button>
         <button class="btn outline" ${target===0?'disabled':''} onclick="addWater(2)">+2 ${unit.name}</button>
       </div>
+      <div class="sliderBox">
+        <div class="sliderTop"><span>拖动选择毫升</span><b id="mlValue">${state.lastMl||250}</b></div>
+        <input id="mlSlider" class="slider" type="range" min="50" max="1500" step="50" value="${state.lastMl||250}"
+          oninput="document.getElementById('mlValue').textContent=this.value;document.getElementById('mlBtnValue').textContent=this.value" />
+        <button class="btn" style="width:100%" ${target===0?'disabled':''} onclick="addWaterML()">记录 <span id="mlBtnValue">${state.lastMl||250}</span> ml</button>
+      </div>
       <div class="section">今日记录</div>
       ${recs.length===0?'<div class="empty">还没有记录</div>':recs.map(r=>`<div class="rec"><span>${r.ml} ml · ${r.time}</span><button onclick="removeRecord('${r.id}')">撤销</button></div>`).join('')}
       <div class="hint">记录以 ml 记账，切换单位不会改变历史数据。</div>`;
@@ -275,6 +285,15 @@
     state.records.push({ id:'wr_'+Date.now(), day:today, ml, time:new Date().toTimeString().slice(0,5) });
     state.notice=`已记录 ${count} ${unit.name}（${ml} ml）`; persist(); render();
     setTimeout(()=>{state.notice='';},1500);
+  }
+  function addWaterML(){
+    const slider=$('mlSlider');
+    const ml=Number(slider ? slider.value : (state.lastMl||250));
+    if(!(ml>=50&&ml<=1500)) return;
+    state.lastMl=ml;
+    const today=bizToday();
+    state.records.push({ id:'wr_'+Date.now(), day:today, ml, time:new Date().toTimeString().slice(0,5) });
+    state.notice=`已记录 ${ml} ml`; persist(); render();
   }
   function removeRecord(id){ state.records=state.records.filter(r=>r.id!==id); persist(); render(); }
 
