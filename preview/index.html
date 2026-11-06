@@ -92,6 +92,13 @@
   .todayStats .ts span { font-size:10px; color:#999; }
   .taskGrid { display:grid; gap:8px; }
   .taskGroup { font-size:11px; color:#999; margin:10px 0 2px; font-weight:600; }
+  .taskEntry { display:flex; align-items:center; justify-content:space-between; width:100%; margin-top:10px; background:#fff8f8; border:1px solid #f3d9db; border-radius:14px; padding:11px 14px; cursor:pointer; }
+  .taskEntry:active { background:#fff1f0; }
+  .taskEntry .teLeft { font-size:13px; font-weight:600; color:#333; }
+  .taskEntry .teRight { font-size:11px; color:var(--primary); }
+  .taskCols { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .taskCol { display:flex; flex-direction:column; gap:8px; }
+  .taskColTitle { font-size:11px; font-weight:600; color:#999; }
   .taskCard { border:1px solid #f0f0f0; border-radius:12px; padding:10px 12px; background:#fff; }
   .tkTop { display:flex; justify-content:space-between; align-items:center; }
   .tkName { font-size:13px; font-weight:600; color:#333; }
@@ -254,7 +261,7 @@
   };
   try { const raw=localStorage.getItem(KEY); if (raw) Object.assign(state, JSON.parse(raw)); } catch {}
   // UI 临时状态不持久化：自定义单位、药物管理面板默认收起
-  state.unitForm=false; state.medManage=false; state.petItemsOpen=false; state.statsRange='week'; state.notice=''; state.tab='today'; state.list='water';
+  state.unitForm=false; state.medManage=false; state.petItemsOpen=false; state.statsRange='week'; state.tasksOpen=false; state.notice=''; state.tab='today'; state.list='water';
   function persist(){
     const data={ mode:state.mode, profile:state.profile, goals:state.goals, records:state.records,
       unitId:state.unitId, units:state.units, lists:state.lists, medItems:state.medItems, medDoses:state.medDoses,
@@ -299,11 +306,14 @@
     else if (state.tab==='stats') state.list==='water'?renderWaterStats():renderMedStats();
     else if (state.tab==='points') renderPoints();
     else renderMe();
-    // 药物管理以弹出对话框呈现
+    // 弹窗优先级：每日任务（积分页）> 药物管理（药物今日页）
     const modalRoot=$('modalRoot');
-    // 仅在药物今日页允许对话框开启
     if (!(state.tab==='today' && state.list==='medication')) state.medManage=false;
-    if(modalRoot) modalRoot.innerHTML = state.medManage ? medManageModal() : '';
+    if (!(state.tab==='points')) state.tasksOpen=false;
+    let modalHtml='';
+    if (state.tasksOpen) modalHtml=tasksModal();
+    else if (state.medManage) modalHtml=medManageModal();
+    if(modalRoot) modalRoot.innerHTML = modalHtml;
   }
   function switchList(k){ if(state.list===k) return; state.list=k; render(); }
   function setTab(t){ state.tab=t; render(); }
@@ -585,8 +595,10 @@
       <div class="hero" style="font-size:24px">${state.points} <small>积分</small></div>
       <div class="sub">连续签到 ${state.streak} 天</div>
       <button class="btn" style="width:100%;margin-top:10px" ${checked?'disabled':''} onclick="checkIn()">${checked?'今日已签到':`签到 +${gain} 积分`}</button>
-      <div class="section">每日任务</div>
-      ${tasksHTML()}
+      <button class="taskEntry" onclick="toggleTasks()">
+        <span class="teLeft">🎯 每日任务</span>
+        <span class="teRight">${claimableCount()>0?`${claimableCount()} 个可领取 ›`:'查看任务 ›'}</span>
+      </button>
       <div class="section">签到日历</div>${calendarHTML()}
       <div class="section">积分流水</div>
       ${state.ledger.length===0?'<div class="empty">暂无记录</div>':state.ledger.map(e=>`<div class="rec"><span>${e.label}</span><span style="color:${e.amount>=0?'#1a7a3c':'#c7000b'}">${e.amount>=0?'+':''}${e.amount}</span></div>`).join('')}`;
@@ -629,23 +641,39 @@
     return medStreak();
   }
   function taskKeyOf(t){ return t.metric==='today'||t.metric==='med_today' ? `${t.id}:${bizToday()}` : `${t.id}:milestone`; }
-  function tasksHTML(){
-    const card=(t)=>{
-      const progress=taskProgress(t);
-      const claimed=state.claimedTasks.includes(taskKeyOf(t));
-      const canClaim=!claimed && progress>=t.need;
-      return `<div class="taskCard">
-        <div class="tkTop"><span class="tkName">${t.name}</span><span class="tkPts">+${t.points}</span></div>
-        <div class="tkBar"><div style="width:${Math.min(100,progress/t.need*100)}%"></div></div>
-        <div class="tkMeta">进度 ${Math.min(progress,t.need)}/${t.need}${claimed?' · 已领取':''}</div>
-        <button class="tkBtn ${claimed?'claimed':''}" ${canClaim?'':'disabled'} onclick="claimTask('${t.id}')">${claimed?'已领取':canClaim?`领取 +${t.points}`:'未达成'}</button>
-      </div>`;
-    };
-    return `
-      <div class="taskGroup">喝水任务</div>
-      <div class="taskGrid">${DAILY_TASKS.filter(t=>t.domain==='water').map(card).join('')}</div>
-      <div class="taskGroup">药物任务</div>
-      <div class="taskGrid">${DAILY_TASKS.filter(t=>t.domain==='med').map(card).join('')}</div>`;
+  function taskCardHTML(t){
+    const progress=taskProgress(t);
+    const claimed=state.claimedTasks.includes(taskKeyOf(t));
+    const canClaim=!claimed && progress>=t.need;
+    return `<div class="taskCard">
+      <div class="tkTop"><span class="tkName">${t.name}</span><span class="tkPts">+${t.points}</span></div>
+      <div class="tkBar"><div style="width:${Math.min(100,progress/t.need*100)}%"></div></div>
+      <div class="tkMeta">进度 ${Math.min(progress,t.need)}/${t.need}${claimed?' · 已领取':''}</div>
+      <button class="tkBtn ${claimed?'claimed':''}" ${canClaim?'':'disabled'} onclick="claimTask('${t.id}')">${claimed?'已领取':canClaim?`领取 +${t.points}`:'未达成'}</button>
+    </div>`;
+  }
+  function claimableCount(){
+    return DAILY_TASKS.filter(t=>!state.claimedTasks.includes(taskKeyOf(t)) && taskProgress(t)>=t.need).length;
+  }
+  function toggleTasks(){ state.tasksOpen=!state.tasksOpen; render(); }
+  function tasksModal(){
+    const cols=[['water','饮水任务'],['med','服药任务']];
+    return `<div class="modalMask" onclick="if(event.target===this)toggleTasks()">
+      <div class="modal">
+        <div class="modalHead">
+          <span>每日任务</span>
+          <button class="modalClose" onclick="toggleTasks()">✕</button>
+        </div>
+        <div class="modalBody">
+          <div class="taskCols">
+            ${cols.map(([d,title])=>`<div class="taskCol">
+              <div class="taskColTitle">${title}</div>
+              ${DAILY_TASKS.filter(t=>t.domain===d).map(taskCardHTML).join('')}
+            </div>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>`;
   }
   function claimTask(id){
     const task=DAILY_TASKS.find(t=>t.id===id); if(!task) return;
