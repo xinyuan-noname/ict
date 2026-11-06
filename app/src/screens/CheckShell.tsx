@@ -350,7 +350,7 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#fff' },
+  root: { flex: 1, minHeight: 0, backgroundColor: "#fff" },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 12 },
   brand: { fontSize: 22, fontWeight: '700', color: '#c7000b', letterSpacing: 1 },
   navLevel1: { flexDirection: 'row', gap: 16, paddingHorizontal: 20, paddingTop: 8 },
@@ -364,12 +364,13 @@ const styles = StyleSheet.create({
   phTitle: { fontSize: 16, fontWeight: '600', color: '#333', marginBottom: 8 },
   phHint: { fontSize: 12, color: '#999', textAlign: 'center', lineHeight: 18 },
   badge: { fontSize: 12, color: '#888' },
-  body: { flex: 1 },
-  tabs: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#eee', paddingVertical: 6 },
+  body: { flex: 1, minHeight: 0 },
+  tabs: { flexDirection: 'row', flexShrink: 0, borderTopWidth: 1, borderTopColor: '#eee', paddingVertical: 6 },
   tab: { flex: 1, alignItems: 'center', paddingVertical: 8 },
   tabText: { fontSize: 14, color: '#999' },
   tabActive: { color: '#c7000b', fontWeight: '600' },
   scroll: { padding: 20, paddingBottom: 32 },
+  scrollView: { flex: 1, minHeight: 0 },
   banner: { marginHorizontal: 20, marginTop: 8, backgroundColor: '#fdecec', borderRadius: 8, padding: 10 },
   bannerText: { color: '#a61b1b', fontSize: 13 },
   notice: { marginHorizontal: 20, marginTop: 8, color: '#1a7a3c', fontSize: 13 },
