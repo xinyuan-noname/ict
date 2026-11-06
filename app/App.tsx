@@ -6,6 +6,8 @@ import { AppRoot } from './src/app/AppRoot';
 import { AuthProvider } from './src/auth/AuthProvider';
 import { NativeAccountKitProvider } from './src/auth/providers/nativeAccountKit';
 import { WebOAuthProvider, WindowsCapabilityProbe } from './src/auth/providers/webOAuth';
+import { WebUnsupportedProvider } from './src/auth/providers/webUnsupported';
+import { AppDialogHost } from './src/components/AppDialog';
 import type { AuthProviderStrategy, CapabilityProbe } from './src/auth/providers/types';
 import { RewardsApi } from './src/api/rewardsApi';
 import { CheckApi } from './src/api/checkApi';
@@ -32,15 +34,18 @@ export function buildAuthProvider(deps: AppDependencies = {}): AuthProvider {
     guard: deps.guard
   });
   const api = new AuthApi(client);
+  const isWeb = Platform.OS === 'web';
   const isWindows = Platform.OS === 'windows' || process.env.RN_PLATFORM === 'windows';
   const strategy =
     deps.provider ??
-    (isWindows
-      ? new WebOAuthProvider({
-          authorizeUrl: deps.authorizeUrl ?? 'https://oauth-login.cloud.huawei.com/oauth2/v3/authorize',
-          redirectUri: WINDOWS_REDIRECT_URI
-        })
-      : new NativeAccountKitProvider());
+    (isWeb
+      ? new WebUnsupportedProvider()
+      : isWindows
+        ? new WebOAuthProvider({
+            authorizeUrl: deps.authorizeUrl ?? 'https://oauth-login.cloud.huawei.com/oauth2/v3/authorize',
+            redirectUri: WINDOWS_REDIRECT_URI
+          })
+        : new NativeAccountKitProvider());
   return new AuthProvider({
     api,
     vault: new KeychainVault(),
@@ -66,6 +71,7 @@ export default function App(): React.JSX.Element {
   return (
     <SafeAreaView style={styles.root}>
       <AppRoot provider={provider} rewardsStore={rewardsStore} checkStore={checkStore} />
+      <AppDialogHost />
     </SafeAreaView>
   );
 }

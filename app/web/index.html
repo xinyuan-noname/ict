@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#c7000b" />
+  <title>check</title>
+  <style>
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: #eef0f4;
+      display: flex;
+      justify-content: center;
+      font-family: -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #root {
+      width: 100%;
+      max-width: 480px;
+      height: 100%;
+      background: #ffffff;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.10);
+      overflow: hidden;
+    }
+    @media (max-width: 480px) {
+      #root { box-shadow: none; }
+    }
+    img { image-rendering: pixelated; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+</body>
+</html>

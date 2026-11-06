@@ -65,7 +65,6 @@ export function effectivePaceThreshold(stdSec: number, p: AthleteProfile): numbe
   return Math.round((stdSec * paceScale(p)) / 5) * 5;
 }
 
-const GROUPS: AchievementDef['group'][] = ['walking', 'cycling', 'pace', 'distance', 'combo'];
 
 export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'walk_10k', group: 'walking', name: '一万步', desc: '某天步数 ≥ 10000', icon: '🔓', rule: 'single_day_steps', threshold: 10000, points: 10 },

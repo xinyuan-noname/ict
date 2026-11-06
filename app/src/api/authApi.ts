@@ -1,6 +1,6 @@
 import { ApiClient, type RawResponse } from './client';
 
-export type Platform = 'android' | 'ios' | 'windows';
+export type Platform = 'android' | 'ios' | 'windows' | 'web';
 
 export interface UserBrief {
   userId: string;

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { showDialog } from '../components/AppDialog';
 import { GUEST_COPY } from '../guest/types';
 
 export interface GuestHomeScreenProps {
@@ -11,10 +12,13 @@ export interface GuestHomeScreenProps {
 // 游客主页独立组件：结构上与认证态主页隔离，签到/积分/商城入口不渲染。
 export function GuestHomeScreen({ displayName, onUpgrade, onExit }: GuestHomeScreenProps): React.JSX.Element {
   const confirmExit = (): void => {
-    Alert.alert('退出游客模式', GUEST_COPY.confirmExit, [
-      { text: '取消', style: 'cancel' },
-      { text: '退出', style: 'destructive', onPress: onExit }
-    ]);
+    showDialog({
+      title: '退出游客模式',
+      message: GUEST_COPY.confirmExit,
+      confirmText: '退出',
+      destructive: true,
+      onConfirm: onExit
+    });
   };
 
   return (

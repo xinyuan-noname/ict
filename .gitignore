@@ -34,3 +34,4 @@ keystore.properties
 app/ios/**/agconnect-services.plist
 records/*.secret.md
 .dev/
+app/dist/

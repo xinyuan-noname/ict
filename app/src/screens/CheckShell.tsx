@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { showDialog } from '../components/AppDialog';
 import type { CheckSnapshot, CheckStore } from '../check/checkStore';
 import { DEFAULT_CUP_ML, ageFromBirthDate, businessToday, formatML, type Gender } from '../model/waterGoal';
 
@@ -210,7 +211,7 @@ function ProfileView({
 
   const save = async (): Promise<void> => {
     if (!height || !weight || !birthDate || !gender || age === null) {
-      Alert.alert('请完善档案', '身高、体重、出生日期与性别都需要填写');
+      showDialog({ title: '请完善档案', message: '身高、体重、出生日期与性别都需要填写' });
       return;
     }
     await store.saveProfile({
@@ -259,10 +260,13 @@ function ProfileView({
         <Pressable
           style={styles.ghost}
           onPress={() => {
-            Alert.alert(isGuest ? '退出游客模式' : '退出登录', '确定退出？', [
-              { text: '取消', style: 'cancel' },
-              { text: '退出', style: 'destructive', onPress: onExit }
-            ]);
+            showDialog({
+              title: isGuest ? '退出游客模式' : '退出登录',
+              message: '确定退出？',
+              confirmText: '退出',
+              destructive: true,
+              onConfirm: onExit
+            });
           }}
         >
           <Text style={styles.ghostText}>{isGuest ? '退出游客模式' : '退出登录'}</Text>
