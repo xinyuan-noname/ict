@@ -26,7 +26,19 @@
   .banner p { margin:0; color:var(--danger); font-size:12px; }
   .header { display:flex; align-items:center; justify-content:space-between; padding:6px 18px 2px; }
   .badge { font-size:11px; color:#999; border:1px solid #eee; border-radius:10px; padding:2px 8px; }
-  .listTabs { display:flex; align-items:baseline; gap:12px; padding:8px 18px 2px; }
+  .listTabs { display:flex; flex-direction:column; gap:2px; padding:8px 18px 2px; }
+  .navLevel1 { display:flex; gap:16px; align-items:baseline; }
+  .navLevel1 .l1 { border:none; background:none; font-size:19px; font-weight:700; color:#c6c6c6; padding:0; cursor:pointer; }
+  .navLevel1 .l1.on { color:#222; }
+  .progress { height:8px; background:#f2f2f2; border-radius:4px; margin:10px 0 0; overflow:hidden; }
+  .progress div { height:8px; background:var(--primary); border-radius:4px; }
+  .enActions { display:flex; gap:8px; margin-top:12px; }
+  .enActions button { flex:1; border:1px solid var(--primary); background:#fff; color:var(--primary); border-radius:14px; padding:8px 0; font-size:12px; font-weight:600; cursor:pointer; }
+  .enBars { display:flex; align-items:flex-end; justify-content:space-between; height:110px; margin-top:6px; }
+  .enBar { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; }
+  .enBar .ev { font-size:9px; color:#aaa; height:12px; }
+  .enBar .eb { width:16px; background:var(--primary); border-radius:3px; }
+  .enBar .ed { font-size:9px; color:#aaa; margin-top:3px; }
   .navL1 { font-size:19px; font-weight:700; color:#222; letter-spacing:.5px; }
   .navL2 { display:flex; gap:14px; }
   .navL2 button { border:none; background:none; font-size:13px; color:#9a9a9a; padding:2px 0 4px; cursor:pointer; position:relative; }
@@ -277,7 +289,8 @@
 
   const KEY='preview.check.v3';
   const state = {
-    mode:'account', list:'water', tab:'today', notice:'', pointsUnlocked:false,
+    mode:'account', category:'health', list:'water', tab:'today', notice:'', pointsUnlocked:false,
+    learn:{ dailyTarget:20, wordsByDay:{}, claimed:[] },
     profile:{ heightCm:0, weightG:0, birthDate:'', gender:'' },
     goals:{}, records:[], unitId:'unit_ml',
     units:[], lists:{ water:true, medication:true, sport:true }, sportRecords:[], sportOpen:{ walking:true },
@@ -291,7 +304,7 @@
     const data={ mode:state.mode, profile:state.profile, goals:state.goals, records:state.records,
       unitId:state.unitId, units:state.units, lists:state.lists, medItems:state.medItems, medDoses:state.medDoses,
       points:state.points, streak:state.streak, checkedDates:state.checkedDates, owned:state.owned,
-      equipped:state.equipped, ledger:state.ledger, lastMl:state.lastMl, pointsUnlocked:state.pointsUnlocked, claimedTasks:state.claimedTasks, sportRecords:state.sportRecords };
+      equipped:state.equipped, ledger:state.ledger, lastMl:state.lastMl, pointsUnlocked:state.pointsUnlocked, claimedTasks:state.claimedTasks, sportRecords:state.sportRecords, learn:state.learn };
     try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {}
   }
 
@@ -310,18 +323,23 @@
     if (name==='friends') renderFriends();
   }
 
+  const CATEGORIES={
+    health:{ name:'健康', lists:[['water','饮水'],['medication','服药'],['sport','运动']] },
+    learning:{ name:'学习', lists:[['english','英语']] }
+  };
   function render(){
     $('identityBadge').textContent = state.mode==='guest'?'游客模式':'华为用户';
-    const lists=[['water','饮水'],['medication','服药'],['sport','运动']].filter(([k])=>state.lists[k]);
-    const LIST_NAMES={ water:'饮水', medication:'服药', sport:'运动' };
-    $('listTabs').innerHTML = `
-      <span class="navL1">健康</span>
-      <div class="navL2">${lists.map(([k])=>`<button class="${state.list===k?'on':''}" onclick="switchList('${k}')">${LIST_NAMES[k]}</button>`).join('')}</div>`;
-    // 清单切换仅在有清单内容的页（check/统计）展示，避免在积分/我的页误切
+    if(!CATEGORIES[state.category]) state.category='health';
+    const cat=CATEGORIES[state.category];
+    const lists=cat.lists.filter(([k])=>state.lists[k]!==false);
+    if (!lists.some(([k])=>k===state.list)) state.list=lists[0][0];
+    const LIST_NAMES={ water:'饮水', medication:'服药', sport:'运动', english:'英语' };
     const showLists = state.tab==='today' || state.tab==='stats';
-    $('listTabs').style.display = showLists ? 'flex' : 'none';
-    if (!lists.some(([k])=>k===state.list)) state.list='water';
-    const tabs=[['today','check'],['stats', state.list==='sport'?'成就':'统计']];
+    $('listTabs').innerHTML = `
+      <div class="navLevel1">${Object.entries(CATEGORIES).map(([k,c])=>`<button class="l1 ${state.category===k?'on':''}" onclick="switchCategory('${k}')">${c.name}</button>`).join('')}</div>
+      ${showLists?`<div class="navL2">${lists.map(([k])=>`<button class="${state.list===k?'on':''}" onclick="switchList('${k}')">${LIST_NAMES[k]}</button>`).join('')}</div>`:''}`;
+    $('listTabs').style.display = 'flex';
+    const tabs=[['today','check'],['stats', (state.list==='sport'||state.list==='english')?'成就':'统计']];
     tabs.push(['points','积分']);
     tabs.push(['me','我的']);
     const ICONS={ today:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>', stats:'📈', points:'⭐', me:'👤', pet:'🐾' };
@@ -330,10 +348,12 @@
     if (state.tab==='today') {
       if(state.list==='sport') renderSportToday();
       else if(state.list==='medication') renderMedToday();
+      else if(state.list==='english') renderEnglishToday();
       else renderWaterToday();
     }
     else if (state.tab==='stats') {
       if(state.list==='sport') renderSportAchievements();
+      else if(state.list==='english') renderEnglishAchievements();
       else if(state.list==='medication') renderMedStats();
       else renderWaterStats();
     }
@@ -1117,6 +1137,103 @@
             </div>`).join('')}</div>`:''}
         </div>`;
       }).join('')}`;
+  }
+
+  // ---------- 学习 · 英语 ----------
+  function switchCategory(k){ state.category=k; state.list=CATEGORIES[k].lists[0][0]; state.tab='today'; render(); }
+
+  const ENGLISH_ACHIEVEMENTS=[
+    {id:'en_daily',n:'今日达标',d:'单日完成每日目标',icon:'🔓',rule:'daily',need:1,p:20},
+    {id:'en_streak3',n:'连学 3 天',d:'连续 3 天完成目标',icon:'🏅',rule:'streak',need:3,p:30},
+    {id:'en_streak7',n:'连学 7 天',d:'连续 7 天完成目标',icon:'🏅',rule:'streak',need:7,p:60},
+    {id:'en_50',n:'单日 50 词',d:'某天背词 ≥ 50',icon:'🔓',rule:'single',need:50,p:40},
+    {id:'en_100',n:'累计 100 词',d:'累计背词 ≥ 100',icon:'🏅',rule:'total',need:100,p:50},
+    {id:'en_500',n:'累计 500 词',d:'累计背词 ≥ 500',icon:'🏅',rule:'total',need:500,p:80},
+    {id:'en_1000',n:'累计 1000 词',d:'累计背词 ≥ 1000',icon:'👑',rule:'total',need:1000,p:120},
+    {id:'en_5000',n:'累计 5000 词',d:'累计背词 ≥ 5000',icon:'👑',rule:'total',need:5000,p:100}
+  ];
+  function enTarget(){ return state.learn.dailyTarget||20; }
+  function enTodayWords(){ return state.learn.wordsByDay[bizToday()]||0; }
+  function enTotal(){ return Object.values(state.learn.wordsByDay||{}).reduce((s,v)=>s+(Number(v)||0),0); }
+  function englishStreak(){
+    let n=0, day=bizToday();
+    for(let i=0;i<365;i++){
+      if((state.learn.wordsByDay[day]||0)>=enTarget()) n++;
+      else break;
+      day=addDays(day,-1);
+    }
+    return n;
+  }
+  function enEval(a){
+    const today=enTodayWords(), total=enTotal(), st=englishStreak();
+    if(a.rule==='daily') return { unlocked: today>=enTarget(), days: today>=enTarget()?[bizToday()]:[], progress: today>=enTarget()?1:0, need:1 };
+    if(a.rule==='streak') return { unlocked: st>=a.need, days: [], progress: st, need: a.need };
+    if(a.rule==='single'){
+      const best=Math.max(0,...Object.values(state.learn.wordsByDay||{}).map(v=>Number(v)||0));
+      return { unlocked: best>=a.need, days: [], progress: best, need: a.need };
+    }
+    return { unlocked: total>=a.need, days: [], progress: total, need: a.need };
+  }
+  function addEnglish(n){
+    const v=Math.round(Number(n));
+    if(!(v>0&&v<=500)){ alert('请输入 1–500 之间的词数（LEARN_001）'); return; }
+    const day=bizToday();
+    state.learn.wordsByDay[day]=(state.learn.wordsByDay[day]||0)+v;
+    persist(); render();
+  }
+  function setEnTarget(v){
+    const t=Math.round(Number(v));
+    if(!(t>=1&&t<=500)){ alert('每日目标需在 1–500 之间（LEARN_001）'); return; }
+    state.learn.dailyTarget=t; persist(); render();
+  }
+
+  function renderEnglishToday(){
+    const todayWords=enTodayWords(), target=enTarget(), st=englishStreak();
+    const ratio=Math.min(1,todayWords/target);
+    const days=Array.from({length:7},(_,i)=>{
+      const day=addDays(bizToday(),-(6-i));
+      return { day, words: state.learn.wordsByDay[day]||0 };
+    });
+    $('checkBody').innerHTML=`
+      <div class="hero">${todayWords} <small>/ ${target} 词</small></div>
+      <div class="sub">${todayWords>=target?'今日目标已达成':'还差 '+(target-todayWords)+' 词'} · 连续 ${st} 天</div>
+      <div class="progress"><div style="width:${Math.round(ratio*100)}%"></div></div>
+      <div class="enActions">
+        <button onclick="addEnglish(5)">+5 词</button>
+        <button onclick="addEnglish(10)">+10 词</button>
+        <button onclick="addEnglish(20)">+20 词</button>
+      </div>
+      <div class="field" style="margin-top:10px">
+        <label>自定义</label>
+        <input id="enWords" type="number" placeholder="1-500" />
+        <button class="btn" style="padding:8px 14px;margin-left:6px" onclick="addEnglish(document.getElementById('enWords').value)">确认</button>
+      </div>
+      <div class="section">近 7 天</div>
+      <div class="enBars">${days.map(d=>`<div class="enBar"><span class="ev">${d.words||''}</span><div class="eb" style="height:${Math.max(3,Math.round(Math.min(1,d.words/Math.max(target,1))*70))}px"></div><span class="ed">${d.day.slice(5)}</span></div>`).join('')}</div>
+      <div class="section">学习目标</div>
+      <div class="field"><label>每日目标</label><input id="enTarget" type="number" value="${target}" onchange="setEnTarget(this.value)" /></div>
+      <div class="hint">通用模板：定量式清单，单位「词」，默认 20 词/日，可调 1–500。</div>`;
+  }
+
+  function renderEnglishAchievements(){
+    const states=ENGLISH_ACHIEVEMENTS.map(a=>({a,s:enEval(a)}));
+    const unlocked=states.filter(x=>x.s.unlocked).length;
+    $('checkBody').innerHTML=`
+      <div class="stats">
+        <div class="stat"><b>${enTotal()}</b><span>累计词数</span></div>
+        <div class="stat"><b>${englishStreak()}</b><span>连续天数</span></div>
+        <div class="stat"><b>${enTodayWords()}</b><span>今日词数</span></div>
+      </div>
+      <div class="sub" style="margin-top:8px">已解锁 ${unlocked}/${ENGLISH_ACHIEVEMENTS.length} · 共 ${ENGLISH_ACHIEVEMENTS.reduce((s,a)=>s+a.p,0)} 积分</div>
+      <div class="achGroup" style="margin-top:10px">
+        <div class="agHead"><span>📚 英语成就</span><span class="agCount">${unlocked}/${ENGLISH_ACHIEVEMENTS.length}</span></div>
+        <div class="agBody">${states.map(({a,s})=>`
+          <div class="achItem ${s.unlocked?'on':''}">
+            <div class="aiTop"><span class="aiIcon">${s.unlocked?a.icon:'🔒'}</span><span class="aiName">${a.n}</span><span class="aiPts">+${a.p}</span></div>
+            <div class="aiDesc">${a.d}</div>
+            ${!s.unlocked&&s.need>1?`<div class="aiProg">进度 ${Math.min(s.progress,s.need)}/${s.need}</div>`:''}
+          </div>`).join('')}</div>
+      </div>`;
   }
 
   render(); show('login');
