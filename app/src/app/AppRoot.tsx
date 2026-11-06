@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, Text, View } from 'react-native';
 import type { AuthProvider, AuthSnapshot } from '../auth/AuthProvider';
 import type { CheckStore } from '../check/checkStore';
 import type { RewardsStore } from '../rewards/rewardsStore';
@@ -101,6 +101,8 @@ export function AppRoot({ provider, rewardsStore, checkStore }: AppRootProps): R
         if (busy) return;
         void provider.enterGuest();
       }}
+      loginDisabled={Platform.OS === 'web'}
+      loginHint="网页版暂不支持华为账号登录，请使用「游客进入预览」"
     />
   );
 }

@@ -5,6 +5,20 @@ import type { CheckSnapshot, CheckStore } from '../check/checkStore';
 import { DEFAULT_CUP_ML, ageFromBirthDate, businessToday, formatML, type Gender } from '../model/waterGoal';
 
 type Tab = 'today' | 'stats' | 'profile';
+type Category = 'health' | 'learning';
+type ListKey = 'water' | 'medication' | 'sport' | 'english';
+
+const CATEGORIES: Record<Category, { name: string; lists: [ListKey, string][] }> = {
+  health: { name: '健康', lists: [['water', '饮水'], ['medication', '服药'], ['sport', '运动']] },
+  learning: { name: '学习', lists: [['english', '英语']] }
+};
+
+const LIST_NAMES: Record<ListKey, string> = {
+  water: '饮水',
+  medication: '服药',
+  sport: '运动',
+  english: '英语'
+};
 
 export interface CheckShellProps {
   store: CheckStore;
@@ -18,6 +32,15 @@ export interface CheckShellProps {
 export function CheckShell({ store, isGuest, displayName, onUpgrade, onExit, onOpenRewards }: CheckShellProps): React.JSX.Element {
   const [snapshot, setSnapshot] = useState<CheckSnapshot>(store.getSnapshot());
   const [tab, setTab] = useState<Tab>('today');
+  const [category, setCategory] = useState<Category>('health');
+  const [list, setList] = useState<ListKey>('water');
+
+  const switchCategory = (next: Category): void => {
+    setCategory(next);
+    setList(CATEGORIES[next].lists[0]?.[0] ?? 'water');
+    setTab('today');
+  };
+  const showLists = tab === 'today' || tab === 'stats';
 
   useEffect(() => {
     const unsubscribe = store.subscribe(setSnapshot);
@@ -34,6 +57,23 @@ export function CheckShell({ store, isGuest, displayName, onUpgrade, onExit, onO
         <Text style={styles.badge}>{isGuest ? '游客模式' : displayName}</Text>
       </View>
 
+      <View style={styles.navLevel1}>
+        {(Object.keys(CATEGORIES) as Category[]).map((key) => (
+          <Pressable key={key} accessibilityRole="button" onPress={() => switchCategory(key)}>
+            <Text style={[styles.navL1, category === key && styles.navL1Active]}>{CATEGORIES[key].name}</Text>
+          </Pressable>
+        ))}
+      </View>
+      {showLists ? (
+        <View style={styles.navL2}>
+          {CATEGORIES[category].lists.map(([key, label]) => (
+            <Pressable key={key} accessibilityRole="button" onPress={() => setList(key)}>
+              <Text style={[styles.navL2Text, list === key && styles.navL2Active]}>{label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+
       {snapshot.errorMessage ? (
         <View style={styles.banner}>
           <Text style={styles.bannerText}>{snapshot.errorMessage}</Text>
@@ -42,8 +82,14 @@ export function CheckShell({ store, isGuest, displayName, onUpgrade, onExit, onO
       {snapshot.notice ? <Text style={styles.notice}>{snapshot.notice}</Text> : null}
 
       <View style={styles.body}>
-        {tab === 'today' ? <TodayView snapshot={snapshot} ratio={ratio} store={store} /> : null}
-        {tab === 'stats' ? <StatsView snapshot={snapshot} /> : null}
+        {list === 'water' ? (
+          <>
+            {tab === 'today' ? <TodayView snapshot={snapshot} ratio={ratio} store={store} /> : null}
+            {tab === 'stats' ? <StatsView snapshot={snapshot} /> : null}
+          </>
+        ) : tab !== 'profile' ? (
+          <PlaceholderView listName={LIST_NAMES[list]} tab={tab} />
+        ) : null}
         {tab === 'profile' ? (
           <ProfileView
             snapshot={snapshot}
@@ -58,8 +104,8 @@ export function CheckShell({ store, isGuest, displayName, onUpgrade, onExit, onO
 
       <View style={styles.tabs}>
         {([
-          ['today', '今日'],
-          ['stats', '统计'],
+          ['today', 'check'],
+          ['stats', list === 'sport' || list === 'english' ? '成就' : '统计'],
           ['profile', '我的']
         ] as [Tab, string][]).map(([key, label]) => (
           <Pressable key={key} accessibilityRole="button" onPress={() => setTab(key)} style={styles.tab}>
@@ -67,6 +113,18 @@ export function CheckShell({ store, isGuest, displayName, onUpgrade, onExit, onO
           </Pressable>
         ))}
       </View>
+    </View>
+  );
+}
+
+function PlaceholderView({ listName, tab }: { listName: string; tab: Tab }): React.JSX.Element {
+  return (
+    <View style={styles.placeholder}>
+      <Text style={styles.phIcon}>{tab === 'today' ? '📝' : '🏆'}</Text>
+      <Text style={styles.phTitle}>
+        {listName} · {tab === 'today' ? '记录' : '统计与成就'}
+      </Text>
+      <Text style={styles.phHint}>该清单的完整交互已在设计预览中上线；当前 RN 版本正在补齐这一页面。</Text>
     </View>
   );
 }
@@ -295,6 +353,16 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#fff' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 12 },
   brand: { fontSize: 22, fontWeight: '700', color: '#c7000b', letterSpacing: 1 },
+  navLevel1: { flexDirection: 'row', gap: 16, paddingHorizontal: 20, paddingTop: 8 },
+  navL1: { fontSize: 19, fontWeight: '700', color: '#c6c6c6' },
+  navL1Active: { color: '#222' },
+  navL2: { flexDirection: 'row', gap: 14, paddingHorizontal: 20, paddingTop: 2 },
+  navL2Text: { fontSize: 13, color: '#9a9a9a', paddingVertical: 4 },
+  navL2Active: { color: '#c7000b', fontWeight: '600' },
+  placeholder: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
+  phIcon: { fontSize: 28, marginBottom: 10 },
+  phTitle: { fontSize: 16, fontWeight: '600', color: '#333', marginBottom: 8 },
+  phHint: { fontSize: 12, color: '#999', textAlign: 'center', lineHeight: 18 },
   badge: { fontSize: 12, color: '#888' },
   body: { flex: 1 },
   tabs: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#eee', paddingVertical: 6 },
