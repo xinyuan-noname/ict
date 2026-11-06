@@ -97,6 +97,10 @@
   .taskEntry .teLeft { font-size:13px; font-weight:600; color:#333; }
   .taskEntry .teRight { font-size:11px; color:var(--primary); }
   .taskCols { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .modalNav { display:flex; gap:16px; margin-bottom:12px; border-bottom:1px solid #f2f2f2; }
+  .modalNav button { border:none; background:none; font-size:13px; color:#9a9a9a; padding:2px 0 8px; cursor:pointer; position:relative; }
+  .modalNav button.on { color:var(--primary); font-weight:600; }
+  .modalNav button.on::after { content:''; position:absolute; left:0; right:0; bottom:-1px; height:2px; background:var(--primary); border-radius:2px; }
   .taskCol { display:flex; flex-direction:column; gap:8px; }
   .taskColTitle { font-size:11px; font-weight:600; color:#999; }
   .taskCard { border:1px solid #f0f0f0; border-radius:12px; padding:10px 12px; background:#fff; }
@@ -261,7 +265,7 @@
   };
   try { const raw=localStorage.getItem(KEY); if (raw) Object.assign(state, JSON.parse(raw)); } catch {}
   // UI 临时状态不持久化：自定义单位、药物管理面板默认收起
-  state.unitForm=false; state.medManage=false; state.petItemsOpen=false; state.statsRange='week'; state.tasksOpen=false; state.notice=''; state.tab='today'; state.list='water';
+  state.unitForm=false; state.medManage=false; state.petItemsOpen=false; state.statsRange='week'; state.tasksOpen=false; state.taskTab='water'; state.notice=''; state.tab='today'; state.list='water';
   function persist(){
     const data={ mode:state.mode, profile:state.profile, goals:state.goals, records:state.records,
       unitId:state.unitId, units:state.units, lists:state.lists, medItems:state.medItems, medDoses:state.medDoses,
@@ -657,7 +661,7 @@
   }
   function toggleTasks(){ state.tasksOpen=!state.tasksOpen; render(); }
   function tasksModal(){
-    const cols=[['water','饮水任务'],['med','服药任务']];
+    const tab=state.taskTab||'water';
     return `<div class="modalMask" onclick="if(event.target===this)toggleTasks()">
       <div class="modal">
         <div class="modalHead">
@@ -665,16 +669,16 @@
           <button class="modalClose" onclick="toggleTasks()">✕</button>
         </div>
         <div class="modalBody">
-          <div class="taskCols">
-            ${cols.map(([d,title])=>`<div class="taskCol">
-              <div class="taskColTitle">${title}</div>
-              ${DAILY_TASKS.filter(t=>t.domain===d).map(taskCardHTML).join('')}
-            </div>`).join('')}
+          <div class="modalNav">
+            <button class="${tab==='water'?'on':''}" onclick="setTaskTab('water')">饮水</button>
+            <button class="${tab==='med'?'on':''}" onclick="setTaskTab('med')">服药</button>
           </div>
+          <div class="taskGrid">${DAILY_TASKS.filter(t=>t.domain===tab).map(taskCardHTML).join('')}</div>
         </div>
       </div>
     </div>`;
   }
+  function setTaskTab(t){ state.taskTab=t; render(); }
   function claimTask(id){
     const task=DAILY_TASKS.find(t=>t.id===id); if(!task) return;
     const key=taskKeyOf(task);
