@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "namespace": "sport",
+  "note": "运动与成就域独立码表；禁止 AUTH_015+，既有 AUTH/POINT/REWARD/CHECK 码语义不变。",
+  "codes": [
+    { "code": "SPORT_001", "httpStatus": 400, "meaning": "参数非法", "userMessage": "运动记录信息有误，请检查", "retryable": false },
+    { "code": "SPORT_002", "httpStatus": 404, "meaning": "记录不存在", "userMessage": "运动记录不存在", "retryable": false },
+    { "code": "SPORT_003", "httpStatus": 409, "meaning": "重复提交", "userMessage": "请勿重复提交", "retryable": false },
+    { "code": "SPORT_004", "httpStatus": 422, "meaning": "数值超出范围", "userMessage": "距离、时长或步数超出合理范围", "retryable": false },
+    { "code": "SPORT_005", "httpStatus": 403, "meaning": "档案信息不足", "userMessage": "请先完善身体档案", "retryable": false },
+    { "code": "SPORT_006", "httpStatus": 429, "meaning": "请求过于频繁", "userMessage": "操作过于频繁，请稍后再试", "retryable": true },
+    { "code": "SPORT_007", "httpStatus": 503, "meaning": "服务不可用", "userMessage": "运动服务暂时不可用，请稍后重试", "retryable": true },
+    { "code": "SPORT_008", "httpStatus": 500, "meaning": "成就评估失败", "userMessage": "成就评估失败，请稍后重试", "retryable": true },
+    { "code": "SPORT_009", "httpStatus": 409, "meaning": "成就已解锁", "userMessage": "该成就已解锁", "retryable": false },
+    { "code": "SPORT_010", "httpStatus": 400, "meaning": "日期非法", "userMessage": "日期格式有误", "retryable": false },
+    { "code": "SPORT_011", "httpStatus": 403, "meaning": "游客不可用", "userMessage": "游客模式暂不支持该功能", "retryable": false },
+    { "code": "SPORT_012", "httpStatus": 500, "meaning": "积分发放失败", "userMessage": "成就积分发放失败，稍后将补发", "retryable": true }
+  ]
+}

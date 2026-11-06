@@ -152,6 +152,27 @@
   .slotRow button { border:1px solid #e6e6e6; background:#fff; border-radius:10px; padding:4px 8px; font-size:11px; color:#666; cursor:pointer; }
   .slotRow button.on { border-color:var(--primary); color:var(--primary); background:#fff5f5; }
   .note { position:fixed; left:16px; bottom:14px; max-width:320px; font-size:11px; color:#777; background:#fff; border-radius:8px; padding:9px 12px; box-shadow:0 4px 16px rgba(0,0,0,.08); line-height:1.6; }
+  .sportForm { border:1px solid #f0f0f0; border-radius:12px; padding:12px; background:#fff; }
+  .sportSelect { flex:1; border:1px solid #e6e6e6; border-radius:8px; padding:8px 10px; font-size:13px; background:#fff; }
+  .paceCard { border:1px solid #f3d9db; background:#fff8f8; border-radius:14px; padding:12px 14px; }
+  .pcTitle { font-size:12px; font-weight:600; color:#a61b1b; margin-bottom:6px; }
+  .pcRow { display:flex; justify-content:space-between; font-size:12px; color:#777; padding:3px 0; }
+  .pcRow b { color:var(--primary); font-size:14px; }
+  .pcTags { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; }
+  .pcTags span { font-size:10px; color:#a61b1b; background:#fff; border:1px solid #f3d9db; border-radius:8px; padding:1px 6px; }
+  .achGroup { border:1px solid #f0f0f0; border-radius:12px; margin-top:8px; overflow:hidden; }
+  .agHead { display:flex; justify-content:space-between; align-items:center; padding:11px 12px; background:#fafafa; cursor:pointer; font-size:13px; font-weight:600; color:#333; }
+  .agCount { font-size:11px; color:#999; font-weight:400; }
+  .agBody { padding:4px 10px 8px; }
+  .achItem { border-bottom:1px dashed #f4f4f4; padding:8px 0; opacity:.62; }
+  .achItem.on { opacity:1; }
+  .aiTop { display:flex; align-items:center; gap:6px; }
+  .aiIcon { font-size:13px; }
+  .aiName { flex:1; font-size:13px; font-weight:600; color:#333; }
+  .aiPts { font-size:11px; color:var(--primary); }
+  .aiDesc { font-size:11px; color:#999; margin:3px 0 0 19px; }
+  .aiDays { font-size:10px; color:#1a7a3c; margin:3px 0 0 19px; }
+  .aiProg { font-size:10px; color:#bbb; margin:3px 0 0 19px; }
   .iconBtn { background:#fff; border:1px solid #eee; border-radius:16px; padding:7px 14px; font-size:13px; color:#555; cursor:pointer; }
   .iconBtn:active { border-color:var(--primary); color:var(--primary); }
   .itemGrid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; }
@@ -259,18 +280,18 @@
     mode:'account', list:'water', tab:'today', notice:'', pointsUnlocked:false,
     profile:{ heightCm:0, weightG:0, birthDate:'', gender:'' },
     goals:{}, records:[], unitId:'unit_ml',
-    units:[], lists:{ water:true, medication:true },
+    units:[], lists:{ water:true, medication:true, sport:true }, sportRecords:[], sportOpen:{ walking:true },
     medItems:[], medDoses:[], draftSlots:['morning','noon'],
     points:0, streak:0, checkedDates:[], owned:['frame_pixel_cyan'], equipped:'frame_pixel_cyan', ledger:[], claimedTasks:[]
   };
   try { const raw=localStorage.getItem(KEY); if (raw) Object.assign(state, JSON.parse(raw)); } catch {}
   // UI 临时状态不持久化：自定义单位、药物管理面板默认收起
-  state.unitForm=false; state.medManage=false; state.petItemsOpen=false; state.statsRange='week'; state.tasksOpen=false; state.taskTab='water'; state.notice=''; state.tab='today'; state.list='water';
+  state.unitForm=false; state.medManage=false; state.petItemsOpen=false; state.statsRange='week'; state.tasksOpen=false; state.taskTab='water'; state.sportOpen={walking:true}; if(state.lists && state.lists.sport===undefined) state.lists.sport=true; state.notice=''; state.tab='today'; state.list='water';
   function persist(){
     const data={ mode:state.mode, profile:state.profile, goals:state.goals, records:state.records,
       unitId:state.unitId, units:state.units, lists:state.lists, medItems:state.medItems, medDoses:state.medDoses,
       points:state.points, streak:state.streak, checkedDates:state.checkedDates, owned:state.owned,
-      equipped:state.equipped, ledger:state.ledger, lastMl:state.lastMl, pointsUnlocked:state.pointsUnlocked, claimedTasks:state.claimedTasks };
+      equipped:state.equipped, ledger:state.ledger, lastMl:state.lastMl, pointsUnlocked:state.pointsUnlocked, claimedTasks:state.claimedTasks, sportRecords:state.sportRecords };
     try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {}
   }
 
@@ -291,8 +312,8 @@
 
   function render(){
     $('identityBadge').textContent = state.mode==='guest'?'游客模式':'华为用户';
-    const lists=[['water','喝水'],['medication','药物']].filter(([k])=>state.lists[k]);
-    const LIST_NAMES={ water:'饮水', medication:'服药' };
+    const lists=[['water','饮水'],['medication','服药'],['sport','运动']].filter(([k])=>state.lists[k]);
+    const LIST_NAMES={ water:'饮水', medication:'服药', sport:'运动' };
     $('listTabs').innerHTML = `
       <span class="navL1">健康</span>
       <div class="navL2">${lists.map(([k])=>`<button class="${state.list===k?'on':''}" onclick="switchList('${k}')">${LIST_NAMES[k]}</button>`).join('')}</div>`;
@@ -300,14 +321,22 @@
     const showLists = state.tab==='today' || state.tab==='stats';
     $('listTabs').style.display = showLists ? 'flex' : 'none';
     if (!lists.some(([k])=>k===state.list)) state.list='water';
-    const tabs=[['today','check'],['stats','统计']];
+    const tabs=[['today','check'],['stats', state.list==='sport'?'成就':'统计']];
     tabs.push(['points','积分']);
     tabs.push(['me','我的']);
     const ICONS={ today:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>', stats:'📈', points:'⭐', me:'👤', pet:'🐾' };
     $('tabbar').innerHTML = tabs.map(([k,l])=>`<button class="${state.tab===k?'on':''}" onclick="switchTab('${k}')">${ICONS[k]?`<span class="ti">${ICONS[k]}</span>`:''}<span>${l}</span></button>`).join('');
     if (!tabs.some(([k])=>k===state.tab)) state.tab='today';
-    if (state.tab==='today') state.list==='water'?renderWaterToday():renderMedToday();
-    else if (state.tab==='stats') state.list==='water'?renderWaterStats():renderMedStats();
+    if (state.tab==='today') {
+      if(state.list==='sport') renderSportToday();
+      else if(state.list==='medication') renderMedToday();
+      else renderWaterToday();
+    }
+    else if (state.tab==='stats') {
+      if(state.list==='sport') renderSportAchievements();
+      else if(state.list==='medication') renderMedStats();
+      else renderWaterStats();
+    }
     else if (state.tab==='points') renderPoints();
     else renderMe();
     // 弹窗优先级：每日任务（积分页）> 药物管理（药物今日页）
@@ -918,6 +947,176 @@
     else if(result==='b'){ state.points+=5; state.ledger.unshift({label:'PK 失败',amount:5}); }
     else { state.points+=10; state.ledger.unshift({label:'PK 平局',amount:10}); }
     persist(); petPersist(); renderFriends();
+  }
+
+  // ---------- 运动 ----------
+  const SPORT_DEMO=[];
+  const walkDays=['2026-08-30','2026-08-31','2026-09-01','2026-09-06','2026-09-20','2026-09-26','2026-10-08','2026-10-12'];
+  walkDays.forEach((d,i)=>SPORT_DEMO.push({ id:'demo_w'+i, type:'walking', day:d, distanceM:0, durationS:0, steps:15000, continuous:false }));
+  SPORT_DEMO.push({ id:'demo_r1', type:'running', day:'2026-08-30', distanceM:1000, durationS:330, steps:0, continuous:true });
+  SPORT_DEMO.push({ id:'demo_r2', type:'running', day:'2026-10-08', distanceM:3000, durationS:1050, steps:0, continuous:true });
+  SPORT_DEMO.push({ id:'demo_r3', type:'running', day:'2026-10-14', distanceM:4930, durationS:1650, steps:0, continuous:true });
+  SPORT_DEMO.push({ id:'demo_r4', type:'running', day:'2026-10-14', distanceM:8550, durationS:2900, steps:0, continuous:true });
+  SPORT_DEMO.push({ id:'demo_r5', type:'running', day:'2026-10-25', distanceM:10000, durationS:2660, steps:0, continuous:true });
+  SPORT_DEMO.push({ id:'demo_c1', type:'cycling', day:'2026-09-02', distanceM:5200, durationS:1200, steps:0, continuous:false });
+  SPORT_DEMO.push({ id:'demo_c2', type:'cycling', day:'2026-09-20', distanceM:10090, durationS:3503, steps:0, continuous:false });
+  if(!state.sportRecords || state.sportRecords.length===0){ state.sportRecords=SPORT_DEMO.slice(); persist(); }
+
+  function sportProfile(){
+    const age=ageFrom(state.profile.birthDate);
+    return { gender: state.profile.gender || 'other', age: age || 30, weightG: state.profile.weightG || 70000, heightCM: state.profile.heightCm || 175 };
+  }
+  function sportClamp(v,lo,hi){ return Math.min(hi,Math.max(lo,v)); }
+  function sportPaceLimit(p){
+    const p0=p.gender==='female'?290:p.gender==='other'?275:260;
+    let ka=1;
+    if(p.age>30) ka+=0.005*(p.age-30); else if(p.age<30) ka-=0.0015*(30-p.age);
+    ka=sportClamp(ka,0.93,1.80);
+    let kw=1;
+    if(p.weightG>0&&p.heightCM>0){ const h=p.heightCM/100; const bmi=p.weightG/1000/(h*h); kw=sportClamp(1+0.012*(bmi-22),0.94,1.35); }
+    return p0*ka*kw;
+  }
+  function sportScale(p){ return sportClamp(1+0.5*(sportPaceLimit(p)/260-1),0.92,1.12); }
+  function sportEffective(std,p){ return Math.round(std*sportScale(p)/5)*5; }
+  function sportPace(r){ return r.distanceM>0&&r.durationS>0 ? Math.round(r.durationS*1000/r.distanceM) : 0; }
+
+  function sportDefs(){ return [
+    {id:'walk_10k',g:'walking',n:'一万步',d:'某天步数 ≥ 10000',icon:'🔓',rule:'steps',t:10000,p:10},
+    {id:'walk_15k',g:'walking',n:'一万五',d:'某天步数 ≥ 15000',icon:'🔓',rule:'steps',t:15000,p:15},
+    {id:'walk_15k_3d',g:'walking',n:'累计 3 天一万五',d:'累计 3 天步数 ≥ 15000',icon:'🏅',rule:'stepsDays',t:15000,n2:3,p:20},
+    {id:'walk_15k_5d',g:'walking',n:'累计 5 天一万五',d:'累计 5 天步数 ≥ 15000',icon:'🏅',rule:'stepsDays',t:15000,n2:5,p:25},
+    {id:'walk_15k_10d',g:'walking',n:'累计 10 天一万五',d:'累计 10 天步数 ≥ 15000',icon:'👑',rule:'stepsDays',t:15000,n2:10,p:30},
+    {id:'walk_15k_15d',g:'walking',n:'累计 15 天一万五',d:'累计 15 天步数 ≥ 15000',icon:'👑',rule:'stepsDays',t:15000,n2:15,p:35},
+    {id:'walk_15k_20d',g:'walking',n:'累计 20 天一万五',d:'累计 20 天步数 ≥ 15000',icon:'👑',rule:'stepsDays',t:15000,n2:20,p:40},
+    {id:'walk_15k_25d',g:'walking',n:'累计 25 天一万五',d:'累计 25 天步数 ≥ 15000',icon:'👑',rule:'stepsDays',t:15000,n2:25,p:45},
+    {id:'walk_15k_30d',g:'walking',n:'累计 30 天一万五',d:'累计 30 天步数 ≥ 15000',icon:'👑',rule:'stepsDays',t:15000,n2:30,p:50},
+    {id:'cycle_5k',g:'cycling',n:'五公里',d:'某次骑行 ≥ 5km',icon:'🔓',rule:'onceDist',t:5000,p:15},
+    {id:'cycle_10k',g:'cycling',n:'十公里',d:'某次骑行 ≥ 10km',icon:'🔓',rule:'onceDist',t:10000,p:20},
+    {id:'cycle_10k_3',g:'cycling',n:'骑行者',d:'累计 3 次骑行 ≥ 10km',icon:'🏅',rule:'countDist',t:10000,n2:3,p:30},
+    {id:'cycle_10k_5',g:'cycling',n:'铁屁股',d:'累计 5 次骑行 ≥ 10km',icon:'👑',rule:'countDist',t:10000,n2:5,p:40},
+    {id:'pace_500',g:'pace',n:'五零零',d:'配速 ≤ 5:00/km',icon:'🔓',rule:'pace',std:300,p:20},
+    {id:'pace_440',g:'pace',n:'四四零',d:'配速 ≤ 4:40/km',icon:'🔓',rule:'pace',std:280,p:25},
+    {id:'pace_420',g:'pace',n:'四二零',d:'配速 ≤ 4:20/km',icon:'🔓',rule:'pace',std:260,p:30},
+    {id:'pace_400',g:'pace',n:'四分台',d:'配速 ≤ 4:00/km',icon:'🏅',rule:'pace',std:240,p:40},
+    {id:'pace_350',g:'pace',n:'三五零',d:'配速 ≤ 3:50/km',icon:'🏅',rule:'pace',std:230,p:50},
+    {id:'pace_340',g:'pace',n:'三四零',d:'配速 ≤ 3:40/km',icon:'👑',rule:'pace',std:220,p:60},
+    {id:'pace_330',g:'pace',n:'三三零',d:'配速 ≤ 3:30/km',icon:'👑',rule:'pace',std:210,p:70},
+    {id:'run_cont_1k',g:'distance',n:'连续 1km',d:'连续跑完 1km，中间不停',icon:'🔓',rule:'contDist',t:1000,p:15},
+    {id:'run_cont_3k',g:'distance',n:'连续 3km',d:'连续跑完 3km，中间不停',icon:'🔓',rule:'contDist',t:3000,p:25},
+    {id:'run_cont_5k',g:'distance',n:'连续 5km',d:'连续跑完 5km，中间不停',icon:'🏅',rule:'contDist',t:5000,p:40},
+    {id:'run_cont_10k',g:'distance',n:'连续 10km',d:'连续跑完 10km，中间不停',icon:'👑',rule:'contDist',t:10000,p:60},
+    {id:'run_total_10k',g:'distance',n:'累计跑步 10km',d:'累计跑步总里程 ≥ 10km',icon:'🏅',rule:'cumDist',t:10000,p:30},
+    {id:'run_total_50k',g:'distance',n:'累计跑步 50km',d:'累计跑步总里程 ≥ 50km',icon:'🏅',rule:'cumDist',t:50000,p:50},
+    {id:'run_total_100k',g:'distance',n:'累计跑步 100km',d:'累计跑步总里程 ≥ 100km',icon:'👑',rule:'cumDist',t:100000,p:70},
+    {id:'combo_3k_500',g:'combo',n:'3km @ 5:00',d:'连续 3km，平均配速 ≤ 5:00/km',icon:'🔥',rule:'combo',t:3000,std:300,p:60},
+    {id:'combo_3k_430',g:'combo',n:'3km @ 4:30',d:'连续 3km，平均配速 ≤ 4:30/km',icon:'🔥',rule:'combo',t:3000,std:270,p:90},
+    {id:'combo_3k_400',g:'combo',n:'3km @ 4:00',d:'连续 3km，平均配速 ≤ 4:00/km',icon:'🔥',rule:'combo',t:3000,std:240,p:120},
+    {id:'combo_5k_500',g:'combo',n:'5km @ 5:00',d:'连续 5km，平均配速 ≤ 5:00/km',icon:'🔥',rule:'combo',t:5000,std:300,p:80},
+    {id:'combo_5k_430',g:'combo',n:'5km @ 4:30',d:'连续 5km，平均配速 ≤ 4:30/km',icon:'🔥',rule:'combo',t:5000,std:270,p:110},
+    {id:'combo_5k_400',g:'combo',n:'5km @ 4:00',d:'连续 5km，平均配速 ≤ 4:00/km',icon:'🔥',rule:'combo',t:5000,std:240,p:140}
+  ]; }
+
+  const SPORT_GROUPS=[
+    {id:'walking',name:'步行成就',icon:'🚶'},
+    {id:'cycling',name:'骑行成就',icon:'🚴'},
+    {id:'pace',name:'跑步 · 配速成就',icon:'🏃'},
+    {id:'distance',name:'跑步 · 距离里程碑',icon:'🏃'},
+    {id:'combo',name:'速度 + 距离连击',icon:'🔥'}
+  ];
+
+  function sportEval(def){
+    const recs=state.sportRecords||[], p=sportProfile(), run=recs.filter(r=>r.type==='running');
+    const out={ unlocked:false, days:[], progress:0, need:def.n2||1 };
+    const pushDay=(day)=>{ if(!out.days.includes(day)) out.days.push(day); };
+    switch(def.rule){
+      case 'steps': recs.forEach(r=>{ if(r.steps>=def.t) pushDay(r.day); }); out.progress=out.days.length; out.unlocked=out.progress>0; break;
+      case 'stepsDays': recs.forEach(r=>{ if(r.steps>=def.t) pushDay(r.day); }); out.progress=out.days.length; out.unlocked=out.progress>=out.need; break;
+      case 'onceDist': recs.forEach(r=>{ if(r.distanceM>=def.t) pushDay(r.day); }); out.progress=out.days.length; out.unlocked=out.progress>0; break;
+      case 'countDist': recs.forEach(r=>{ if(r.distanceM>=def.t) pushDay(r.day); }); out.progress=out.days.length; out.unlocked=out.progress>=out.need; break;
+      case 'pace': { const lim=sportEffective(def.std,p); run.forEach(r=>{ const pc=sportPace(r); if(pc>0&&pc<=lim) pushDay(r.day); }); out.progress=out.days.length; out.unlocked=out.progress>0; break; }
+      case 'contDist': run.forEach(r=>{ if(r.distanceM>=def.t) pushDay(r.day); }); out.progress=out.days.length; out.unlocked=out.progress>0; break;
+      case 'cumDist': out.progress=run.reduce((s,r)=>s+r.distanceM,0); out.unlocked=out.progress>=def.t; break;
+      case 'combo': { const lim=sportEffective(def.std,p); run.forEach(r=>{ if(r.distanceM>=def.t){ const pc=sportPace(r); if(pc>0&&pc<=lim) pushDay(r.day); } }); out.progress=out.days.length; out.unlocked=out.progress>0; break; }
+    }
+    return out;
+  }
+
+  function sportToday(){
+    const day=bizToday();
+    const recs=(state.sportRecords||[]).filter(r=>r.day===day);
+    return { recs, steps:recs.reduce((s,r)=>s+r.steps,0), dist:recs.reduce((s,r)=>s+r.distanceM,0), dur:recs.reduce((s,r)=>s+r.durationS,0) };
+  }
+
+  function renderSportToday(){
+    const t=sportToday();
+    const typeLabel={walking:'步行',cycling:'骑行',running:'跑步'};
+    $('checkBody').innerHTML=`
+      <div class="todayStats">
+        <div class="ts"><b>${t.steps}</b><span>今日步数</span></div>
+        <div class="ts"><b>${(t.dist/1000).toFixed(2)}</b><span>今日公里</span></div>
+        <div class="ts"><b>${Math.round(t.dur/60)}</b><span>今日分钟</span></div>
+      </div>
+      <div class="section">添加运动记录</div>
+      <div class="sportForm">
+        <div class="field"><label>类型</label>
+          <select id="spType" class="sportSelect"><option value="walking">步行</option><option value="cycling">骑行</option><option value="running">跑步</option></select>
+        </div>
+        <div class="field"><label>距离 (km)</label><input id="spDist" type="number" step="0.01" placeholder="如 5.2" /></div>
+        <div class="field"><label>时长 (分钟)</label><input id="spDur" type="number" placeholder="如 30" /></div>
+        <div class="field"><label>步数</label><input id="spSteps" type="number" placeholder="如 12000" /></div>
+        <button class="btn" style="width:100%" onclick="addSport()">保存记录</button>
+      </div>
+      <div class="section">今日记录</div>
+      ${t.recs.length===0?'<div class="empty">今天还没有运动记录</div>':t.recs.map(r=>`
+        <div class="rec"><span>${typeLabel[r.type]}${r.distanceM?' · '+(r.distanceM/1000).toFixed(2)+' km':''}${r.steps?' · '+r.steps+' 步':''}${r.durationS?' · '+Math.round(r.durationS/60)+' 分钟':''}</span>
+        <button onclick="removeSport('${r.id}')">删除</button></div>`).join('')}
+      <div class="hint">本期为手动录入，不接入手机传感器或健康平台。</div>`;
+  }
+
+  function addSport(){
+    const type=$('spType').value;
+    const distKm=Number($('spDist').value||0), durMin=Number($('spDur').value||0), steps=Number($('spSteps').value||0);
+    if(!(distKm>=0&&distKm<=300)||!(durMin>=0&&durMin<=1440)||!(steps>=0&&steps<=100000)){ alert('距离、时长或步数超出合理范围（SPORT_004）'); return; }
+    state.sportRecords.unshift({ id:'sp_'+Date.now(), type, day:bizToday(), distanceM:Math.round(distKm*1000), durationS:Math.round(durMin*60), steps:Math.round(steps), continuous:true });
+    persist(); render();
+  }
+  function removeSport(id){ state.sportRecords=(state.sportRecords||[]).filter(r=>r.id!==id); persist(); render(); }
+  function toggleSportGroup(g){ state.sportOpen[g]=!state.sportOpen[g]; render(); }
+
+  function fmtPace(sec){ if(sec<=0) return '—'; const m=Math.floor(sec/60), s=Math.round(sec%60); return m+"'"+String(s).padStart(2,'0')+'"'; }
+
+  function renderSportAchievements(){
+    const p=sportProfile();
+    const plp=sportPaceLimit(p), scale=sportScale(p);
+    const defs=sportDefs();
+    const totalUnlocked=defs.filter(d=>sportEval(d).unlocked).length;
+    $('checkBody').innerHTML=`
+      <div class="paceCard">
+        <div class="pcTitle">个性化配速极限</div>
+        <div class="pcRow"><span>个人极限配速</span><b>${fmtPace(plp)}</b></div>
+        <div class="pcRow"><span>缩放系数</span><b>${scale.toFixed(2)}</b></div>
+        <div class="pcTags">${[300,280,260,240,230,220,210].map(std=>`<span>${fmtPace(sportEffective(std,p))}</span>`).join('')}</div>
+        <div class="hint">依据性别/年龄/体重估算，仅用于成就激励，不构成训练或医学建议。</div>
+      </div>
+      <div class="sub" style="margin:10px 0 4px">已解锁 ${totalUnlocked}/${defs.length} · 共 ${defs.reduce((s,d)=>s+d.p,0)} 积分</div>
+      ${SPORT_GROUPS.map(g=>{
+        const items=defs.filter(d=>d.g===g.id).map(d=>({d,s:sportEval(d)}));
+        const unlocked=items.filter(x=>x.s.unlocked).length;
+        const open=!!state.sportOpen[g.id];
+        return `<div class="achGroup">
+          <div class="agHead" onclick="toggleSportGroup('${g.id}')">
+            <span>${g.icon} ${g.name}</span>
+            <span class="agCount">${unlocked}/${items.length} ${open?'▾':'▸'}</span>
+          </div>
+          ${open?`<div class="agBody">${items.map(({d,s})=>`
+            <div class="achItem ${s.unlocked?'on':''}">
+              <div class="aiTop"><span class="aiIcon">${s.unlocked?d.icon:'🔒'}</span><span class="aiName">${d.n}</span><span class="aiPts">+${d.p}</span></div>
+              <div class="aiDesc">${d.d}</div>
+              ${s.days.length?`<div class="aiDays">${s.days.join(' · ')}</div>`:''}
+              ${!s.unlocked&&s.need>1?`<div class="aiProg">进度 ${Math.min(s.progress,s.need)}/${s.need}</div>`:''}
+            </div>`).join('')}</div>`:''}
+        </div>`;
+      }).join('')}`;
   }
 
   render(); show('login');
