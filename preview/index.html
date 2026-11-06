@@ -26,9 +26,12 @@
   .banner p { margin:0; color:var(--danger); font-size:12px; }
   .header { display:flex; align-items:center; justify-content:space-between; padding:6px 18px 2px; }
   .badge { font-size:11px; color:#999; border:1px solid #eee; border-radius:10px; padding:2px 8px; }
-  .listTabs { display:flex; background:#f4f5f7; border-radius:14px; padding:3px; margin:8px 18px 6px; }
-  .listTabs button { flex:1; border:none; background:transparent; border-radius:11px; padding:7px 0; font-size:12px; color:#8a8a8a; cursor:pointer; transition:background .15s,color .15s; }
-  .listTabs button.on { background:#fff; color:var(--primary); font-weight:600; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+  .listTabs { display:flex; align-items:baseline; gap:12px; padding:8px 18px 2px; }
+  .navL1 { font-size:19px; font-weight:700; color:#222; letter-spacing:.5px; }
+  .navL2 { display:flex; gap:14px; }
+  .navL2 button { border:none; background:none; font-size:13px; color:#9a9a9a; padding:2px 0 4px; cursor:pointer; position:relative; }
+  .navL2 button.on { color:var(--primary); font-weight:600; }
+  .navL2 button.on::after { content:''; position:absolute; left:0; right:0; bottom:-1px; height:2px; background:var(--primary); border-radius:2px; }
   .body { flex:1; overflow-y:auto; padding:4px 18px 14px; }
   .notice { color:var(--ok); font-size:12px; min-height:15px; margin:2px 0; }
   .hero { text-align:center; font-size:28px; font-weight:700; color:#222; }
@@ -278,7 +281,10 @@
   function render(){
     $('identityBadge').textContent = state.mode==='guest'?'游客模式':'华为用户';
     const lists=[['water','喝水'],['medication','药物']].filter(([k])=>state.lists[k]);
-    $('listTabs').innerHTML = lists.map(([k,l])=>`<button class="${state.list===k?'on':''}" onclick="switchList('${k}')">${l}</button>`).join('');
+    const LIST_NAMES={ water:'饮水', medication:'服药' };
+    $('listTabs').innerHTML = `
+      <span class="navL1">健康</span>
+      <div class="navL2">${lists.map(([k])=>`<button class="${state.list===k?'on':''}" onclick="switchList('${k}')">${LIST_NAMES[k]}</button>`).join('')}</div>`;
     // 清单切换仅在有清单内容的页（check/统计）展示，避免在积分/我的页误切
     const showLists = state.tab==='today' || state.tab==='stats';
     $('listTabs').style.display = showLists ? 'flex' : 'none';
