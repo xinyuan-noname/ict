@@ -80,13 +80,15 @@ function localTraceId(): string {
 export class ApiClient {
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
-  private readonly fetchImpl: typeof fetch;
+  private readonly fetchImpl: typeof fetch | undefined;
   private readonly guard: NetworkGuard | undefined;
 
   constructor(options: ApiClientOptions) {
     this.baseUrl = assertBaseUrl(options.baseUrl, options.allowInsecure ?? false);
     this.timeoutMs = options.timeoutMs ?? 3000;
-    this.fetchImpl = options.fetchImpl ?? globalThis.fetch.bind(globalThis);
+    // 运行时不提供 fetch 时不要在此崩溃读取 .bind：延后到 request 内给出明确协议错误
+    const globalFetch = typeof globalThis.fetch === 'function' ? globalThis.fetch.bind(globalThis) : undefined;
+    this.fetchImpl = options.fetchImpl ?? globalFetch;
     this.guard = options.guard;
   }
 
@@ -108,10 +110,15 @@ export class ApiClient {
       headers['Idempotency-Key'] = options.idempotencyKey;
     }
 
+    const fetchImpl = this.fetchImpl;
+    if (!fetchImpl) {
+      throw new ProtocolError('fetch unavailable in current runtime');
+    }
+
     let response: Response;
     try {
       this.guard?.recordOutbound();
-      response = await this.fetchImpl(`${this.baseUrl}${path}`, {
+      response = await fetchImpl(`${this.baseUrl}${path}`, {
         method: options.method ?? 'GET',
         headers,
         body: options.body === undefined ? undefined : JSON.stringify(options.body),

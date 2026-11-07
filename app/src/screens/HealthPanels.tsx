@@ -98,6 +98,8 @@ export function MedicationPanel({ tab }: { tab: PanelTab }): React.JSX.Element {
   const [items, setItems] = useState<MedItem[]>([]);
   const [doses, setDoses] = useState<MedDose[]>([]);
   const [manageOpen, setManageOpen] = useState(false);
+  const [formView, setFormView] = useState(false);
+  const [formError, setFormError] = useState('');
   const [name, setName] = useState('');
   const [dosage, setDosage] = useState('');
   const [slots, setSlots] = useState<string[]>(['morning', 'noon']);
@@ -136,18 +138,30 @@ export function MedicationPanel({ tab }: { tab: PanelTab }): React.JSX.Element {
     persist(items, doses.filter((d) => d.id !== doseId));
   };
 
+  // 管理弹窗内切换到「新增药物」界面（不是常驻表单）
+  const openForm = (): void => {
+    setFormView(true);
+    setFormError('');
+  };
+  // 新增完成 / 返回：回到药物列表并清空草稿
+  const closeForm = (): void => {
+    setFormView(false);
+    setName('');
+    setDosage('');
+    setSlots(['morning', 'noon']);
+    setFormError('');
+  };
   const addMed = (): void => {
     if (!name.trim() || !dosage.trim() || slots.length === 0) {
-      setNotice('药名、剂量与至少一个时段必填');
+      setFormError('药名、剂量与至少一个时段必填');
       return;
     }
     persist(
       [...items, { id: `med_${Date.now()}`, name: name.trim(), dosage: dosage.trim(), slots, status: 'active' }],
       doses
     );
-    setName('');
-    setDosage('');
     setNotice('已添加药物');
+    closeForm();
   };
   const stopMed = (id: string): void => {
     persist(items.map((item) => (item.id === id ? { ...item, status: 'stopped' } : item)), doses);
@@ -237,7 +251,14 @@ export function MedicationPanel({ tab }: { tab: PanelTab }): React.JSX.Element {
           )}
         </View>
       ))}
-      <Pressable style={styles.outlineButton} onPress={() => setManageOpen(true)}>
+      <Pressable
+        accessibilityRole="button"
+        style={styles.outlineButton}
+        onPress={() => {
+          setFormView(false);
+          setManageOpen(true);
+        }}
+      >
         <Text style={styles.outlineButtonText}>管理药物</Text>
       </Pressable>
 
@@ -245,9 +266,42 @@ export function MedicationPanel({ tab }: { tab: PanelTab }): React.JSX.Element {
         <Pressable style={styles.modalMask} onPress={() => setManageOpen(false)}>
           <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
             <View style={styles.modalHead}>
-              <Text style={styles.modalTitle}>药物管理</Text>
-              <Pressable onPress={() => setManageOpen(false)}><Text style={styles.modalClose}>✕</Text></Pressable>
+              <Text style={styles.modalTitle}>{formView ? '新增药物' : '药物管理'}</Text>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  if (formView) closeForm();
+                  else setManageOpen(false);
+                }}
+              >
+                <Text style={styles.modalClose}>{formView ? '‹ 返回' : '✕'}</Text>
+              </Pressable>
             </View>
+            {formView ? (
+              <ScrollView>
+                <View style={styles.field}><Text style={styles.fieldLabel}>药名</Text>
+                  <TextInput value={name} onChangeText={setName} style={styles.input} placeholder="如 维生素D" />
+                </View>
+                <View style={styles.field}><Text style={styles.fieldLabel}>剂量</Text>
+                  <TextInput value={dosage} onChangeText={setDosage} style={styles.input} placeholder="如 1粒" />
+                </View>
+                <View style={styles.slotRow}>
+                  {MED_SLOTS.map(([key, label]) => (
+                    <Pressable
+                      key={key}
+                      style={[styles.slotChip, slots.includes(key) && styles.slotChipOn]}
+                      onPress={() => setSlots((prev) => (prev.includes(key) ? prev.filter((s) => s !== key) : [...prev, key]))}
+                    >
+                      <Text style={[styles.slotChipText, slots.includes(key) && styles.slotChipTextOn]}>{label}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+                {formError ? <Text style={styles.formError}>{formError}</Text> : null}
+                <Pressable accessibilityRole="button" style={styles.primaryButton} onPress={addMed}>
+                  <Text style={styles.primaryText}>添加药物</Text>
+                </Pressable>
+              </ScrollView>
+            ) : (
             <ScrollView>
               <View style={styles.medGrid}>
                 {items.map((item) => (
@@ -274,26 +328,12 @@ export function MedicationPanel({ tab }: { tab: PanelTab }): React.JSX.Element {
                   </View>
                 ))}
               </View>
-              <Text style={styles.section}>新增药物</Text>
-              <View style={styles.field}><Text style={styles.fieldLabel}>药名</Text>
-                <TextInput value={name} onChangeText={setName} style={styles.input} placeholder="如 维生素D" />
-              </View>
-              <View style={styles.field}><Text style={styles.fieldLabel}>剂量</Text>
-                <TextInput value={dosage} onChangeText={setDosage} style={styles.input} placeholder="如 1粒" />
-              </View>
-              <View style={styles.slotRow}>
-                {MED_SLOTS.map(([key, label]) => (
-                  <Pressable
-                    key={key}
-                    style={[styles.slotChip, slots.includes(key) && styles.slotChipOn]}
-                    onPress={() => setSlots((prev) => (prev.includes(key) ? prev.filter((s) => s !== key) : [...prev, key]))}
-                  >
-                    <Text style={[styles.slotChipText, slots.includes(key) && styles.slotChipTextOn]}>{label}</Text>
-                  </Pressable>
-                ))}
-              </View>
-              <Pressable style={styles.primaryButton} onPress={addMed}><Text style={styles.primaryText}>添加药物</Text></Pressable>
+              {items.length === 0 ? <Text style={styles.empty}>还没有药物条目</Text> : null}
+              <Pressable accessibilityRole="button" style={styles.addMedButton} onPress={openForm}>
+                <Text style={styles.addMedButtonText}>＋ 新增药物</Text>
+              </Pressable>
             </ScrollView>
+            )}
           </Pressable>
         </Pressable>
       </Modal>
@@ -671,6 +711,9 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 3, marginTop: 6 },
   chip: { fontSize: 9, color: '#666', borderWidth: 1, borderColor: '#eee', borderRadius: 8, paddingHorizontal: 5, paddingVertical: 1 },
   medButton: { marginTop: 8, borderWidth: 1, borderColor: '#c7000b', borderRadius: 10, paddingVertical: 4, alignItems: 'center' },
+  addMedButton: { marginTop: 12, borderWidth: 1, borderColor: '#c7000b', borderRadius: 12, paddingVertical: 10, alignItems: 'center' },
+  addMedButtonText: { color: '#c7000b', fontSize: 13, fontWeight: '600' },
+  formError: { color: '#a61b1b', fontSize: 12, marginTop: 2 },
   medButtonOff: { borderColor: '#e5e5e5' },
   medButtonText: { color: '#c7000b', fontSize: 10 },
   slotRow: { flexDirection: 'row', gap: 6, marginBottom: 8 },

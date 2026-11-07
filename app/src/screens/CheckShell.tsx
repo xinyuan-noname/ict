@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { showDialog } from '../components/AppDialog';
 import { EnglishPanel, MedicationPanel, SportPanel } from './HealthPanels';
 import { LineChart } from '../components/LineChart';
+import { MlSlider } from '../components/MlSlider';
+import { DatePickerModal } from '../components/DatePickerModal';
 import type { CheckSnapshot, CheckStore } from '../check/checkStore';
-import { DEFAULT_CUP_ML, ageFromBirthDate, businessToday, formatML, type Gender } from '../model/waterGoal';
+import { ageFromBirthDate, businessToday, formatML, type Gender } from '../model/waterGoal';
+import { WATER_RANGES, WATER_RANGE_LABEL, type WaterPoint } from '../model/waterRange';
 
 type Tab = 'today' | 'stats' | 'profile';
 type Category = 'health' | 'learning';
@@ -80,7 +83,7 @@ export function CheckShell({ store, isGuest, displayName, onUpgrade, onExit, onO
         {list === 'water' ? (
           <>
             {tab === 'today' ? <TodayView snapshot={snapshot} ratio={ratio} store={store} /> : null}
-            {tab === 'stats' ? <StatsView snapshot={snapshot} /> : null}
+            {tab === 'stats' ? <StatsView snapshot={snapshot} store={store} /> : null}
           </>
         ) : list === 'medication' ? (
           tab === 'profile' ? null : <MedicationPanel tab={tab} />
@@ -117,37 +120,138 @@ export function CheckShell({ store, isGuest, displayName, onUpgrade, onExit, onO
 }
 
 function TodayView({ snapshot, ratio, store }: { snapshot: CheckSnapshot; ratio: number; store: CheckStore }): React.JSX.Element {
+  const [ml, setMl] = useState(250);
+  const [unitModal, setUnitModal] = useState(false);
+  const [unitName, setUnitName] = useState('');
+  const [unitMl, setUnitMl] = useState('');
+  const [unitError, setUnitError] = useState<string | null>(null);
+
+  const closeUnitModal = (): void => {
+    setUnitModal(false);
+    setUnitName('');
+    setUnitMl('');
+    setUnitError(null);
+  };
+
+  const addUnit = async (): Promise<void> => {
+    const error = await store.addUnit(unitName, Number(unitMl));
+    if (error) {
+      setUnitError(error);
+      return;
+    }
+    closeUnitModal();
+  };
+
   return (
-    <ScrollView contentContainerStyle={styles.scroll}>
-      <ProgressRing ratio={ratio} />
-      <Text style={styles.hero}>
-        {snapshot.totalMl} <Text style={styles.heroUnit}>/ {snapshot.targetMl} ml</Text>
-      </Text>
-      <Text style={styles.sub}>
-        {snapshot.targetMl === 0 ? '请先在「我的」填写身体档案' : snapshot.achieved ? '今日目标已达成' : `还差 ${snapshot.targetMl - snapshot.totalMl} ml`}
-      </Text>
-      <Text style={styles.sub}>连续达成 {snapshot.streak} 天 · 约 {snapshot.cups} 杯（{DEFAULT_CUP_ML} ml/杯）</Text>
+    <>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <ProgressRing ratio={ratio} />
+        <Text style={styles.hero}>
+          {snapshot.totalMl} <Text style={styles.heroUnit}>/ {snapshot.targetMl || '--'} ml</Text>
+        </Text>
+        <Text style={styles.sub}>
+          {snapshot.targetMl === 0 ? '请先在「我的」填写身体档案' : snapshot.achieved ? '今日目标已达成' : `还差 ${snapshot.targetMl - snapshot.totalMl} ml`}
+        </Text>
 
-      <View style={styles.actions}>
-        <Pressable accessibilityRole="button" testID="add-250" style={styles.primary} onPress={() => void store.addWater(250)}>
-          <Text style={styles.primaryText}>+250 ml</Text>
-        </Pressable>
-        <Pressable accessibilityRole="button" testID="add-500" style={styles.secondary} onPress={() => void store.addWater(500)}>
-          <Text style={styles.secondaryText}>+500 ml</Text>
-        </Pressable>
-      </View>
+        <View style={styles.metrics}>
+          <Metric label="今日总量 ml" value={snapshot.totalMl} />
+          <Metric label="还需 ml" value={Math.max(0, snapshot.targetMl - snapshot.totalMl)} />
+          <Metric label="连续达标" value={snapshot.streak} />
+        </View>
 
-      <Text style={styles.section}>今日记录</Text>
-      {snapshot.totalMl === 0 ? <Text style={styles.empty}>还没有记录</Text> : null}
-      {snapshot.records.map((r) => (
-        <View key={r.recordId} style={styles.record}>
-          <Text style={styles.recordText}>{r.ml} ml</Text>
-          <Pressable accessibilityRole="button" onPress={() => void store.removeRecord(r.recordId)}>
-            <Text style={styles.delete}>撤销</Text>
+        <View testID="water-units" style={styles.unitRow}>
+          {snapshot.units.filter((u) => u.id !== 'unit_ml').map((u) => (
+            <Pressable key={u.id} accessibilityRole="button" style={styles.unitChip} onPress={() => void store.logUnit(u.id)}>
+              <Text style={styles.unitChipText}>{`${u.name} ${u.ml}ml`}</Text>
+              <Text style={styles.unitPlus}>+</Text>
+            </Pressable>
+          ))}
+          <Pressable
+            accessibilityRole="button"
+            style={styles.unitAdd}
+            onPress={() => {
+              setUnitModal(true);
+              setUnitError(null);
+            }}
+          >
+            <Text style={styles.unitAddText}>+ 自定义</Text>
           </Pressable>
         </View>
-      ))}
-    </ScrollView>
+
+        <View style={styles.sliderBox}>
+          <View style={styles.sliderTop}>
+            <Text style={styles.hint}>拖动选择毫升</Text>
+            <Text style={styles.sliderValue}>{ml}</Text>
+          </View>
+          <MlSlider value={ml} onChange={setMl} />
+          <Pressable
+            accessibilityRole="button"
+            testID="commit-ml"
+            style={[styles.primary, styles.blockButton]}
+            onPress={() => void store.addWater(ml)}
+          >
+            <Text style={styles.primaryText}>确认记录 {ml} ml</Text>
+          </Pressable>
+          <Text style={[styles.hint, styles.centerHint]}>拖动选择后点「确认记录」</Text>
+        </View>
+
+        <Text style={styles.section}>今日记录</Text>
+        {snapshot.totalMl === 0 ? <Text style={styles.empty}>还没有记录</Text> : null}
+        {snapshot.records.map((r) => (
+          <View key={r.recordId} style={styles.record}>
+            <Text style={styles.recordText}>
+              {r.unitName && r.amount ? `${r.amount} ${r.unitName} · ` : ''}
+              {r.ml} ml
+            </Text>
+            <Pressable accessibilityRole="button" onPress={() => void store.removeRecord(r.recordId)}>
+              <Text style={styles.delete}>撤销</Text>
+            </Pressable>
+          </View>
+        ))}
+        <Text style={styles.legend}>记录以 ml 记账，切换单位不会改变历史数据。</Text>
+      </ScrollView>
+
+    <Modal visible={unitModal} transparent animationType="slide" onRequestClose={closeUnitModal}>
+      <Pressable style={styles.modalMask} onPress={closeUnitModal}>
+        <Pressable style={styles.modalCard} onPress={(event) => event.stopPropagation()}>
+          <View style={styles.modalHead}>
+            <Text style={styles.modalTitle}>自定义单位</Text>
+            <Pressable accessibilityRole="button" onPress={closeUnitModal}>
+              <Text style={styles.modalClose}>✕</Text>
+            </Pressable>
+          </View>
+          <Text style={styles.modalHint}>记录始终以 ml 记账，单位只影响记录时的展示。</Text>
+          <TextInput
+            value={unitName}
+            onChangeText={setUnitName}
+            maxLength={12}
+            placeholder="单位名称，如 马克杯"
+            style={styles.input}
+          />
+          <TextInput
+            value={unitMl}
+            onChangeText={setUnitMl}
+            keyboardType="number-pad"
+            placeholder={`容量 ${50}-${2000} ml`}
+            style={styles.input}
+          />
+          {unitError ? <Text style={styles.unitError}>{unitError}</Text> : null}
+          <Pressable accessibilityRole="button" style={[styles.primary, styles.blockButton, styles.modalSubmit]} onPress={() => void addUnit()}>
+            <Text style={styles.primaryText}>添加单位</Text>
+          </Pressable>
+        </Pressable>
+      </Pressable>
+    </Modal>
+    </>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: number }): React.JSX.Element {
+  return (
+    <View style={styles.metric}>
+      <Text style={styles.metricValue}>{value}</Text>
+      <Text style={styles.metricLabel}>{label}</Text>
+    </View>
   );
 }
 
@@ -180,31 +284,51 @@ function ProgressRing({ ratio }: { ratio: number }): React.JSX.Element {
   );
 }
 
-function StatsView({ snapshot }: { snapshot: CheckSnapshot }): React.JSX.Element {
+function chartLabels(points: WaterPoint[]): string[] {
+  const stride = points.length <= 8 ? 1 : Math.ceil(points.length / 6);
+  return points.map((p, i) => (i % stride === 0 || i === points.length - 1 ? p.label : ''));
+}
+
+function StatsView({ snapshot, store }: { snapshot: CheckSnapshot; store: CheckStore }): React.JSX.Element {
+  const stats = snapshot.rangeStats;
+  const label = WATER_RANGE_LABEL[snapshot.range];
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
+      <View style={styles.rangeRow}>
+        {WATER_RANGES.map(([key, name]) => (
+          <Pressable
+            key={key}
+            accessibilityRole="button"
+            style={[styles.rangeChip, snapshot.range === key && styles.rangeChipOn]}
+            onPress={() => void store.setRange(key)}
+          >
+            <Text style={[styles.rangeChipText, snapshot.range === key && styles.rangeChipTextOn]}>{name}</Text>
+          </Pressable>
+        ))}
+      </View>
+
       <View style={styles.statRow}>
-        <Stat label="周平均" value={formatML(snapshot.averageMl)} />
-        <Stat label="达成率" value={`${Math.round(snapshot.achievementRate * 100)}%`} />
+        <Stat label={`${label}平均`} value={formatML(stats.averageMl)} />
+        <Stat label="达成率" value={`${Math.round(stats.achievementRate * 100)}%`} />
         <Stat label="连续" value={`${snapshot.streak} 天`} />
       </View>
 
-      <Text style={styles.section}>本周饮水变化</Text>
+      <Text style={styles.section}>{label}饮水趋势</Text>
       <LineChart
-        values={snapshot.week.map((d) => d.totalMl)}
-        labels={snapshot.week.map((d) => d.day.slice(5))}
+        values={snapshot.rangeSeries.map((p) => p.value)}
+        labels={chartLabels(snapshot.rangeSeries)}
         unit="ml"
         target={snapshot.targetMl}
       />
-      <Text style={styles.legend}>目标线：{snapshot.targetMl} ml · 折线按最大值归一</Text>
+      <Text style={styles.legend}>红线为目标 {snapshot.targetMl} ml · 灰点为无记录</Text>
 
-      <Text style={styles.section}>每日明细</Text>
-      {snapshot.week.map((d) => (
-        <View key={d.day} style={styles.tableRow}>
-          <Text style={styles.tableCell}>{d.day}</Text>
-          <Text style={styles.tableCell}>{formatML(d.totalMl)}</Text>
-          <Text style={[styles.tableCell, { color: d.achieved ? '#1a7a3c' : '#999' }]}>
-            {d.achieved ? '达成' : d.totalMl > 0 ? '未达成' : '无记录'}
+      <Text style={styles.section}>明细</Text>
+      {snapshot.rangeSeries.map((p) => (
+        <View key={p.day} style={styles.tableRow}>
+          <Text style={styles.tableCell}>{p.label}</Text>
+          <Text style={styles.tableCell}>{formatML(p.value)}</Text>
+          <Text style={[styles.tableCell, { color: p.achieved ? '#1a7a3c' : '#999' }]}>
+            {p.achieved ? '达成' : p.value > 0 ? '未达成' : '无记录'}
           </Text>
         </View>
       ))}
@@ -239,6 +363,7 @@ function ProfileView({
   const [height, setHeight] = useState(snapshot.profile ? String(snapshot.profile.heightCm) : '');
   const [weight, setWeight] = useState(snapshot.profile ? String(Math.round(snapshot.profile.weightG / 1000)) : '');
   const [birthDate, setBirthDate] = useState('');
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [gender, setGender] = useState<Gender | ''>(snapshot.profile?.gender ?? '');
   const age = birthDate ? ageFromBirthDate(birthDate, businessToday()) : null;
 
@@ -257,7 +382,17 @@ function ProfileView({
       <Text style={styles.section}>身体档案</Text>
       <Field label="身高 (cm)" value={height} onChange={setHeight} />
       <Field label="体重 (kg)" value={weight} onChange={setWeight} />
-      <Field label="出生日期 (YYYY-MM-DD)" value={birthDate} onChange={setBirthDate} />
+      <View style={styles.field}>
+        <Text style={styles.fieldLabel}>出生日期</Text>
+        <Pressable
+          accessibilityRole="button"
+          testID="birth-date"
+          style={styles.fieldValue}
+          onPress={() => setDatePickerOpen(true)}
+        >
+          <Text style={birthDate ? styles.fieldValueText : styles.fieldPlaceholder}>{birthDate || 'YYYY-MM-DD'}</Text>
+        </Pressable>
+      </View>
       <View style={styles.genderRow}>
         {(['male', 'female', 'other'] as Gender[]).map((g) => (
           <Pressable key={g} onPress={() => setGender(g)} style={[styles.gender, gender === g && styles.genderActive]}>
@@ -305,6 +440,16 @@ function ProfileView({
           <Text style={styles.ghostText}>{isGuest ? '退出游客模式' : '退出登录'}</Text>
         </Pressable>
       </View>
+
+      <DatePickerModal
+        visible={datePickerOpen}
+        value={birthDate}
+        onCancel={() => setDatePickerOpen(false)}
+        onConfirm={(picked) => {
+          setBirthDate(picked);
+          setDatePickerOpen(false);
+        }}
+      />
     </ScrollView>
   );
 }
@@ -352,13 +497,40 @@ const styles = StyleSheet.create({
   hero: { fontSize: 30, fontWeight: '700', color: '#222', textAlign: 'center' },
   heroUnit: { fontSize: 15, color: '#999', fontWeight: '400' },
   sub: { fontSize: 13, color: '#888', textAlign: 'center', marginTop: 4 },
+  metrics: { flexDirection: 'row', gap: 8, marginTop: 16, marginBottom: 4 },
+  metric: { flex: 1, alignItems: 'center', backgroundColor: '#fafafa', borderRadius: 12, paddingVertical: 9 },
+  metricValue: { fontSize: 16, fontWeight: '700', color: '#c7000b' },
+  metricLabel: { fontSize: 11, color: '#999', marginTop: 2 },
+  unitRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 18, marginTop: 14 },
+  unitChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 6 },
+  unitChipText: { fontSize: 14, color: '#333' },
+  unitPlus: { fontSize: 14, color: '#c7000b', fontWeight: '700' },
+  unitAdd: { paddingVertical: 6 },
+  unitAddText: { fontSize: 14, color: '#c7000b', fontWeight: '600' },
+  unitError: { color: '#a61b1b', fontSize: 12, marginTop: 2 },
+  modalMask: { flex: 1, backgroundColor: 'rgba(0,0,0,0.38)', justifyContent: 'flex-end' },
+  modalCard: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 18, gap: 10 },
+  modalHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  modalTitle: { fontSize: 15, fontWeight: '600', color: '#222' },
+  modalClose: { fontSize: 16, color: '#999', paddingHorizontal: 6 },
+  modalHint: { fontSize: 12, color: '#999' },
+  modalSubmit: { marginTop: 4 },
+  blockButton: { alignSelf: 'stretch' },
+  sliderBox: { marginTop: 14, marginBottom: 4, backgroundColor: '#fafafa', borderRadius: 14, padding: 12 },
+  sliderTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  sliderValue: { fontSize: 18, fontWeight: '700', color: '#c7000b' },
+  centerHint: { textAlign: 'center', marginTop: 6 },
+  rangeRow: { flexDirection: 'row', gap: 6, marginBottom: 8 },
+  rangeChip: { flex: 1, borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 12, paddingVertical: 6, alignItems: 'center' },
+  rangeChipOn: { borderColor: '#c7000b', backgroundColor: '#fff5f5' },
+  rangeChipText: { fontSize: 12, color: '#888' },
+  rangeChipTextOn: { color: '#c7000b', fontWeight: '600' },
   ringCenter: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   ringPercent: { fontSize: 30, fontWeight: '700', color: '#c7000b' },
   ringLabel: { fontSize: 12, color: '#999', marginTop: 2 },
-  actions: { flexDirection: 'row', gap: 12, justifyContent: 'center', marginTop: 18 },
-  primary: { backgroundColor: '#c7000b', borderRadius: 22, paddingVertical: 12, paddingHorizontal: 28 },
+  primary: { backgroundColor: '#c7000b', borderRadius: 22, paddingVertical: 12, paddingHorizontal: 28, alignSelf: 'center', alignItems: 'center' },
   primaryText: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  secondary: { backgroundColor: '#fff', borderColor: '#c7000b', borderWidth: 1, borderRadius: 22, paddingVertical: 12, paddingHorizontal: 28, marginTop: 10 },
+  secondary: { backgroundColor: '#fff', borderColor: '#c7000b', borderWidth: 1, borderRadius: 22, paddingVertical: 12, paddingHorizontal: 28, marginTop: 10, alignSelf: 'center', alignItems: 'center' },
   secondaryText: { color: '#c7000b', fontSize: 15, fontWeight: '600' },
   section: { fontSize: 15, fontWeight: '600', color: '#333', marginTop: 22, marginBottom: 8 },
   empty: { color: '#aaa', fontSize: 13 },
@@ -380,6 +552,9 @@ const styles = StyleSheet.create({
   field: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   fieldLabel: { width: 100, color: '#666', fontSize: 14 },
   input: { flex: 1, borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, fontSize: 14 },
+  fieldValue: { flex: 1, borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 10 },
+  fieldValueText: { fontSize: 14, color: '#222' },
+  fieldPlaceholder: { fontSize: 14, color: '#aaa' },
   genderRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
   gender: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 8, borderWidth: 1, borderColor: '#e5e5e5' },
   genderActive: { borderColor: '#c7000b', backgroundColor: '#fff5f5' },
