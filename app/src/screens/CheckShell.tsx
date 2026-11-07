@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { showDialog } from '../components/AppDialog';
+import { EnglishPanel, MedicationPanel, SportPanel } from './HealthPanels';
 import type { CheckSnapshot, CheckStore } from '../check/checkStore';
 import { DEFAULT_CUP_ML, ageFromBirthDate, businessToday, formatML, type Gender } from '../model/waterGoal';
 
@@ -11,13 +12,6 @@ type ListKey = 'water' | 'medication' | 'sport' | 'english';
 const CATEGORIES: Record<Category, { name: string; lists: [ListKey, string][] }> = {
   health: { name: '健康', lists: [['water', '饮水'], ['medication', '服药'], ['sport', '运动']] },
   learning: { name: '学习', lists: [['english', '英语']] }
-};
-
-const LIST_NAMES: Record<ListKey, string> = {
-  water: '饮水',
-  medication: '服药',
-  sport: '运动',
-  english: '英语'
 };
 
 export interface CheckShellProps {
@@ -87,8 +81,12 @@ export function CheckShell({ store, isGuest, displayName, onUpgrade, onExit, onO
             {tab === 'today' ? <TodayView snapshot={snapshot} ratio={ratio} store={store} /> : null}
             {tab === 'stats' ? <StatsView snapshot={snapshot} /> : null}
           </>
-        ) : tab !== 'profile' ? (
-          <PlaceholderView listName={LIST_NAMES[list]} tab={tab} />
+        ) : list === 'medication' ? (
+          tab === 'profile' ? null : <MedicationPanel tab={tab} />
+        ) : list === 'sport' ? (
+          tab === 'profile' ? null : <SportPanel tab={tab} />
+        ) : list === 'english' ? (
+          tab === 'profile' ? null : <EnglishPanel tab={tab} />
         ) : null}
         {tab === 'profile' ? (
           <ProfileView
@@ -113,18 +111,6 @@ export function CheckShell({ store, isGuest, displayName, onUpgrade, onExit, onO
           </Pressable>
         ))}
       </View>
-    </View>
-  );
-}
-
-function PlaceholderView({ listName, tab }: { listName: string; tab: Tab }): React.JSX.Element {
-  return (
-    <View style={styles.placeholder}>
-      <Text style={styles.phIcon}>{tab === 'today' ? '📝' : '🏆'}</Text>
-      <Text style={styles.phTitle}>
-        {listName} · {tab === 'today' ? '记录' : '统计与成就'}
-      </Text>
-      <Text style={styles.phHint}>该清单的完整交互已在设计预览中上线；当前 RN 版本正在补齐这一页面。</Text>
     </View>
   );
 }
