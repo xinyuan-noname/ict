@@ -8,6 +8,7 @@ import { NativeAccountKitProvider } from './src/auth/providers/nativeAccountKit'
 import { WebOAuthProvider, WindowsCapabilityProbe } from './src/auth/providers/webOAuth';
 import { WebUnsupportedProvider } from './src/auth/providers/webUnsupported';
 import { AppDialogHost } from './src/components/AppDialog';
+import { ErrorBoundary } from './src/components/ErrorBoundary';
 import type { AuthProviderStrategy, CapabilityProbe } from './src/auth/providers/types';
 import { RewardsApi } from './src/api/rewardsApi';
 import { CheckApi } from './src/api/checkApi';
@@ -70,8 +71,10 @@ export default function App(): React.JSX.Element {
   }, [provider, guard]);
   return (
     <SafeAreaView style={styles.root}>
-      <AppRoot provider={provider} rewardsStore={rewardsStore} checkStore={checkStore} />
-      <AppDialogHost />
+      <ErrorBoundary>
+        <AppRoot provider={provider} rewardsStore={rewardsStore} checkStore={checkStore} />
+        <AppDialogHost />
+      </ErrorBoundary>
     </SafeAreaView>
   );
 }
