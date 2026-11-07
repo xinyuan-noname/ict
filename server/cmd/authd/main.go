@@ -15,6 +15,7 @@ import (
 	"ict/server/internal/adapter/audit"
 	"ict/server/internal/adapter/huawei"
 	"ict/server/internal/adapter/store/filestore"
+	"ict/server/internal/adapter/wechat"
 	"ict/server/internal/config"
 	"ict/server/internal/domain"
 	"ict/server/internal/handler"
@@ -35,7 +36,7 @@ func main() {
 
 	// --selfcheck 只输出模式与环境，不输出任何凭据（design 2.5.1）。
 	if len(os.Args) > 1 && os.Args[1] == "--selfcheck" {
-		fmt.Printf("selfcheck ok mode=%s env=%s\n", cfg.AuthMode, cfg.Env)
+		fmt.Printf("selfcheck ok mode=%s env=%s wechat=%s\n", cfg.AuthMode, cfg.Env, cfg.WeChatAvailabilityState())
 		return
 	}
 
@@ -183,9 +184,47 @@ func main() {
 		Clock: portClock{}, Logger: logger,
 	}
 
+	var weChatService *service.WeChatAuthService
+	if cfg.WeChatEnabled {
+		weChatStore, wserr := filestore.OpenWeChatState(cfg.DatabaseDSN+".wechat.json", filestore.Options{
+			Namespace: cfg.StorageNamespace,
+			Mode:      cfg.AuthMode,
+		})
+		if wserr != nil {
+			logger.Error(context.Background(), "wechat state storage open failed", "event", "boot_failure", "reason", wserr.Error())
+			os.Exit(1)
+		}
+		weChatProvider := wechat.New(wechat.Options{
+			AppID:              cfg.WeChatAppID,
+			Secret:             cfg.WeChatAppSecret,
+			SecretPrevious:     cfg.WeChatAppSecretPrevious,
+			PrimaryRedirectURI: cfg.WeChatPrimaryRedirectURI,
+			AuthorizeURL:       cfg.WeChatAuthorizeURL,
+			TokenURL:           cfg.WeChatTokenURL,
+			UserInfoURL:        cfg.WeChatUserInfoURL,
+			Timeout:            cfg.WeChatTimeout,
+			ConnectRetries:     cfg.WeChatConnectRetries,
+			BreakerThreshold:   cfg.WeChatBreakerThreshold,
+			BreakerOpen:        cfg.WeChatBreakerOpen,
+			Logger:             logger,
+		})
+		weChatService = &service.WeChatAuthService{
+			Opts: service.WeChatOptions{
+				Enabled: cfg.WeChatEnabled, Env: cfg.Env, Mode: cfg.WeChatMode,
+				AppID: cfg.WeChatAppID, PrimaryRedirectURI: cfg.WeChatPrimaryRedirectURI,
+				StateTTL: cfg.WeChatStateTTL, MaxPendingState: cfg.WeChatMaxPendingState,
+			},
+			Provider: weChatProvider, States: weChatStore, Users: store, Codes: store,
+			Sessions: sessions, Audit: sink, Clock: portClock{}, Logger: logger,
+			Limiter:       ratelimit.New(cfg.RateLimitLoginFails, time.Minute),
+			GlobalLimiter: ratelimit.New(300, time.Minute),
+		}
+	}
+
 	srv := &handler.Server{Deps: handler.Deps{
 		Cfg: cfg, Auth: authService, Reward: rewardService, Check: checkService,
-		Pet: petService, Sport: sportService, Sync: syncService, Sessions: sessions, Provider: provider,
+		Pet: petService, Sport: sportService, Sync: syncService, WeChat: weChatService,
+		Sessions: sessions, Provider: provider,
 		Storage: store, Log: logger, StartedAt: time.Now(),
 	}}
 

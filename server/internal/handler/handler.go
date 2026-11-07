@@ -24,6 +24,7 @@ type Deps struct {
 	Pet       *service.PetService
 	Sport     *service.SportService
 	Sync      *service.SyncService
+	WeChat    *service.WeChatAuthService
 	Sessions  *service.SessionService
 	Provider  interface{ Probe(context.Context) string }
 	Storage   interface{ Ping(context.Context) error }
@@ -86,6 +87,11 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("GET /v1/sync/snapshot", s.syncSnapshot)
 	mux.HandleFunc("POST /v1/sync/push", s.syncPush)
 	mux.HandleFunc("POST /v1/sync/reconcile", s.syncReconcile)
+
+	// 微信开放平台扫码登录（独立链路，不复用华为登录端点）。
+	mux.HandleFunc("POST /v1/auth/wechat/authorize", s.wechatAuthorize)
+	mux.HandleFunc("POST /v1/auth/wechat/callback", s.wechatCallback)
+	mux.HandleFunc("GET /v1/auth/wechat/availability", s.wechatAvailability)
 
 	// 宠物 / 道具 / 好友 / PK。
 	mux.HandleFunc("GET /v1/pet", s.petGet)
