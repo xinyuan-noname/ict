@@ -78,11 +78,11 @@ function build(go) {
 function start(name, cmd, args, options) {
   mkdirSync(LOGS, { recursive: true });
   const out = openSync(join(LOGS, `${name}.log`), 'a');
-  // Windows 上 npx / npm 是 .cmd 脚本，直接 spawn 会 ENOENT
-  const executable =
-    process.platform === 'win32' && (cmd === 'npx' || cmd === 'npm') ? `${cmd}.cmd` : cmd;
-  const child = spawn(executable, args, {
+  // Windows 上 npx / npm 是 .cmd 脚本：直接 spawn 会 EINVAL/ENOENT，必须经 shell
+  const useShell = process.platform === 'win32' && (cmd === 'npx' || cmd === 'npm');
+  const child = spawn(cmd, args, {
     ...options,
+    shell: useShell,
     stdio: ['ignore', out, out],
     windowsHide: true
   });
