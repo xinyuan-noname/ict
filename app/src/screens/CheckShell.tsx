@@ -27,9 +27,10 @@ export interface CheckShellProps {
   onExit: () => void;
   onOpenRewards?: () => void;
   sportStore?: SportStore;
+  onSync?: () => void;
 }
 
-export function CheckShell({ store, isGuest, displayName, onUpgrade, onExit, onOpenRewards, sportStore }: CheckShellProps): React.JSX.Element {
+export function CheckShell({ store, isGuest, displayName, onUpgrade, onExit, onOpenRewards, sportStore, onSync }: CheckShellProps): React.JSX.Element {
   const [snapshot, setSnapshot] = useState<CheckSnapshot>(store.getSnapshot());
   const [tab, setTab] = useState<Tab>('today');
   const [category, setCategory] = useState<Category>('health');
@@ -102,6 +103,7 @@ export function CheckShell({ store, isGuest, displayName, onUpgrade, onExit, onO
             onUpgrade={onUpgrade}
             onExit={onExit}
             onOpenRewards={onOpenRewards}
+            onSync={onSync}
           />
         ) : null}
       </View>
@@ -353,7 +355,8 @@ function ProfileView({
   isGuest,
   onUpgrade,
   onExit,
-  onOpenRewards
+  onOpenRewards,
+  onSync
 }: {
   snapshot: CheckSnapshot;
   store: CheckStore;
@@ -361,6 +364,7 @@ function ProfileView({
   onUpgrade?: () => void;
   onExit: () => void;
   onOpenRewards?: () => void;
+  onSync?: () => void;
 }): React.JSX.Element {
   const [height, setHeight] = useState(snapshot.profile ? String(snapshot.profile.heightCm) : '');
   const [weight, setWeight] = useState(snapshot.profile ? String(Math.round(snapshot.profile.weightG / 1000)) : '');
@@ -418,6 +422,19 @@ function ProfileView({
           <Text style={styles.secondaryText}>签到与头像框</Text>
         </Pressable>
       ) : null}
+
+      <Text style={styles.section}>数据与同步</Text>
+      <View style={styles.identity}>
+        <Text style={styles.hint}>云端同步：{isGuest ? '不可用（需登录）' : '已开启'}</Text>
+        <Text style={styles.hint}>
+          {isGuest ? 'Web 版未开放华为账号登录；使用游客模式，本地保存' : '运动记录、成就与积分以服务端为准'}
+        </Text>
+        {!isGuest && onSync ? (
+          <Pressable style={styles.secondary} onPress={onSync}>
+            <Text style={styles.secondaryText}>立即同步</Text>
+          </Pressable>
+        ) : null}
+      </View>
 
       <View style={styles.identity}>
         <Text style={styles.section}>{isGuest ? '游客模式' : '账号'}</Text>

@@ -15,6 +15,9 @@ import { CheckApi } from './src/api/checkApi';
 import { CheckStore } from './src/check/checkStore';
 import { SportApi } from './src/api/sportApi';
 import { SportStore } from './src/sport/sportStore';
+import { SyncClient } from './src/api/syncClient';
+import { SyncEngine } from './src/sync/syncEngine';
+import { SyncQueue } from './src/sync/syncQueue';
 import { RewardsStore } from './src/rewards/rewardsStore';
 import { GuestNetworkGuard } from './src/guest/GuestNetworkGuard';
 import { GuestStore } from './src/guest/GuestStore';
@@ -90,12 +93,24 @@ function AppContent(): React.JSX.Element {
     const client = new ApiClient({ baseUrl: defaultBaseUrl(), allowInsecure: __DEV__, guard });
     return new SportStore({ api: new SportApi(client), getToken: () => provider.currentToken() });
   }, [provider, guard]);
+  const syncEngine = useMemo(() => {
+    const client = new ApiClient({ baseUrl: defaultBaseUrl(), allowInsecure: __DEV__, guard });
+    return new SyncEngine({
+      client: new SyncClient(client),
+      queue: new SyncQueue(),
+      getToken: () => provider.currentToken(),
+      onUnauthorized: () => {
+        void provider.logout();
+      }
+    });
+  }, [provider, guard]);
   return (
     <AppRoot
       provider={provider}
       rewardsStore={rewardsStore}
       checkStore={checkStore}
       sportStore={sportStore}
+      syncEngine={syncEngine}
     />
   );
 }

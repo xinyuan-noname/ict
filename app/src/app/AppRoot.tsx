@@ -4,6 +4,7 @@ import type { AuthProvider, AuthSnapshot } from '../auth/AuthProvider';
 import type { CheckStore } from '../check/checkStore';
 import type { RewardsStore } from '../rewards/rewardsStore';
 import type { SportStore } from '../sport/sportStore';
+import type { SyncEngine } from '../sync/syncEngine';
 import { CheckShell } from '../screens/CheckShell';
 import { LoginScreen } from '../screens/LoginScreen';
 import { RewardsScreen } from '../screens/RewardsScreen';
@@ -14,10 +15,11 @@ export interface AppRootProps {
   rewardsStore: RewardsStore;
   checkStore: CheckStore;
   sportStore?: SportStore;
+  syncEngine?: SyncEngine;
 }
 
 // 导航守卫：恢复中 → 登录 → check 清单主页（游客/登录共用外壳）。
-export function AppRoot({ provider, rewardsStore, checkStore, sportStore }: AppRootProps): React.JSX.Element {
+export function AppRoot({ provider, rewardsStore, checkStore, sportStore, syncEngine }: AppRootProps): React.JSX.Element {
   const [snapshot, setSnapshot] = useState<AuthSnapshot>(provider.getSnapshot());
   const [busy, setBusy] = useState(false);
   const [showRewards, setShowRewards] = useState(false);
@@ -40,6 +42,19 @@ export function AppRoot({ provider, rewardsStore, checkStore, sportStore }: AppR
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provider]);
 
+  // 同步仅在已登录态运行；游客与未登录零请求（SYNC-02/09）。
+  useEffect(() => {
+    if (!syncEngine) {
+      return;
+    }
+    if (snapshot.state === 'authenticated') {
+      syncEngine.start();
+    } else {
+      syncEngine.stop();
+    }
+    return () => syncEngine.stop();
+  }, [snapshot.state, syncEngine]);
+
   if (snapshot.state === 'restoring') {
     return (
       <View style={styles.center}>
@@ -56,6 +71,7 @@ export function AppRoot({ provider, rewardsStore, checkStore, sportStore }: AppR
         isGuest
         displayName="游客"
         sportStore={sportStore}
+        onSync={() => void syncEngine?.flush()}
         onUpgrade={() => {
           void provider.login();
         }}
@@ -82,6 +98,7 @@ export function AppRoot({ provider, rewardsStore, checkStore, sportStore }: AppR
         isGuest={false}
         displayName={snapshot.user?.displayName ?? '华为用户'}
         sportStore={sportStore}
+        onSync={() => void syncEngine?.flush()}
         onOpenRewards={() => setShowRewards(true)}
         onExit={() => {
           void provider.logout();
