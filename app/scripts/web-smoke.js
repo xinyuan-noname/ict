@@ -63,6 +63,7 @@ setTimeout(() => {
   }
 
   dom.window.close();
+
   if (!text || childCount === 0) {
     console.error('[web-smoke] 失败：页面没有任何可见内容（白屏）');
     process.exit(1);
