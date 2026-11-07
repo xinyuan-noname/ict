@@ -20,7 +20,7 @@ import {
 } from '../check/localData';
 import { ENGLISH_ACHIEVEMENTS, ENGLISH_TOTAL_POINTS, englishAchievementState, englishStreak, englishTotal } from '../model/english';
 import { LineChart } from '../components/LineChart';
-import { ACHIEVEMENTS, GROUP_NAMES, evaluate, type AchievementDef, type AthleteProfile, type SportRecord as ModelSportRecord } from '../model/sport';
+import { ACHIEVEMENTS, GROUP_NAMES, effectivePaceThreshold, evaluate, formatPace, paceLimitSec, paceScale, type AchievementDef, type AthleteProfile, type SportRecord as ModelSportRecord } from '../model/sport';
 import { businessToday } from '../model/waterGoal';
 
 type PanelTab = 'today' | 'stats' | 'profile';
@@ -174,8 +174,14 @@ export function MedicationPanel({ tab }: { tab: PanelTab }): React.JSX.Element {
     const days = Array.from({ length: 7 }, (_, i) => {
       const day = addDays(today, -(6 - i));
       const dayViews = medViews(items, doses, day, 23);
-      const done = dayViews.length > 0 && dayViews.every((v) => v.status === 'taken' || v.status === 'late');
-      return { day, done, total: dayViews.length };
+      const takenCount = dayViews.filter((v) => v.status === 'taken' || v.status === 'late').length;
+      const done = dayViews.length > 0 && takenCount === dayViews.length;
+      return {
+        day,
+        done,
+        total: dayViews.length,
+        rate: dayViews.length > 0 ? Math.round((takenCount / dayViews.length) * 100) : 0
+      };
     });
     return (
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scroll}>
@@ -184,7 +190,14 @@ export function MedicationPanel({ tab }: { tab: PanelTab }): React.JSX.Element {
           <View style={styles.statBox}><Text style={styles.statValue}>{totalDoses}</Text><Text style={styles.statLabel}>累计次数</Text></View>
           <View style={styles.statBox}><Text style={styles.statValue}>{items.filter((i) => i.status === 'active').length}</Text><Text style={styles.statLabel}>在服药物</Text></View>
         </View>
-        <Text style={styles.section}>近 7 天</Text>
+<Text style={styles.section}>近 7 天完成率</Text>
+        <LineChart
+          values={days.map((d) => d.rate)}
+          labels={days.map((d) => d.day.slice(5).slice(3))}
+          unit="%"
+          target={100}
+        />
+        <Text style={styles.section}>近 7 天明细</Text>
         {days.map((d) => (
           <View key={d.day} style={styles.row}>
             <Text style={styles.rowCell}>{d.day}</Text>
@@ -357,6 +370,23 @@ export function SportPanel({ tab }: { tab: PanelTab }): React.JSX.Element {
           <View style={styles.statBox}><Text style={styles.statValue}>{unlocked}</Text><Text style={styles.statLabel}>已解锁</Text></View>
           <View style={styles.statBox}><Text style={styles.statValue}>{records.reduce((s, r) => s + r.distanceM, 0) / 1000}</Text><Text style={styles.statLabel}>累计公里</Text></View>
           <View style={styles.statBox}><Text style={styles.statValue}>{records.reduce((s, r) => s + r.steps, 0)}</Text><Text style={styles.statLabel}>累计步数</Text></View>
+        </View>
+        <Text style={styles.section}>个性化配速极限</Text>
+        <View style={styles.paceCard}>
+          <View style={styles.paceRow}>
+            <Text style={styles.paceLabel}>个人极限配速</Text>
+            <Text style={styles.paceValue}>{formatPace(paceLimitSec(SPORT_PROFILE))}</Text>
+          </View>
+          <View style={styles.paceRow}>
+            <Text style={styles.paceLabel}>缩放系数</Text>
+            <Text style={styles.paceValue}>{paceScale(SPORT_PROFILE).toFixed(2)}</Text>
+          </View>
+          <View style={styles.paceTags}>
+            {[300, 280, 260, 240, 230, 220, 210].map((std) => (
+              <Text key={std} style={styles.paceTag}>{formatPace(effectivePaceThreshold(std, SPORT_PROFILE))}</Text>
+            ))}
+          </View>
+          <Text style={styles.paceHint}>依据性别/年龄/体重估算，仅用于成就激励，不构成训练或医学建议。</Text>
         </View>
         <Text style={styles.section}>近 7 天步数</Text>
         <TrendChart
@@ -614,5 +644,12 @@ const styles = StyleSheet.create({
   slotChip: { borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5 },
   slotChipOn: { borderColor: '#c7000b', backgroundColor: '#fff5f5' },
   slotChipText: { fontSize: 11, color: '#666' },
-  slotChipTextOn: { color: '#c7000b', fontWeight: '600' }
+  slotChipTextOn: { color: '#c7000b', fontWeight: '600' },
+  paceCard: { borderWidth: 1, borderColor: '#f3d9db', backgroundColor: '#fff8f8', borderRadius: 14, padding: 12 },
+  paceRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
+  paceLabel: { fontSize: 12, color: '#777' },
+  paceValue: { fontSize: 14, color: '#c7000b', fontWeight: '700' },
+  paceTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 8 },
+  paceTag: { fontSize: 10, color: '#a61b1b', backgroundColor: '#fff', borderWidth: 1, borderColor: '#f3d9db', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 1 },
+  paceHint: { fontSize: 10, color: '#aaa', marginTop: 8, lineHeight: 15 }
 });
