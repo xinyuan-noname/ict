@@ -7,7 +7,12 @@
 <style>
   :root { --primary:#c7000b; --danger-bg:#fdecec; --danger:#a61b1b; --text:#333; --muted:#888; --ok:#1a7a3c; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  body { margin:0; font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif; background:#eef0f4; display:flex; justify-content:center; padding:18px 16px; }
+  body { margin:0; font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif; background:#eef0f4; display:flex; flex-direction:column; align-items:center; gap:12px; padding:18px 16px; }
+  .protoBanner { width:100%; max-width:390px; background:#fff8e6; border:1px solid #f0d9a8; border-radius:12px; padding:10px 14px; color:#5a4500; font-size:12px; line-height:1.6; }
+  .protoBanner b { font-size:13px; }
+  .protoBanner p { margin:4px 0; }
+  .protoBanner a { color:#a86b00; }
+  .protoHint { color:#8a7440; }
   .phone { width:390px; height:820px; background:#fff; border-radius:28px; box-shadow:0 18px 50px rgba(0,0,0,.18); overflow:hidden; display:flex; flex-direction:column; }
   .status { height:26px; flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; padding:0 18px; font-size:11px; color:#bbb; }
   .screen { flex:1; display:flex; flex-direction:column; overflow:hidden; }
@@ -199,6 +204,13 @@
 </style>
 </head>
 <body>
+<div class="protoBanner">
+  <p><b>设计原型 · 非产品实现</b></p>
+  <p>本页仅用于视觉与交互评审，不代表可交付产品。</p>
+  <p>Web 版以 app/dist/ 静态产物或 npm run web:dev 为准。</p>
+  <p><a href="http://127.0.0.1:3000" target="_blank" rel="noreferrer">查看 Web 版（http://127.0.0.1:3000）</a></p>
+  <p class="protoHint">未启动时：在 app/ 目录执行 npm run web:dev，或部署 app/dist/ 后访问。</p>
+</div>
 <div>
   <div class="tabsTop">
     <button class="tab" data-screen="login">登录</button>

@@ -30,6 +30,12 @@ if (!scriptSrc) {
 const bundlePath = path.join(distDir, scriptSrc.replace(/^\.\//, ''));
 const bundle = fs.readFileSync(bundlePath, 'utf8');
 
+// PRV-05：原型标注不得进入构建产物。
+if (bundle.includes('非产品实现') || html.includes('非产品实现')) {
+  console.error('[web-smoke] 失败：构建产物包含「非产品实现」原型标记');
+  process.exit(1);
+}
+
 const errors = [];
 const virtualConsole = new VirtualConsole();
 virtualConsole.on('jsdomError', (err) => errors.push(`jsdomError: ${err.message}`));
