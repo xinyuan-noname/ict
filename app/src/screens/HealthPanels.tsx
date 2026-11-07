@@ -19,6 +19,7 @@ import {
   type SportRecord
 } from '../check/localData';
 import { ENGLISH_ACHIEVEMENTS, ENGLISH_TOTAL_POINTS, englishAchievementState, englishStreak, englishTotal } from '../model/english';
+import { LineChart } from '../components/LineChart';
 import { ACHIEVEMENTS, GROUP_NAMES, evaluate, type AchievementDef, type AthleteProfile, type SportRecord as ModelSportRecord } from '../model/sport';
 import { businessToday } from '../model/waterGoal';
 
@@ -358,7 +359,7 @@ export function SportPanel({ tab }: { tab: PanelTab }): React.JSX.Element {
           <View style={styles.statBox}><Text style={styles.statValue}>{records.reduce((s, r) => s + r.steps, 0)}</Text><Text style={styles.statLabel}>累计步数</Text></View>
         </View>
         <Text style={styles.section}>近 7 天步数</Text>
-        <WeekBars
+        <TrendChart
           values={Array.from({ length: 7 }, (_, i) => {
             const day = addDays(today, -(6 - i));
             return { label: day.slice(5), value: records.filter((r) => r.day === day).reduce((s, r) => s + r.steps, 0) };
@@ -466,7 +467,7 @@ export function EnglishPanel({ tab }: { tab: PanelTab }): React.JSX.Element {
           <View style={styles.statBox}><Text style={styles.statValue}>{ENGLISH_TOTAL_POINTS}</Text><Text style={styles.statLabel}>成就积分</Text></View>
         </View>
         <Text style={styles.section}>近 7 天词数</Text>
-        <WeekBars
+        <TrendChart
           values={Array.from({ length: 7 }, (_, i) => {
             const day = addDays(today, -(6 - i));
             return { label: day.slice(5), value: data.wordsByDay[day] ?? 0 };
@@ -506,7 +507,7 @@ export function EnglishPanel({ tab }: { tab: PanelTab }): React.JSX.Element {
         <Pressable style={styles.inlineButton} onPress={applyTarget}><Text style={styles.inlineButtonText}>保存</Text></Pressable>
       </View>
       <Text style={styles.section}>近 7 天</Text>
-      <WeekBars
+      <TrendChart
         values={Array.from({ length: 7 }, (_, i) => {
           const day = addDays(today, -(6 - i));
           return { label: day.slice(5), value: data.wordsByDay[day] ?? 0 };
@@ -518,19 +519,13 @@ export function EnglishPanel({ tab }: { tab: PanelTab }): React.JSX.Element {
 }
 
 // ---------- 柱状图（无第三方依赖） ----------
-function WeekBars({ values, unit }: { values: { label: string; value: number }[]; unit: string }): React.JSX.Element {
-  const max = Math.max(1, ...values.map((v) => v.value));
+function TrendChart({ values, unit }: { values: { label: string; value: number }[]; unit: string }): React.JSX.Element {
   return (
-    <View style={styles.bars}>
-      {values.map((v) => (
-        <View key={v.label} style={styles.barCol}>
-          <Text style={styles.barValue}>{v.value > 0 ? v.value : ''}</Text>
-          <View style={[styles.bar, { height: Math.max(3, Math.round((v.value / max) * 80)) }]} />
-          <Text style={styles.barLabel}>{v.label.slice(3)}</Text>
-        </View>
-      ))}
-      <Text style={styles.barUnit}>{unit}</Text>
-    </View>
+    <LineChart
+      values={values.map((v) => v.value)}
+      labels={values.map((v) => v.label.slice(3))}
+      unit={unit}
+    />
   );
 }
 
