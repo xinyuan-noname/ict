@@ -6,7 +6,10 @@ import { GUEST_COPY } from '../guest/types';
 import type { SecureVault } from '../native/SecureVault';
 import { EXPIRES_KEY, SESSION_KEY, USER_KEY, VaultWriteError } from '../native/SecureVault';
 import { shouldClearCredential } from '../shared/errorCatalog';
+import { WECHAT_CANCELLED_COPY, wechatCopy } from '../shared/wechatCopy';
 import { logEvent } from '../shared/logger';
+import type { WeChatAuthApi } from '../api/wechatAuthApi';
+import { isCancelledResult } from '../api/wechatAuthApi';
 import type { AuthProviderStrategy, CapabilityProbe } from './providers/types';
 
 export type AuthState = 'restoring' | 'guest' | 'authenticated' | 'anonymous' | 'unsupported';
@@ -22,6 +25,8 @@ export interface AuthProviderDeps {
   networkGuard?: GuestNetworkGuard;
   /** 冷启动无会话时是否自动恢复游客档案；Web 传 false，其余端省略（默认 true） */
   resumeGuestOnBoot?: boolean;
+  /** Web 微信登录 API；三端不传，保证零影响 */
+  wechatApi?: WeChatAuthApi;
 }
 
 export interface AuthSnapshot {
@@ -39,6 +44,8 @@ export class AuthProvider {
   private readonly listeners = new Set<Listener>();
   private sessionToken: string | null = null;
   private timeoutStreak = 0;
+  private weChatBusy = false;
+  private weChatOrigin: 'guest' | 'anonymous' | null = null;
 
   constructor(private readonly deps: AuthProviderDeps) {}
 
@@ -265,6 +272,116 @@ export class AuthProvider {
     } catch (err) {
       backToGuest(toErrorInfo(err).message);
     }
+  }
+
+  // 微信第一段：服务端生成 state 后跳转官方授权页；busy 期间拒绝重入。
+  async beginWeChatLogin(): Promise<void> {
+    if (!this.deps.wechatApi || this.weChatBusy || this.snapshot.state === 'authenticated') {
+      return;
+    }
+    this.weChatBusy = true;
+    this.weChatOrigin = this.snapshot.state === 'guest' ? 'guest' : 'anonymous';
+    if (this.weChatOrigin === 'guest') {
+      this.deps.networkGuard?.leaveGuestMode();
+    }
+    try {
+      const { data } = await this.deps.wechatApi.authorize();
+      if (typeof window !== 'undefined' && window.location) {
+        window.location.assign(data.authorizeUrl);
+      }
+    } catch (err) {
+      this.weChatBusy = false;
+      this.restoreOrigin(toErrorInfo(err).message);
+    }
+  }
+
+  // 微信第二段：回跳后换取会话；取消/失败按来源回退，游客标识保持不变。
+  async completeWeChatLogin(input: {
+    code: string;
+    state: string;
+    cancelled?: boolean;
+    clientVersion?: string;
+  }): Promise<void> {
+    if (!this.deps.wechatApi) {
+      return;
+    }
+    const wasGuest = this.weChatOrigin === 'guest';
+    try {
+      const { data } = await this.deps.wechatApi.callback(input);
+      if (isCancelledResult(data)) {
+        this.restoreOrigin(WECHAT_CANCELLED_COPY);
+        return;
+      }
+      await this.persistSession(data, wasGuest);
+    } catch (err) {
+      const info = toErrorInfo(err);
+      this.restoreOrigin(wechatCopy(info.code));
+    } finally {
+      this.weChatOrigin = null;
+      this.weChatBusy = false;
+    }
+  }
+
+  private restoreOrigin(message?: string): void {
+    if (this.weChatOrigin === 'guest') {
+      this.deps.networkGuard?.enterGuestMode();
+      this.set({ state: 'guest', lastError: message ? { message } : null });
+      return;
+    }
+    this.set({ state: 'anonymous', lastError: message ? { message } : null });
+  }
+
+  // 公共落盘：写凭证 → 升级时清游客档案 → 写有效期与用户 → 认证态。
+  private async persistSession(
+    data: { sessionToken: string; expiresAt: string; user: UserBrief },
+    wasGuest: boolean
+  ): Promise<boolean> {
+    try {
+      await this.deps.vault.set(SESSION_KEY, data.sessionToken);
+    } catch (writeErr) {
+      logEvent('vault_write_failed', {
+        reason: writeErr instanceof VaultWriteError ? writeErr.message : 'unknown'
+      });
+      try {
+        await this.deps.api.logout(data.sessionToken);
+      } catch {
+        /* 吊销失败不影响本地失败结论 */
+      }
+      this.failBack(wasGuest, '本地安全存储不可用，登录失败');
+      return false;
+    }
+    if (wasGuest) {
+      const cleared = (await this.deps.guestStore?.clear()) ?? true;
+      if (!cleared) {
+        try {
+          await this.deps.api.logout(data.sessionToken);
+        } catch {
+          /* 尽力吊销 */
+        }
+        await this.deps.vault.clear(SESSION_KEY);
+        await this.deps.vault.clear(EXPIRES_KEY);
+        await this.deps.vault.clear(USER_KEY);
+        this.sessionToken = null;
+        this.failBack(true, '切换失败，已保留游客模式');
+        return false;
+      }
+    }
+    await this.deps.vault.set(EXPIRES_KEY, data.expiresAt);
+    await this.deps.vault.set(USER_KEY, JSON.stringify(data.user));
+    this.sessionToken = data.sessionToken;
+    this.timeoutStreak = 0;
+    this.deps.networkGuard?.leaveGuestMode();
+    this.set({ state: 'authenticated', user: data.user, expiresAt: data.expiresAt, lastError: null });
+    return true;
+  }
+
+  private failBack(wasGuest: boolean, message: string): void {
+    if (wasGuest) {
+      this.deps.networkGuard?.enterGuestMode();
+      this.set({ state: 'guest', lastError: { message } });
+      return;
+    }
+    this.set({ state: 'anonymous', lastError: { message } });
   }
 
   async logout(): Promise<void> {

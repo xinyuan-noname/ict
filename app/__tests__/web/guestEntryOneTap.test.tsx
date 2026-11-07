@@ -36,5 +36,9 @@ test('点击游客入口 1 次进入 check 清单且不发起网络请求', asyn
   expect(text).toContain('游客模式');
   expect(text).toContain('今日记录');
   expect(text).not.toContain('网页版暂不支持华为账号登录');
-  expect(fetchSpy).not.toHaveBeenCalled();
+  // 允许登录页渲染前的一次能力探测；游客窗口内不得有任何业务请求（WXO-65）。
+  const businessCalls = fetchSpy.mock.calls.filter(
+    (call) => !String(call[0]).includes('/v1/auth/wechat/availability')
+  );
+  expect(businessCalls).toHaveLength(0);
 });

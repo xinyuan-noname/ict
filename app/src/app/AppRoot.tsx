@@ -16,13 +16,55 @@ export interface AppRootProps {
   checkStore: CheckStore;
   sportStore?: SportStore;
   syncEngine?: SyncEngine;
+  /** Web 微信能力；三端不传，页面与请求零变化 */
+  wechat?: { available: boolean; reason?: string; onLogin: () => void };
+  /** 挂载前捕获的微信回跳上下文（仅 Web） */
+  initialWeChatCallback?:
+    | { kind: 'success'; code: string; state: string }
+    | { kind: 'cancelled' }
+    | { kind: 'error'; message: string }
+    | { kind: 'none' }
+    | null;
 }
 
 // 导航守卫：恢复中 → 登录 → check 清单主页（游客/登录共用外壳）。
-export function AppRoot({ provider, rewardsStore, checkStore, sportStore, syncEngine }: AppRootProps): React.JSX.Element {
+export function AppRoot({
+  provider,
+  rewardsStore,
+  checkStore,
+  sportStore,
+  syncEngine,
+  wechat,
+  initialWeChatCallback
+}: AppRootProps): React.JSX.Element {
   const [snapshot, setSnapshot] = useState<AuthSnapshot>(provider.getSnapshot());
   const [busy, setBusy] = useState(false);
   const [showRewards, setShowRewards] = useState(false);
+  const [wechatError, setWechatError] = useState<string | undefined>(undefined);
+
+  // 回跳上下文只消费一次；成功即换票，异常直接回登录页提示。
+  useEffect(() => {
+    if (!initialWeChatCallback) {
+      return;
+    }
+    if (initialWeChatCallback.kind === 'success') {
+      void provider.completeWeChatLogin({
+        code: initialWeChatCallback.code,
+        state: initialWeChatCallback.state
+      });
+    } else if (initialWeChatCallback.kind === 'error') {
+      setWechatError(initialWeChatCallback.message);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const upgrade = (): void => {
+    if (wechat?.available) {
+      wechat.onLogin();
+      return;
+    }
+    void provider.login();
+  };
 
   useEffect(() => {
     const unsubscribe = provider.subscribe((next) => {
@@ -73,7 +115,7 @@ export function AppRoot({ provider, rewardsStore, checkStore, sportStore, syncEn
         sportStore={sportStore}
         onSync={() => void syncEngine?.flush()}
         onUpgrade={() => {
-          void provider.login();
+          upgrade();
         }}
         onExit={() => {
           void provider.exitGuest();
@@ -111,7 +153,10 @@ export function AppRoot({ provider, rewardsStore, checkStore, sportStore, syncEn
     <LoginScreen
       loading={busy}
       errorCode={snapshot.lastError?.code}
-      errorMessage={snapshot.lastError ? userMessageFor(snapshot.lastError.code) : undefined}
+      errorMessage={
+        wechatError ??
+        (snapshot.lastError ? userMessageFor(snapshot.lastError.code) : undefined)
+      }
       traceId={snapshot.lastError?.traceId}
       onLogin={() => {
         if (busy) return;
@@ -122,9 +167,22 @@ export function AppRoot({ provider, rewardsStore, checkStore, sportStore, syncEn
         if (busy) return;
         void provider.enterGuest();
       }}
+      wechat={
+        wechat
+          ? {
+              available: wechat.available,
+              reason: wechat.reason,
+              onLogin: wechat.onLogin
+            }
+          : undefined
+      }
       loginDisabled={Platform.OS === 'web'}
-      loginHint="网页版暂不支持华为账号登录，请使用「游客进入预览」"
-      guestPrimary={Platform.OS === 'web'}
+      loginHint={
+        wechat
+          ? '网页版暂不支持华为账号登录，请使用微信登录或游客进入'
+          : '网页版暂不支持华为账号登录，请使用「游客进入预览」'
+      }
+      guestPrimary={Platform.OS === 'web' && !wechat?.available}
     />
   );
 }

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Platform, SafeAreaView, StyleSheet } from 'react-native';
 import { AuthApi } from './src/api/authApi';
 import { ApiClient } from './src/api/client';
@@ -24,6 +24,8 @@ import { GuestStore } from './src/guest/GuestStore';
 import { AsyncStorageGuestStorage } from './src/guest/GuestStorage';
 import { KeychainVault } from './src/native/SecureVault';
 import { APP_VERSION, WINDOWS_REDIRECT_URI, defaultBaseUrl } from './src/shared/config';
+import { WeChatAuthApi, weChatOrigin } from './src/api/wechatAuthApi';
+import { takePendingWeChatCallback } from './src/web/wechatCallback';
 
 export interface AppDependencies {
   baseUrl?: string;
@@ -32,6 +34,7 @@ export interface AppDependencies {
   capability?: CapabilityProbe;
   guard?: GuestNetworkGuard;
   resumeGuestOnBoot?: boolean;
+  wechatApi?: WeChatAuthApi;
 }
 
 export function buildAuthProvider(deps: AppDependencies = {}): AuthProvider {
@@ -43,6 +46,14 @@ export function buildAuthProvider(deps: AppDependencies = {}): AuthProvider {
   const api = new AuthApi(client);
   const isWeb = Platform.OS === 'web';
   const isWindows = Platform.OS === 'windows' || process.env.RN_PLATFORM === 'windows';
+  // 微信仅 Web：同源请求，不读 defaultBaseUrl（P5）。三端不构造该 API。
+  const wechatApi =
+    deps.wechatApi ??
+    (isWeb && weChatOrigin()
+      ? new WeChatAuthApi(
+          new ApiClient({ baseUrl: weChatOrigin(), allowInsecure: __DEV__ })
+        )
+      : undefined);
   const strategy =
     deps.provider ??
     (isWeb
@@ -62,7 +73,8 @@ export function buildAuthProvider(deps: AppDependencies = {}): AuthProvider {
     guestStore: new GuestStore({ storage: new AsyncStorageGuestStorage() }),
     networkGuard: deps.guard,
     // Web 首屏固定为登录页：不自动恢复游客档案，点击「游客进入预览」时才复用。
-    resumeGuestOnBoot: deps.resumeGuestOnBoot ?? !isWeb
+    resumeGuestOnBoot: deps.resumeGuestOnBoot ?? !isWeb,
+    wechatApi
   });
 }
 
@@ -80,7 +92,54 @@ export default function App(): React.JSX.Element {
 
 function AppContent(): React.JSX.Element {
   const guard = useMemo(() => new GuestNetworkGuard(), []);
-  const provider = useMemo(() => buildAuthProvider({ guard }), [guard]);
+  // 微信仅在 Web 构造，且使用同源 baseUrl；三端为 undefined。
+  const wechatApi = useMemo(() => {
+    if (Platform.OS !== 'web') {
+      return undefined;
+    }
+    const origin = weChatOrigin();
+    if (!origin) {
+      return undefined;
+    }
+    return new WeChatAuthApi(new ApiClient({ baseUrl: origin, allowInsecure: __DEV__ }));
+  }, []);
+  const provider = useMemo(() => buildAuthProvider({ guard, wechatApi }), [guard, wechatApi]);
+  const initialWeChatCallback = useMemo(
+    () => (Platform.OS === 'web' ? takePendingWeChatCallback() : null),
+    []
+  );
+  const [wechatState, setWechatState] = useState<{ available: boolean; reason?: string }>({
+    available: false
+  });
+
+  // 渲染前完成可用性判定（≤1s）；失败/超时按不可用降级，不阻塞游客入口。
+  useEffect(() => {
+    if (!wechatApi) {
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      if (!cancelled) {
+        setWechatState({ available: false, reason: 'unavailable' });
+      }
+    }, 1000);
+    void wechatApi
+      .availability()
+      .then(({ data }) => {
+        if (cancelled) return;
+        clearTimeout(timer);
+        setWechatState({ available: data.enabled, reason: data.reason });
+      })
+      .catch(() => {
+        if (cancelled) return;
+        clearTimeout(timer);
+        setWechatState({ available: false, reason: 'unavailable' });
+      });
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [wechatApi]);
   const rewardsStore = useMemo(() => {
     const client = new ApiClient({ baseUrl: defaultBaseUrl(), allowInsecure: __DEV__, guard });
     return new RewardsStore({ api: new RewardsApi(client), getToken: () => provider.currentToken() });
@@ -111,6 +170,18 @@ function AppContent(): React.JSX.Element {
       checkStore={checkStore}
       sportStore={sportStore}
       syncEngine={syncEngine}
+      wechat={
+        wechatApi
+          ? {
+              available: wechatState.available,
+              reason: wechatState.reason,
+              onLogin: () => {
+                void provider.beginWeChatLogin();
+              }
+            }
+          : undefined
+      }
+      initialWeChatCallback={initialWeChatCallback}
     />
   );
 }

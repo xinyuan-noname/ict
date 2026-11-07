@@ -1,6 +1,6 @@
 import { ApiClient, type RawResponse } from './client';
 
-export type Platform = 'android' | 'ios' | 'windows' | 'web';
+export type Platform = 'android' | 'ios' | 'windows' | 'web' | 'wechat';
 
 export interface UserBrief {
   userId: string;

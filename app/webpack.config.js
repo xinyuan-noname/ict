@@ -75,7 +75,17 @@ module.exports = (_env, argv) => {
       hot: true,
       historyApiFallback: true,
       allowedHosts: 'all',
-      client: { overlay: { warnings: false, errors: true } }
+      client: { overlay: { warnings: false, errors: true } },
+      // 开发态同源：浏览器请求 3000 端口的 /v1 转发到 authd，
+      // 使微信绑定 Cookie（SameSite=Lax）与后续接口请求同源。
+      proxy: [
+        {
+          context: ['/v1'],
+          target: 'http://127.0.0.1:8443',
+          changeOrigin: false,
+          secure: false
+        }
+      ]
     },
     devtool: isDev ? 'eval-cheap-module-source-map' : false,
     performance: { hints: false }
