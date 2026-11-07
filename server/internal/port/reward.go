@@ -14,6 +14,8 @@ type RewardTx struct {
 	Owned    map[string]domain.OwnedFrame
 	Orders   map[string]domain.RedeemOrder
 	Equipped string
+	// Idempotency 记录成就入账幂等键 → 首次流水 entryId，保证重复请求只入账一次。
+	Idempotency map[string]string
 	// HighWater 记录已处理的最大签到日，用于检测时钟回拨（未来日期）。
 	HighWater string
 }

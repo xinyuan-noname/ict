@@ -111,6 +111,8 @@ type PointsEntry struct {
 	UserID       string    `json:"userId"`
 	Type         string    `json:"type"`
 	Amount       int       `json:"amount"`
+	// RequestedAmount 记录申请入账分值；余额截断时 Amount 可能为 0（ACH-07）。
+	RequestedAmount int    `json:"requestedAmount,omitempty"`
 	BalanceAfter int       `json:"balanceAfter"`
 	OccurredAt   time.Time `json:"occurredAt"`
 	RefID        string    `json:"refId,omitempty"`
@@ -119,8 +121,9 @@ type PointsEntry struct {
 }
 
 const (
-	EntryCheckInEarn = "checkin_earn"
-	EntryRewardSpend = "reward_spend"
+	EntryCheckInEarn      = "checkin_earn"
+	EntryRewardSpend      = "reward_spend"
+	EntryAchievementEarn  = "achievement_earn"
 )
 
 type FrameStatus string

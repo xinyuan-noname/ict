@@ -202,6 +202,9 @@ func Evaluate(records []SportRecord, def AchievementDef, profile AthleteProfile)
 	case RuleSingleDaySteps:
 		seen := map[string]bool{}
 		for _, r := range records {
+			if r.Type != SportWalking {
+				continue
+			}
 			if r.Steps >= def.Threshold && !seen[r.Day] {
 				seen[r.Day] = true
 				state.Days = append(state.Days, r.Day)
@@ -213,6 +216,9 @@ func Evaluate(records []SportRecord, def AchievementDef, profile AthleteProfile)
 	case RuleCumDaysSteps:
 		seen := map[string]bool{}
 		for _, r := range records {
+			if r.Type != SportWalking {
+				continue
+			}
 			if r.Steps >= def.Threshold && !seen[r.Day] {
 				seen[r.Day] = true
 				state.Days = append(state.Days, r.Day)
@@ -224,6 +230,9 @@ func Evaluate(records []SportRecord, def AchievementDef, profile AthleteProfile)
 
 	case RuleOnceDistance:
 		for _, r := range records {
+			if r.Type != SportCycling {
+				continue
+			}
 			if r.DistanceM >= def.Threshold {
 				state.Days = append(state.Days, r.Day)
 			}
@@ -234,6 +243,9 @@ func Evaluate(records []SportRecord, def AchievementDef, profile AthleteProfile)
 	case RuleCumCountDist:
 		count := 0
 		for _, r := range records {
+			if r.Type != SportCycling {
+				continue
+			}
 			if r.DistanceM >= def.Threshold {
 				count++
 				state.Days = append(state.Days, r.Day)

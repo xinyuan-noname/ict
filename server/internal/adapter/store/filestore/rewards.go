@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"strings"
 	"sync"
 
 	"ict/server/internal/domain"
@@ -29,6 +30,8 @@ type rewardData struct {
 	Orders    map[string]domain.RedeemOrder   `json:"orders"`
 	Equipped  map[string]string               `json:"equipped"`
 	HighWater map[string]string               `json:"highWater"`
+	// Idempotency: 幂等键 → 首次流水 entryId（成就入账）。
+	Idempotency map[string]string `json:"idempotency"`
 }
 
 func newRewardData() rewardData {
@@ -40,6 +43,7 @@ func newRewardData() rewardData {
 		Orders:    map[string]domain.RedeemOrder{},
 		Equipped:  map[string]string{},
 		HighWater: map[string]string{},
+		Idempotency: map[string]string{},
 	}
 }
 
@@ -56,6 +60,9 @@ func OpenRewards(path string, opts Options) (*RewardStore, error) {
 	}
 	if s.data.Accounts == nil {
 		s.data = newRewardData()
+	}
+	if s.data.Idempotency == nil {
+		s.data.Idempotency = map[string]string{}
 	}
 	switch {
 	case s.data.Namespace == "" && s.data.Mode == "":
@@ -145,14 +152,22 @@ func (s *RewardStore) txFor(userID string) *port.RewardTx {
 			orders[key] = order
 		}
 	}
+	idem := map[string]string{}
+	prefix := "sport:" + userID + ":"
+	for key, entryID := range s.data.Idempotency {
+		if strings.HasPrefix(key, prefix) {
+			idem[key] = entryID
+		}
+	}
 	return &port.RewardTx{
-		Account:   account,
-		CheckIns:  checkIns,
-		Entries:   append([]domain.PointsEntry(nil), s.data.Entries[userID]...),
-		Owned:     owned,
-		Orders:    orders,
-		Equipped:  s.data.Equipped[userID],
-		HighWater: s.data.HighWater[userID],
+		Account:     account,
+		CheckIns:    checkIns,
+		Entries:     append([]domain.PointsEntry(nil), s.data.Entries[userID]...),
+		Owned:       owned,
+		Orders:      orders,
+		Equipped:    s.data.Equipped[userID],
+		Idempotency: idem,
+		HighWater:   s.data.HighWater[userID],
 	}
 }
 
@@ -163,6 +178,9 @@ func (s *RewardStore) commit(userID string, tx *port.RewardTx) {
 	s.data.Owned[userID] = tx.Owned
 	s.data.Equipped[userID] = tx.Equipped
 	s.data.HighWater[userID] = tx.HighWater
+	for key, entryID := range tx.Idempotency {
+		s.data.Idempotency[key] = entryID
+	}
 	for key, order := range tx.Orders {
 		s.data.Orders[key] = order
 	}

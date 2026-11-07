@@ -458,6 +458,94 @@ func decodeCursor(cursor string) string {
 	return cursor
 }
 
+// SettleResult 是成就积分入账结果。
+type SettleResult struct {
+	EntryID      string
+	Requested    int
+	Applied      int
+	Capped       bool
+	Replayed     bool
+	BalanceAfter int
+}
+
+// SettleAchievement 按幂等键入账成就积分：重复请求返回首次流水，余额只加一次。
+// 成就流水始终写入（amount 可能为 0），供 ACH-07 追溯被截断的分值。
+func (s *RewardService) SettleAchievement(
+	ctx context.Context, userID, achievementID string, points int, ruleVersion string,
+) (SettleResult, error) {
+	if strings.TrimSpace(userID) == "" || strings.TrimSpace(achievementID) == "" || points < 0 {
+		return SettleResult{}, apperr.NewReward(apperr.Point001, nil)
+	}
+	key := domain.AchievementGrantKey(userID, achievementID)
+	now := s.now()
+	var out SettleResult
+	err := s.Store.Do(ctx, userID, func(tx *port.RewardTx) error {
+		if entryID, ok := tx.Idempotency[key]; ok {
+			out = SettleResult{EntryID: entryID, Replayed: true, BalanceAfter: tx.Account.Balance}
+			for _, e := range tx.Entries {
+				if e.EntryID == entryID {
+					out.Requested = e.RequestedAmount
+					if out.Requested == 0 && e.Amount > 0 {
+						out.Requested = e.Amount
+					}
+					out.Applied = e.Amount
+					break
+				}
+			}
+			return nil
+		}
+		applied, capped := domain.ApplyCap(tx.Account.Balance, points)
+		tx.Account.Balance += applied
+		tx.Account.UpdatedAt = now
+		entryID := domain.NewEntryID()
+		tx.Entries = append(tx.Entries, domain.PointsEntry{
+			EntryID: entryID, UserID: userID, Type: domain.EntryAchievementEarn,
+			Amount: applied, RequestedAmount: points, BalanceAfter: tx.Account.Balance,
+			OccurredAt: now, RefID: achievementID, RuleVersion: ruleVersion,
+		})
+		tx.Idempotency[key] = entryID
+		out = SettleResult{
+			EntryID: entryID, Requested: points, Applied: applied, Capped: capped,
+			BalanceAfter: tx.Account.Balance,
+		}
+		return nil
+	})
+	if err != nil {
+		return SettleResult{}, normalizeReward(err)
+	}
+	return out, nil
+}
+
+// Balance 返回权威余额，供成就快照与对账使用。
+func (s *RewardService) Balance(ctx context.Context, userID string) (int, error) {
+	balance := 0
+	err := s.Store.View(ctx, userID, func(tx *port.RewardTx) error {
+		balance = tx.Account.Balance
+		return nil
+	})
+	if err != nil {
+		return 0, normalizeReward(err)
+	}
+	return balance, nil
+}
+
+// AchievementGrantedTotal 返回账本中成就类流水合计（实际入账，不含截断差额）。
+func (s *RewardService) AchievementGrantedTotal(ctx context.Context, userID string) (int, error) {
+	total := 0
+	err := s.Store.View(ctx, userID, func(tx *port.RewardTx) error {
+		for _, e := range tx.Entries {
+			if e.Type == domain.EntryAchievementEarn {
+				total += e.Amount
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return 0, normalizeReward(err)
+	}
+	return total, nil
+}
+
 func normalizeReward(err error) error {
 	if err == nil {
 		return nil

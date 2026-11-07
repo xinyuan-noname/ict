@@ -22,6 +22,7 @@ type Deps struct {
 	Reward    *service.RewardService
 	Check     *service.CheckService
 	Pet       *service.PetService
+	Sport     *service.SportService
 	Sessions  *service.SessionService
 	Provider  interface{ Probe(context.Context) string }
 	Storage   interface{ Ping(context.Context) error }
@@ -73,6 +74,11 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("POST /v1/check/medication/doses", s.checkTakeDose)
 	mux.HandleFunc("DELETE /v1/check/medication/doses/{doseId}", s.checkCancelDose)
 	mux.HandleFunc("GET /v1/check/medication/week", s.checkMedWeek)
+
+	// 运动域：记录写入、删除回退与成就快照。
+	mux.HandleFunc("POST /v1/sport/records", s.sportAddRecord)
+	mux.HandleFunc("DELETE /v1/sport/records/{recordId}", s.sportDeleteRecord)
+	mux.HandleFunc("GET /v1/sport/achievements", s.sportAchievements)
 
 	// 宠物 / 道具 / 好友 / PK。
 	mux.HandleFunc("GET /v1/pet", s.petGet)

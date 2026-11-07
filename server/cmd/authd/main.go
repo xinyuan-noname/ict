@@ -159,9 +159,28 @@ func main() {
 		Logger: logger, Invites: petStore,
 	}
 
+	sportStore, sperr := filestore.OpenSport(cfg.DatabaseDSN+".sport.json", filestore.Options{
+		Namespace: cfg.StorageNamespace,
+		Mode:      cfg.AuthMode,
+	})
+	if sperr != nil {
+		logger.Error(context.Background(), "sport storage open failed", "event", "boot_failure", "reason", sperr.Error())
+		os.Exit(1)
+	}
+	sportService := &service.SportService{
+		Store: sportStore, Rewards: rewardService, Clock: portClock{}, Logger: logger,
+		Profile: func(ctx context.Context, userID string) (domain.HealthProfile, error) {
+			view, err := checkService.Profile(ctx, userID)
+			if err != nil {
+				return domain.HealthProfile{}, err
+			}
+			return view.Profile, nil
+		},
+	}
+
 	srv := &handler.Server{Deps: handler.Deps{
 		Cfg: cfg, Auth: authService, Reward: rewardService, Check: checkService,
-		Pet: petService, Sessions: sessions, Provider: provider,
+		Pet: petService, Sport: sportService, Sessions: sessions, Provider: provider,
 		Storage: store, Log: logger, StartedAt: time.Now(),
 	}}
 
