@@ -161,6 +161,20 @@ async function pickWebPort(start = 3000, end = 3010) {
   return start;
 }
 
+async function waitWebReady(port, timeoutMs = 60000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      const res = await fetch(`http://127.0.0.1:${port}/`);
+      if (res.ok) return true;
+    } catch {
+      /* dev server 还没起 */
+    }
+    await delay(500);
+  }
+  return false;
+}
+
 function openUrl(url) {
   if (noOpen) return;
   const cmd = process.platform === 'win32' ? 'cmd' : process.platform === 'darwin' ? 'open' : 'xdg-open';
@@ -222,6 +236,11 @@ async function main() {
     const port = await pickWebPort();
     start('web', 'npx', ['webpack', 'serve', '--mode', 'development', '--port', String(port)], { cwd: APP });
     log(`Web: http://127.0.0.1:${port}`);
+    if (await waitWebReady(port)) {
+      log('Web 编译完成，正在打开浏览器');
+    } else {
+      log('Web 编译超时，请手动打开上面的地址或查看 .dev/logs/web.log');
+    }
     openUrl(`http://127.0.0.1:${port}`);
     log('press Ctrl+C to stop');
     return;
@@ -284,6 +303,11 @@ async function main() {
   }
 
   if (webMode) {
+    if (await waitWebReady(webPort)) {
+      log('Web 编译完成，正在打开浏览器');
+    } else {
+      log(`Web 编译超时，请手动打开 http://127.0.0.1:${webPort} 或查看 .dev/logs/web.log`);
+    }
     openUrl(`http://127.0.0.1:${webPort}`);
   } else {
     openPreview();
