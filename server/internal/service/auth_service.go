@@ -96,6 +96,15 @@ func (a *AuthService) Login(ctx context.Context, in LoginInput) (LoginOutput, er
 		return LoginOutput{}, a.fail(ctx, apperr.Auth009, "", platformKey, "", in, errors.New("platform missing or unsupported"))
 	}
 
+	// 微信走独立的 /v1/auth/wechat/* 链路；华为通道显式拒绝，即使运维误配白名单。
+	if platform == domain.PlatformWechat {
+		ae := apperr.New(apperr.Auth009, errors.New("wechat platform not accepted"))
+		ae.Reason = "platform_unsupported"
+		a.audit(domain.EventLoginFailure, "", platformKey, string(apperr.Auth009), traceID)
+		a.loginFailTotal.Add(1)
+		return LoginOutput{}, ae
+	}
+
 	if platform == domain.PlatformWindows {
 		if in.RedirectURI == "" || !a.redirectAllowed(in.RedirectURI) {
 			ae := apperr.New(apperr.Auth006, errors.New("windows redirect mismatch"))

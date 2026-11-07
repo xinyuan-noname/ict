@@ -14,11 +14,14 @@ const (
 	PlatformAndroid Platform = "android"
 	PlatformIOS     Platform = "ios"
 	PlatformWindows Platform = "windows"
+	// PlatformWechat 仅用于微信开放平台扫码登录；不新增 PlatformWeb
+	// （华为通道不接受 web，微信通道不接受 platform 参数）。
+	PlatformWechat Platform = "wechat"
 )
 
 func ParsePlatform(s string) (Platform, bool) {
 	switch Platform(s) {
-	case PlatformAndroid, PlatformIOS, PlatformWindows:
+	case PlatformAndroid, PlatformIOS, PlatformWindows, PlatformWechat:
 		return Platform(s), true
 	}
 	return "", false
