@@ -106,6 +106,25 @@ type Config struct {
 	LogLevel  string
 	MetricsAddr string
 	Version   string
+
+	// 微信开放平台扫码登录（默认关闭，未配置时仅降级为不可用）。
+	WeChatEnabled           bool
+	WeChatMode              string
+	WeChatAppID             string
+	WeChatAppSecret         string
+	WeChatAppSecretPrevious string
+	WeChatRedirectURIs      []string
+	WeChatPrimaryRedirectURI string
+	WeChatAuthorizeURL      string
+	WeChatTokenURL          string
+	WeChatUserInfoURL       string
+	WeChatTimeout           time.Duration
+	WeChatConnectRetries    int
+	WeChatBreakerOpen       time.Duration
+	WeChatBreakerThreshold  int
+	WeChatStateTTL          time.Duration
+	WeChatMaxPendingState   int
+	WeChatWarnings          []string
 }
 
 // Load 解析环境变量；任何解析失败一律拒绝启动（design 1.2.2 第 4 条）。
@@ -203,10 +222,46 @@ func Load() (*Config, error) {
 		"windows": env("CLIENT_MIN_VERSION_WINDOWS", "1.0.0"),
 	}
 
+	// 微信登录配置：默认关闭；未配置时只在开发态告警，生产必须显式配齐。
+	c.WeChatEnabled = boolean("WECHAT_ENABLED", false)
+	c.WeChatMode = env("WECHAT_MODE", "mock")
+	c.WeChatAppID = env("WECHAT_APP_ID", "")
+	c.WeChatAppSecret = env("WECHAT_APP_SECRET", "")
+	c.WeChatAppSecretPrevious = env("WECHAT_APP_SECRET_PREVIOUS", "")
+	c.WeChatRedirectURIs = list("WECHAT_REDIRECT_URIS", nil)
+	c.WeChatPrimaryRedirectURI = env("WECHAT_PRIMARY_REDIRECT_URI", "")
+	c.WeChatAuthorizeURL = env("WECHAT_AUTHORIZE_URL", OfficialWeChatAuthorizeURL)
+	c.WeChatTokenURL = env("WECHAT_TOKEN_URL", OfficialWeChatTokenURL)
+	c.WeChatUserInfoURL = env("WECHAT_USERINFO_URL", OfficialWeChatUserInfoURL)
+	if c.WeChatTimeout, err = duration("WECHAT_TIMEOUT", 5*time.Second); err != nil {
+		return nil, err
+	}
+	if c.WeChatConnectRetries, err = integerValue("WECHAT_CONNECT_RETRIES", 1); err != nil {
+		return nil, err
+	}
+	if c.WeChatBreakerOpen, err = duration("WECHAT_BREAKER_OPEN", 15*time.Second); err != nil {
+		return nil, err
+	}
+	if c.WeChatBreakerThreshold, err = integerValue("WECHAT_BREAKER_THRESHOLD", 5); err != nil {
+		return nil, err
+	}
+	if c.WeChatStateTTL, err = duration("WECHAT_STATE_TTL", 10*time.Minute); err != nil {
+		return nil, err
+	}
+	if c.WeChatMaxPendingState, err = integerValue("WECHAT_MAX_PENDING_STATE", 3); err != nil {
+		return nil, err
+	}
+
 	c.resolveEndpoints()
 	if problems := c.SelfCheck(); len(problems) > 0 {
 		sort.Strings(problems)
 		return nil, errors.New("config invalid: " + strings.Join(problems, "; "))
+	}
+	fatal, warnings := c.WeChatSelfCheck()
+	c.WeChatWarnings = warnings
+	if len(fatal) > 0 {
+		sort.Strings(fatal)
+		return nil, errors.New("config invalid: " + strings.Join(fatal, "; "))
 	}
 	return c, nil
 }
