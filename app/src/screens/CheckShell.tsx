@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { showDialog } from '../components/AppDialog';
 import { EnglishPanel, MedicationPanel, SportPanel } from './HealthPanels';
+import { LineChart } from '../components/LineChart';
 import type { CheckSnapshot, CheckStore } from '../check/checkStore';
 import { DEFAULT_CUP_ML, ageFromBirthDate, businessToday, formatML, type Gender } from '../model/waterGoal';
 
@@ -180,7 +181,6 @@ function ProgressRing({ ratio }: { ratio: number }): React.JSX.Element {
 }
 
 function StatsView({ snapshot }: { snapshot: CheckSnapshot }): React.JSX.Element {
-  const max = Math.max(snapshot.targetMl, ...snapshot.week.map((d) => d.totalMl), 1);
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
       <View style={styles.statRow}>
@@ -190,24 +190,13 @@ function StatsView({ snapshot }: { snapshot: CheckSnapshot }): React.JSX.Element
       </View>
 
       <Text style={styles.section}>本周饮水变化</Text>
-      <View style={styles.chart}>
-        {snapshot.week.map((d) => {
-          const height = Math.max(4, Math.round((d.totalMl / max) * 120));
-          return (
-            <View key={d.day} style={styles.barCol}>
-              <Text style={styles.barValue}>{d.totalMl > 0 ? d.totalMl : ''}</Text>
-              <View
-                style={[
-                  styles.bar,
-                  { height, backgroundColor: d.achieved ? '#c7000b' : d.totalMl > 0 ? '#f2a6ab' : '#eee' }
-                ]}
-              />
-              <Text style={styles.barLabel}>{d.day.slice(5)}</Text>
-            </View>
-          );
-        })}
-      </View>
-      <Text style={styles.legend}>目标线：{snapshot.targetMl} ml · 柱高按最大值归一</Text>
+      <LineChart
+        values={snapshot.week.map((d) => d.totalMl)}
+        labels={snapshot.week.map((d) => d.day.slice(5))}
+        unit="ml"
+        target={snapshot.targetMl}
+      />
+      <Text style={styles.legend}>目标线：{snapshot.targetMl} ml · 折线按最大值归一</Text>
 
       <Text style={styles.section}>每日明细</Text>
       {snapshot.week.map((d) => (
