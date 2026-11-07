@@ -2,17 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { showDialog } from '../components/AppDialog';
 import { EnglishPanel, MedicationPanel, SportPanel } from './HealthPanels';
-import { LineChart } from '../components/LineChart';
+import { DataPage } from './DataPage';
 import { MlSlider } from '../components/MlSlider';
 import { DatePickerModal } from '../components/DatePickerModal';
 import type { CheckSnapshot, CheckStore } from '../check/checkStore';
-import { ageFromBirthDate, businessToday, formatML, type Gender } from '../model/waterGoal';
-import { WATER_RANGES, WATER_RANGE_LABEL, type WaterPoint } from '../model/waterRange';
+import { ageFromBirthDate, businessToday, type Gender } from '../model/waterGoal';
 import type { SportStore } from '../sport/sportStore';
 
-type Tab = 'today' | 'stats' | 'profile';
+type Tab = 'check' | 'data' | 'profile';
 type Category = 'health' | 'learning';
 type ListKey = 'water' | 'medication' | 'sport' | 'english';
+type DataSubTab = 'stats' | 'achievements';
 
 const CATEGORIES: Record<Category, { name: string; lists: [ListKey, string][] }> = {
   health: { name: '健康', lists: [['water', '饮水'], ['medication', '服药'], ['sport', '运动']] },
@@ -32,16 +32,21 @@ export interface CheckShellProps {
 
 export function CheckShell({ store, isGuest, displayName, onUpgrade, onExit, onOpenRewards, sportStore, onSync }: CheckShellProps): React.JSX.Element {
   const [snapshot, setSnapshot] = useState<CheckSnapshot>(store.getSnapshot());
-  const [tab, setTab] = useState<Tab>('today');
+  const [tab, setTab] = useState<Tab>('check');
   const [category, setCategory] = useState<Category>('health');
   const [list, setList] = useState<ListKey>('water');
+  const [subTabByList, setSubTabByList] = useState<Partial<Record<ListKey, DataSubTab>>>({});
 
+  // 切分类只回落清单，不劫持当前页签，也不丢二级记忆（NAV-03/07）。
   const switchCategory = (next: Category): void => {
     setCategory(next);
     setList(CATEGORIES[next].lists[0]?.[0] ?? 'water');
-    setTab('today');
   };
-  const showLists = tab === 'today' || tab === 'stats';
+  const subTab: DataSubTab = subTabByList[list] ?? 'stats';
+  const changeSubTab = (next: DataSubTab): void => {
+    setSubTabByList((prev) => ({ ...prev, [list]: next }));
+  };
+  const showLists = tab !== 'profile';
 
   useEffect(() => {
     const unsubscribe = store.subscribe(setSnapshot);
@@ -58,13 +63,15 @@ export function CheckShell({ store, isGuest, displayName, onUpgrade, onExit, onO
         <Text style={styles.badge}>{isGuest ? '游客模式' : displayName}</Text>
       </View>
 
-      <View style={styles.navLevel1}>
-        {(Object.keys(CATEGORIES) as Category[]).map((key) => (
-          <Pressable key={key} accessibilityRole="button" onPress={() => switchCategory(key)}>
-            <Text style={[styles.navL1, category === key && styles.navL1Active]}>{CATEGORIES[key].name}</Text>
-          </Pressable>
-        ))}
-      </View>
+      {tab !== 'profile' ? (
+        <View style={styles.navLevel1} testID="nav-level1">
+          {(Object.keys(CATEGORIES) as Category[]).map((key) => (
+            <Pressable key={key} accessibilityRole="button" onPress={() => switchCategory(key)}>
+              <Text style={[styles.navL1, category === key && styles.navL1Active]}>{CATEGORIES[key].name}</Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
       {showLists ? (
         <View style={styles.navL2}>
           {CATEGORIES[category].lists.map(([key, label]) => (
@@ -83,17 +90,29 @@ export function CheckShell({ store, isGuest, displayName, onUpgrade, onExit, onO
       {snapshot.notice ? <Text style={styles.notice}>{snapshot.notice}</Text> : null}
 
       <View style={styles.body}>
-        {list === 'water' ? (
-          <>
-            {tab === 'today' ? <TodayView snapshot={snapshot} ratio={ratio} store={store} /> : null}
-            {tab === 'stats' ? <StatsView snapshot={snapshot} store={store} /> : null}
-          </>
-        ) : list === 'medication' ? (
-          tab === 'profile' ? null : <MedicationPanel tab={tab} />
-        ) : list === 'sport' ? (
-          tab === 'profile' ? null : <SportPanel tab={tab} sportStore={sportStore} />
-        ) : list === 'english' ? (
-          tab === 'profile' ? null : <EnglishPanel tab={tab} />
+        {tab === 'check' ? (
+          list === 'water' ? (
+            <TodayView snapshot={snapshot} ratio={ratio} store={store} />
+          ) : list === 'medication' ? (
+            <MedicationPanel tab="today" />
+          ) : list === 'sport' ? (
+            <SportPanel tab="today" sportStore={sportStore} />
+          ) : (
+            <EnglishPanel tab="today" />
+          )
+        ) : null}
+        {tab === 'data' ? (
+          <DataPage
+            checklist={list}
+            subTab={subTab}
+            onChangeSubTab={changeSubTab}
+            isGuest={isGuest}
+            displayName={displayName}
+            waterSnapshot={snapshot}
+            waterStore={store}
+            sportStore={sportStore}
+            onGoRecord={() => setTab('check')}
+          />
         ) : null}
         {tab === 'profile' ? (
           <ProfileView
@@ -108,10 +127,10 @@ export function CheckShell({ store, isGuest, displayName, onUpgrade, onExit, onO
         ) : null}
       </View>
 
-      <View style={styles.tabs}>
+      <View style={styles.tabs} testID="bottom-tabs">
         {([
-          ['today', 'check'],
-          ['stats', list === 'sport' || list === 'english' ? '成就' : '统计'],
+          ['check', 'check'],
+          ['data', '数据'],
           ['profile', '我的']
         ] as [Tab, string][]).map(([key, label]) => (
           <Pressable key={key} accessibilityRole="button" onPress={() => setTab(key)} style={styles.tab}>
@@ -284,67 +303,6 @@ function ProgressRing({ ratio }: { ratio: number }): React.JSX.Element {
         <Text style={styles.ringPercent}>{Math.round(ratio * 100)}%</Text>
         <Text style={styles.ringLabel}>今日进度</Text>
       </View>
-    </View>
-  );
-}
-
-function chartLabels(points: WaterPoint[]): string[] {
-  const stride = points.length <= 8 ? 1 : Math.ceil(points.length / 6);
-  return points.map((p, i) => (i % stride === 0 || i === points.length - 1 ? p.label : ''));
-}
-
-function StatsView({ snapshot, store }: { snapshot: CheckSnapshot; store: CheckStore }): React.JSX.Element {
-  const stats = snapshot.rangeStats;
-  const label = WATER_RANGE_LABEL[snapshot.range];
-  return (
-    <ScrollView contentContainerStyle={styles.scroll}>
-      <View style={styles.rangeRow}>
-        {WATER_RANGES.map(([key, name]) => (
-          <Pressable
-            key={key}
-            accessibilityRole="button"
-            style={[styles.rangeChip, snapshot.range === key && styles.rangeChipOn]}
-            onPress={() => void store.setRange(key)}
-          >
-            <Text style={[styles.rangeChipText, snapshot.range === key && styles.rangeChipTextOn]}>{name}</Text>
-          </Pressable>
-        ))}
-      </View>
-
-      <View style={styles.statRow}>
-        <Stat label={`${label}平均`} value={formatML(stats.averageMl)} />
-        <Stat label="达成率" value={`${Math.round(stats.achievementRate * 100)}%`} />
-        <Stat label="连续" value={`${snapshot.streak} 天`} />
-      </View>
-
-      <Text style={styles.section}>{label}饮水趋势</Text>
-      <LineChart
-        values={snapshot.rangeSeries.map((p) => p.value)}
-        labels={chartLabels(snapshot.rangeSeries)}
-        unit="ml"
-        target={snapshot.targetMl}
-      />
-      <Text style={styles.legend}>红线为目标 {snapshot.targetMl} ml · 灰点为无记录</Text>
-
-      <Text style={styles.section}>明细</Text>
-      {snapshot.rangeSeries.map((p) => (
-        <View key={p.day} style={styles.tableRow}>
-          <Text style={styles.tableCell}>{p.label}</Text>
-          <Text style={styles.tableCell}>{formatML(p.value)}</Text>
-          <Text style={[styles.tableCell, { color: p.achieved ? '#1a7a3c' : '#999' }]}>
-            {p.achieved ? '达成' : p.value > 0 ? '未达成' : '无记录'}
-          </Text>
-        </View>
-      ))}
-    </ScrollView>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }): React.JSX.Element {
-  return (
-    <View style={styles.stat}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
 }

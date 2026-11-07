@@ -77,14 +77,16 @@ test('饮水统计页渲染周记 / 月记 / 季度记三档', async () => {
   const root = mountShell();
   await wait(150);
 
-  const statsTab = Array.from(root.querySelectorAll('[role="button"]')).find((el) =>
-    (el.textContent ?? '').includes('统计')
+  const dataTab = Array.from(root.querySelectorAll('[role="button"]')).find((el) =>
+    (el.textContent ?? '').includes('数据')
   );
-  expect(statsTab).toBeTruthy();
-  (statsTab as HTMLElement).click();
+  expect(dataTab).toBeTruthy();
+  (dataTab as HTMLElement).click();
   await wait(150);
 
   const text = root.textContent ?? '';
+  expect(text).toContain('统计');
+  expect(text).toContain('成就');
   expect(text).toContain('周记');
   expect(text).toContain('月记');
   expect(text).toContain('季度记');

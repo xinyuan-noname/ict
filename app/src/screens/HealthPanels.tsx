@@ -25,7 +25,7 @@ import { businessToday } from '../model/waterGoal';
 import type { AchievementStateView } from '../api/sportApi';
 import type { SportStore } from '../sport/sportStore';
 
-type PanelTab = 'today' | 'stats' | 'profile';
+type PanelTab = 'today' | 'stats' | 'achievements' | 'profile';
 
 function addDays(day: string, delta: number): string {
   const date = new Date(`${day}T00:00:00Z`);
@@ -192,22 +192,6 @@ export function MedicationPanel({ tab }: { tab: PanelTab }): React.JSX.Element {
 
   if (tab === 'stats') {
     const totalDoses = doses.length;
-    const groups = [
-      {
-        name: '服药成就',
-        items: MED_ACHIEVEMENTS.map((a) => {
-          const progress =
-            a.kind === 'today' ? (medTodayDone(items, doses, nowHour) ? 1 : 0)
-              : a.kind === 'streak' ? streak
-                : a.kind === 'items' ? items.filter((i) => i.status === 'active').length
-                  : totalDoses;
-          return {
-            key: a.id, name: a.name, desc: a.desc, icon: a.icon, points: a.points,
-            unlocked: progress >= a.need, progress, need: a.need
-          };
-        })
-      }
-    ];
     const days = Array.from({ length: 7 }, (_, i) => {
       const day = addDays(today, -(6 - i));
       const dayViews = medViews(items, doses, day, 23);
@@ -242,7 +226,31 @@ export function MedicationPanel({ tab }: { tab: PanelTab }): React.JSX.Element {
             <Text style={[styles.rowCell, { color: d.done ? '#1a7a3c' : '#bbb' }]}>{d.total === 0 ? '无药物' : d.done ? '完成' : '未完成'}</Text>
           </View>
         ))}
-        <Text style={styles.section}>成就</Text>
+      </ScrollView>
+    );
+  }
+
+  if (tab === 'achievements') {
+    const totalDoses = doses.length;
+    const groups = [
+      {
+        name: '服药成就',
+        items: MED_ACHIEVEMENTS.map((a) => {
+          const progress =
+            a.kind === 'today' ? (medTodayDone(items, doses, nowHour) ? 1 : 0)
+              : a.kind === 'streak' ? streak
+                : a.kind === 'items' ? items.filter((i) => i.status === 'active').length
+                  : totalDoses;
+          return {
+            key: a.id, name: a.name, desc: a.desc, icon: a.icon, points: a.points,
+            unlocked: progress >= a.need, progress, need: a.need
+          };
+        })
+      }
+    ];
+    return (
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scroll}>
+        <Text style={styles.section}>服药成就（{MED_ACHIEVEMENTS.length} 个）</Text>
         <AchievementWall groups={groups} />
       </ScrollView>
     );
@@ -538,7 +546,44 @@ export function SportPanel({ tab, sportStore }: { tab: PanelTab; sportStore?: Sp
           ))}
         </View>
         <TrendChart values={sportSeries(range, records, today)} unit="步" />
-        <Text style={styles.section}>成就（{ACHIEVEMENTS.length} 个）</Text>
+      </ScrollView>
+    );
+  }
+
+  if (tab === 'achievements') {
+    const modelRecords = records.map(toModelRecord);
+    const states = ACHIEVEMENTS.map((def) => ({ def, state: evaluate(modelRecords, def as AchievementDef, SPORT_PROFILE) }));
+    const groupKeys: AchievementDef['group'][] = ['walking', 'cycling', 'pace', 'distance', 'combo'];
+    const remoteById = new Map(remote.map((item) => [item.achievementId, item]));
+    const groups = groupKeys.map((group) => ({
+      name: GROUP_NAMES[group],
+      items: states
+        .filter(({ def }) => def.group === group)
+        .map(({ def, state }) => {
+          const granted = remoteById.get(def.id);
+          const base = { key: def.id, name: def.name, desc: def.desc, icon: def.icon, points: def.points };
+          if (granted) {
+            return {
+              ...base,
+              points: granted.points,
+              unlocked: granted.status !== 'locked',
+              status: granted.status,
+              grantedPoints: granted.grantedPoints,
+              progress: granted.progress,
+              need: granted.need > 0 ? granted.need : 1
+            };
+          }
+          return {
+            ...base,
+            unlocked: state.unlocked,
+            progress: state.progress,
+            need: state.need > 0 ? state.need : 1
+          };
+        })
+    }));
+    return (
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scroll}>
+        <Text style={styles.section}>运动成就（{ACHIEVEMENTS.length} 个）</Text>
         {sportStore ? (
           <Text style={styles.achBadge}>积分余额：{balance === null ? '—' : balance}（服务端账本）</Text>
         ) : null}
@@ -622,18 +667,6 @@ export function EnglishPanel({ tab }: { tab: PanelTab }): React.JSX.Element {
   };
 
   if (tab === 'stats') {
-    const groups = [
-      {
-        name: '英语成就',
-        items: ENGLISH_ACHIEVEMENTS.map((def) => {
-          const state = englishAchievementState(def, data, today, addDays);
-          return {
-            key: def.id, name: def.name, desc: def.desc, icon: def.icon, points: def.points,
-            unlocked: state.unlocked, progress: state.progress, need: state.need
-          };
-        })
-      }
-    ];
     return (
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scroll}>
         <View style={styles.statsRow}>
@@ -649,7 +682,26 @@ export function EnglishPanel({ tab }: { tab: PanelTab }): React.JSX.Element {
           })}
           unit="词"
         />
-        <Text style={styles.section}>成就</Text>
+      </ScrollView>
+    );
+  }
+
+  if (tab === 'achievements') {
+    const groups = [
+      {
+        name: '英语成就',
+        items: ENGLISH_ACHIEVEMENTS.map((def) => {
+          const state = englishAchievementState(def, data, today, addDays);
+          return {
+            key: def.id, name: def.name, desc: def.desc, icon: def.icon, points: def.points,
+            unlocked: state.unlocked, progress: state.progress, need: state.need
+          };
+        })
+      }
+    ];
+    return (
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scroll}>
+        <Text style={styles.section}>英语成就（{ENGLISH_ACHIEVEMENTS.length} 个）</Text>
         <AchievementWall groups={groups} />
       </ScrollView>
     );
