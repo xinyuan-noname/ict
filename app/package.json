@@ -17,7 +17,9 @@
     "web:dev": "webpack serve --mode development",
     "web:build": "webpack --mode production",
     "web:preview": "webpack serve --mode production",
-    "web:verify": "webpack --mode production --no-stats"
+    "web:smoke": "node scripts/web-smoke.js",
+    "web:verify": "webpack --mode production --no-stats && node scripts/web-smoke.js",
+    "test:web": "jest --config jest.config.web.js"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",
