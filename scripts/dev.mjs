@@ -8,6 +8,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, openSync, closeSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
+import net from 'node:net';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const SERVER = join(ROOT, 'server');
@@ -147,6 +148,19 @@ async function selfTestRun() {
   }
 }
 
+async function pickWebPort(start = 3000, end = 3010) {
+  for (let port = start; port <= end; port += 1) {
+    const free = await new Promise((resolve) => {
+      const server = net.createServer();
+      server.once('error', () => resolve(false));
+      server.once('listening', () => server.close(() => resolve(true)));
+      server.listen(port, '127.0.0.1');
+    });
+    if (free) return port;
+  }
+  return start;
+}
+
 function openUrl(url) {
   if (noOpen) return;
   const cmd = process.platform === 'win32' ? 'cmd' : process.platform === 'darwin' ? 'open' : 'xdg-open';
@@ -205,9 +219,10 @@ process.on('exit', () => {
 
 async function main() {
   if (webOnly) {
-    start('web', 'npx', ['webpack', 'serve', '--mode', 'development'], { cwd: APP });
-    log('Web: http://127.0.0.1:3000');
-    openUrl('http://127.0.0.1:3000');
+    const port = await pickWebPort();
+    start('web', 'npx', ['webpack', 'serve', '--mode', 'development', '--port', String(port)], { cwd: APP });
+    log(`Web: http://127.0.0.1:${port}`);
+    openUrl(`http://127.0.0.1:${port}`);
     log('press Ctrl+C to stop');
     return;
   }
@@ -253,9 +268,11 @@ async function main() {
     return;
   }
 
+  let webPort = 0;
   if (webMode) {
-    start('web', 'npx', ['webpack', 'serve', '--mode', 'development'], { cwd: APP });
-    log(`Web: http://127.0.0.1:3000`);
+    webPort = await pickWebPort();
+    start('web', 'npx', ['webpack', 'serve', '--mode', 'development', '--port', String(webPort)], { cwd: APP });
+    log(`Web: http://127.0.0.1:${webPort}`);
   } else if (!noMetro) {
     start('metro', 'npx', ['react-native', 'start', '--port', String(METRO_PORT)], {
       cwd: APP,
@@ -267,7 +284,7 @@ async function main() {
   }
 
   if (webMode) {
-    openUrl('http://127.0.0.1:3000');
+    openUrl(`http://127.0.0.1:${webPort}`);
   } else {
     openPreview();
   }
