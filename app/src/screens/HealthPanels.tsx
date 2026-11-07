@@ -22,6 +22,8 @@ import { ENGLISH_ACHIEVEMENTS, ENGLISH_TOTAL_POINTS, englishAchievementState, en
 import { LineChart } from '../components/LineChart';
 import { ACHIEVEMENTS, GROUP_NAMES, effectivePaceThreshold, evaluate, formatPace, paceLimitSec, paceScale, type AchievementDef, type AthleteProfile, type SportRecord as ModelSportRecord } from '../model/sport';
 import { businessToday } from '../model/waterGoal';
+import type { AchievementStateView } from '../api/sportApi';
+import type { SportStore } from '../sport/sportStore';
 
 type PanelTab = 'today' | 'stats' | 'profile';
 
@@ -46,6 +48,23 @@ interface AchievementItem {
   unlocked: boolean;
   progress: number;
   need: number;
+  /** 登录用户的四态；缺省时按 unlocked 布尔渲染。 */
+  status?: 'locked' | 'unlocked' | 'granting' | 'granted';
+  grantedPoints?: number;
+}
+
+function achievementBadge(item: AchievementItem): string | null {
+  if (item.status === 'granted') {
+    const granted = item.grantedPoints ?? item.points;
+    return granted > 0 ? `已发放 +${granted}` : '已发放（已达上限）';
+  }
+  if (item.status === 'granting') {
+    return '发放中';
+  }
+  if (item.status === 'unlocked') {
+    return '已解锁';
+  }
+  return null;
 }
 
 function AchievementWall({ groups }: { groups: { name: string; items: AchievementItem[] }[] }): React.JSX.Element {
@@ -61,21 +80,25 @@ function AchievementWall({ groups }: { groups: { name: string; items: Achievemen
                 {unlocked}/{group.items.length}
               </Text>
             </View>
-            {group.items.map((item) => (
-              <View key={item.key} style={[styles.achItem, item.unlocked && styles.achItemOn]}>
-                <View style={styles.achRow}>
-                  <Text style={styles.achIcon}>{item.unlocked ? item.icon : '🔒'}</Text>
-                  <Text style={styles.achName}>{item.name}</Text>
-                  <Text style={styles.achPts}>+{item.points}</Text>
+            {group.items.map((item) => {
+              const badge = achievementBadge(item);
+              return (
+                <View key={item.key} style={[styles.achItem, item.unlocked && styles.achItemOn]}>
+                  <View style={styles.achRow}>
+                    <Text style={styles.achIcon}>{item.unlocked ? item.icon : '🔒'}</Text>
+                    <Text style={styles.achName}>{item.name}</Text>
+                    <Text style={styles.achPts}>+{item.points}</Text>
+                  </View>
+                  <Text style={styles.achDesc}>{item.desc}</Text>
+                  {badge ? <Text style={styles.achBadge}>{badge}</Text> : null}
+                  {!item.unlocked && item.need > 1 ? (
+                    <Text style={styles.achProgress}>
+                      进度 {Math.min(item.progress, item.need)}/{item.need}
+                    </Text>
+                  ) : null}
                 </View>
-                <Text style={styles.achDesc}>{item.desc}</Text>
-                {!item.unlocked && item.need > 1 ? (
-                  <Text style={styles.achProgress}>
-                    进度 {Math.min(item.progress, item.need)}/{item.need}
-                  </Text>
-                ) : null}
-              </View>
-            ))}
+              );
+            })}
           </View>
         );
       })}
@@ -382,17 +405,31 @@ function sportSeries(
   });
 }
 
-export function SportPanel({ tab }: { tab: PanelTab }): React.JSX.Element {
+export function SportPanel({ tab, sportStore }: { tab: PanelTab; sportStore?: SportStore }): React.JSX.Element {
   const [records, setRecords] = useState<SportRecord[]>([]);
   const [type, setType] = useState<SportRecord['type']>('walking');
   const [distanceKm, setDistanceKm] = useState('');
   const [minutes, setMinutes] = useState('');
   const [steps, setSteps] = useState('');
   const [range, setRange] = useState<'week' | 'month' | 'quarter'>('week');
+  const [remote, setRemote] = useState<AchievementStateView[]>(sportStore?.getSnapshot().achievements ?? []);
+  const [balance, setBalance] = useState<number | null>(sportStore?.getSnapshot().pointsBalance ?? null);
 
   useEffect(() => {
     void loadSport().then(setRecords);
   }, []);
+
+  useEffect(() => {
+    if (!sportStore) {
+      return;
+    }
+    const unsubscribe = sportStore.subscribe((snapshot) => {
+      setRemote(snapshot.achievements);
+      setBalance(snapshot.pointsBalance);
+    });
+    void sportStore.loadRemote();
+    return unsubscribe;
+  }, [sportStore]);
 
   const persist = (next: SportRecord[]): void => {
     setRecords(next);
@@ -410,32 +447,64 @@ export function SportPanel({ tab }: { tab: PanelTab }): React.JSX.Element {
     const mins = safeNumber(minutes);
     const stepCount = safeNumber(steps);
     if (km < 0 || km > 300 || mins < 0 || mins > 1440 || stepCount < 0 || stepCount > 100000) return;
-    persist([
-      {
-        id: `sp_${Date.now()}`, type, day: today,
-        distanceM: Math.round(km * 1000), durationS: Math.round(mins * 60), steps: Math.round(stepCount), continuous: true
-      },
-      ...records
-    ]);
+    const record: SportRecord = {
+      id: `sp_${Date.now()}`, type, day: today,
+      distanceM: Math.round(km * 1000), durationS: Math.round(mins * 60), steps: Math.round(stepCount), continuous: true
+    };
+    persist([record, ...records]);
+    if (sportStore) {
+      void sportStore
+        .addRecord({
+          recordId: record.id, type: record.type, day: record.day,
+          distanceM: record.distanceM, durationS: record.durationS,
+          steps: record.steps, continuous: record.continuous
+        })
+        .catch(() => undefined);
+    }
     setDistanceKm('');
     setMinutes('');
     setSteps('');
+  };
+
+  const removeRecord = (recordId: string): void => {
+    persist(records.filter((r) => r.id !== recordId));
+    if (sportStore) {
+      void sportStore.removeRecord(recordId).catch(() => undefined);
+    }
   };
 
   if (tab === 'stats') {
     const modelRecords = records.map(toModelRecord);
     const states = ACHIEVEMENTS.map((def) => ({ def, state: evaluate(modelRecords, def as AchievementDef, SPORT_PROFILE) }));
     const groupKeys: AchievementDef['group'][] = ['walking', 'cycling', 'pace', 'distance', 'combo'];
+    const remoteById = new Map(remote.map((item) => [item.achievementId, item]));
     const groups = groupKeys.map((group) => ({
       name: GROUP_NAMES[group],
       items: states
         .filter(({ def }) => def.group === group)
-        .map(({ def, state }) => ({
-          key: def.id, name: def.name, desc: def.desc, icon: def.icon, points: def.points,
-          unlocked: state.unlocked, progress: state.progress, need: state.need > 0 ? state.need : 1
-        }))
+        .map(({ def, state }) => {
+          const granted = remoteById.get(def.id);
+          const base = { key: def.id, name: def.name, desc: def.desc, icon: def.icon, points: def.points };
+          if (granted) {
+            return {
+              ...base,
+              points: granted.points,
+              unlocked: granted.status !== 'locked',
+              status: granted.status,
+              grantedPoints: granted.grantedPoints,
+              progress: granted.progress,
+              need: granted.need > 0 ? granted.need : 1
+            };
+          }
+          return {
+            ...base,
+            unlocked: state.unlocked,
+            progress: state.progress,
+            need: state.need > 0 ? state.need : 1
+          };
+        })
     }));
-    const unlocked = states.filter(({ state }) => state.unlocked).length;
+    const unlocked = groups.reduce((sum, group) => sum + group.items.filter((item) => item.unlocked).length, 0);
     return (
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scroll}>
         <View style={styles.statsRow}>
@@ -470,6 +539,9 @@ export function SportPanel({ tab }: { tab: PanelTab }): React.JSX.Element {
         </View>
         <TrendChart values={sportSeries(range, records, today)} unit="步" />
         <Text style={styles.section}>成就（{ACHIEVEMENTS.length} 个）</Text>
+        {sportStore ? (
+          <Text style={styles.achBadge}>积分余额：{balance === null ? '—' : balance}（服务端账本）</Text>
+        ) : null}
         <AchievementWall groups={groups} />
       </ScrollView>
     );
@@ -508,7 +580,7 @@ export function SportPanel({ tab }: { tab: PanelTab }): React.JSX.Element {
         <View key={record.id} style={styles.row}>
           <Text style={styles.rowCell}>{record.type === 'walking' ? '步行' : record.type === 'cycling' ? '骑行' : '跑步'}</Text>
           <Text style={styles.rowCell}>{record.distanceM > 0 ? `${(record.distanceM / 1000).toFixed(2)} km` : `${record.steps} 步`}</Text>
-          <Pressable onPress={() => persist(records.filter((r) => r.id !== record.id))}>
+          <Pressable onPress={() => removeRecord(record.id)}>
             <Text style={styles.deleteText}>删除</Text>
           </Pressable>
         </View>
@@ -696,6 +768,7 @@ const styles = StyleSheet.create({
   achPts: { fontSize: 11, color: '#c7000b' },
   achDesc: { fontSize: 11, color: '#999', marginTop: 3, marginLeft: 18 },
   achProgress: { fontSize: 10, color: '#bbb', marginTop: 3, marginLeft: 18 },
+  achBadge: { fontSize: 10, color: '#c7000b', marginTop: 3, marginLeft: 18 },
   modalMask: { flex: 1, backgroundColor: 'rgba(0,0,0,0.38)', justifyContent: 'flex-end' },
   modalCard: { maxHeight: '82%', backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16 },
   modalHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },

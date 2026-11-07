@@ -3,6 +3,7 @@ import { ActivityIndicator, Platform, StyleSheet, Text, View } from 'react-nativ
 import type { AuthProvider, AuthSnapshot } from '../auth/AuthProvider';
 import type { CheckStore } from '../check/checkStore';
 import type { RewardsStore } from '../rewards/rewardsStore';
+import type { SportStore } from '../sport/sportStore';
 import { CheckShell } from '../screens/CheckShell';
 import { LoginScreen } from '../screens/LoginScreen';
 import { RewardsScreen } from '../screens/RewardsScreen';
@@ -12,10 +13,11 @@ export interface AppRootProps {
   provider: AuthProvider;
   rewardsStore: RewardsStore;
   checkStore: CheckStore;
+  sportStore?: SportStore;
 }
 
 // 导航守卫：恢复中 → 登录 → check 清单主页（游客/登录共用外壳）。
-export function AppRoot({ provider, rewardsStore, checkStore }: AppRootProps): React.JSX.Element {
+export function AppRoot({ provider, rewardsStore, checkStore, sportStore }: AppRootProps): React.JSX.Element {
   const [snapshot, setSnapshot] = useState<AuthSnapshot>(provider.getSnapshot());
   const [busy, setBusy] = useState(false);
   const [showRewards, setShowRewards] = useState(false);
@@ -53,6 +55,7 @@ export function AppRoot({ provider, rewardsStore, checkStore }: AppRootProps): R
         store={checkStore}
         isGuest
         displayName="游客"
+        sportStore={sportStore}
         onUpgrade={() => {
           void provider.login();
         }}
@@ -78,6 +81,7 @@ export function AppRoot({ provider, rewardsStore, checkStore }: AppRootProps): R
         store={checkStore}
         isGuest={false}
         displayName={snapshot.user?.displayName ?? '华为用户'}
+        sportStore={sportStore}
         onOpenRewards={() => setShowRewards(true)}
         onExit={() => {
           void provider.logout();

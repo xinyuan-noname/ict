@@ -13,6 +13,8 @@ import type { AuthProviderStrategy, CapabilityProbe } from './src/auth/providers
 import { RewardsApi } from './src/api/rewardsApi';
 import { CheckApi } from './src/api/checkApi';
 import { CheckStore } from './src/check/checkStore';
+import { SportApi } from './src/api/sportApi';
+import { SportStore } from './src/sport/sportStore';
 import { RewardsStore } from './src/rewards/rewardsStore';
 import { GuestNetworkGuard } from './src/guest/GuestNetworkGuard';
 import { GuestStore } from './src/guest/GuestStore';
@@ -84,7 +86,18 @@ function AppContent(): React.JSX.Element {
     const client = new ApiClient({ baseUrl: defaultBaseUrl(), allowInsecure: __DEV__, guard });
     return new CheckStore({ api: new CheckApi(client), getToken: () => provider.currentToken() });
   }, [provider, guard]);
-  return <AppRoot provider={provider} rewardsStore={rewardsStore} checkStore={checkStore} />;
+  const sportStore = useMemo(() => {
+    const client = new ApiClient({ baseUrl: defaultBaseUrl(), allowInsecure: __DEV__, guard });
+    return new SportStore({ api: new SportApi(client), getToken: () => provider.currentToken() });
+  }, [provider, guard]);
+  return (
+    <AppRoot
+      provider={provider}
+      rewardsStore={rewardsStore}
+      checkStore={checkStore}
+      sportStore={sportStore}
+    />
+  );
 }
 
 const styles = StyleSheet.create({

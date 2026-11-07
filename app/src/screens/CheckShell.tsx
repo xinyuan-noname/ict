@@ -8,6 +8,7 @@ import { DatePickerModal } from '../components/DatePickerModal';
 import type { CheckSnapshot, CheckStore } from '../check/checkStore';
 import { ageFromBirthDate, businessToday, formatML, type Gender } from '../model/waterGoal';
 import { WATER_RANGES, WATER_RANGE_LABEL, type WaterPoint } from '../model/waterRange';
+import type { SportStore } from '../sport/sportStore';
 
 type Tab = 'today' | 'stats' | 'profile';
 type Category = 'health' | 'learning';
@@ -25,9 +26,10 @@ export interface CheckShellProps {
   onUpgrade?: () => void;
   onExit: () => void;
   onOpenRewards?: () => void;
+  sportStore?: SportStore;
 }
 
-export function CheckShell({ store, isGuest, displayName, onUpgrade, onExit, onOpenRewards }: CheckShellProps): React.JSX.Element {
+export function CheckShell({ store, isGuest, displayName, onUpgrade, onExit, onOpenRewards, sportStore }: CheckShellProps): React.JSX.Element {
   const [snapshot, setSnapshot] = useState<CheckSnapshot>(store.getSnapshot());
   const [tab, setTab] = useState<Tab>('today');
   const [category, setCategory] = useState<Category>('health');
@@ -88,7 +90,7 @@ export function CheckShell({ store, isGuest, displayName, onUpgrade, onExit, onO
         ) : list === 'medication' ? (
           tab === 'profile' ? null : <MedicationPanel tab={tab} />
         ) : list === 'sport' ? (
-          tab === 'profile' ? null : <SportPanel tab={tab} />
+          tab === 'profile' ? null : <SportPanel tab={tab} sportStore={sportStore} />
         ) : list === 'english' ? (
           tab === 'profile' ? null : <EnglishPanel tab={tab} />
         ) : null}
