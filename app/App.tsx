@@ -77,5 +77,5 @@ export default function App(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, minHeight: 0, backgroundColor: '#ffffff' }
+  root: { flex: 1, minHeight: 0, overflow: 'hidden', backgroundColor: '#ffffff' }
 });

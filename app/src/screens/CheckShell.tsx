@@ -336,7 +336,7 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, minHeight: 0, backgroundColor: "#fff" },
+  root: { flex: 1, minHeight: 0, overflow: "hidden", backgroundColor: "#fff" },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 12 },
   brand: { fontSize: 22, fontWeight: '700', color: '#c7000b', letterSpacing: 1 },
   navLevel1: { flexDirection: 'row', gap: 16, paddingHorizontal: 20, paddingTop: 8 },
