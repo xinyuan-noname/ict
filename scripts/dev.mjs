@@ -78,13 +78,20 @@ function build(go) {
 function start(name, cmd, args, options) {
   mkdirSync(LOGS, { recursive: true });
   const out = openSync(join(LOGS, `${name}.log`), 'a');
-  const child = spawn(cmd, args, {
+  // Windows 上 npx / npm 是 .cmd 脚本，直接 spawn 会 ENOENT
+  const executable =
+    process.platform === 'win32' && (cmd === 'npx' || cmd === 'npm') ? `${cmd}.cmd` : cmd;
+  const child = spawn(executable, args, {
     ...options,
     stdio: ['ignore', out, out],
     windowsHide: true
   });
   closeSync(out);
   children.push({ name, child });
+  child.on('error', (error) => {
+    // 必须消费 error 事件，否则 Node 会以未捕获异常退出
+    console.error(`[dev] ${name} failed to start: ${error.message}`);
+  });
   child.on('exit', (code) => {
     if (!shuttingDown && code !== 0 && code !== null) {
       console.error(`[dev] ${name} exited with code ${code}, see .dev/logs/${name}.log`);
