@@ -26,6 +26,7 @@ export interface AppDependencies {
   provider?: AuthProviderStrategy;
   capability?: CapabilityProbe;
   guard?: GuestNetworkGuard;
+  resumeGuestOnBoot?: boolean;
 }
 
 export function buildAuthProvider(deps: AppDependencies = {}): AuthProvider {
@@ -54,7 +55,9 @@ export function buildAuthProvider(deps: AppDependencies = {}): AuthProvider {
     capability: deps.capability ?? (isWindows ? new WindowsCapabilityProbe() : undefined),
     clientVersion: APP_VERSION,
     guestStore: new GuestStore({ storage: new AsyncStorageGuestStorage() }),
-    networkGuard: deps.guard
+    networkGuard: deps.guard,
+    // Web 首屏固定为登录页：不自动恢复游客档案，点击「游客进入预览」时才复用。
+    resumeGuestOnBoot: deps.resumeGuestOnBoot ?? !isWeb
   });
 }
 

@@ -103,6 +103,7 @@ export function AppRoot({ provider, rewardsStore, checkStore }: AppRootProps): R
       }}
       loginDisabled={Platform.OS === 'web'}
       loginHint="网页版暂不支持华为账号登录，请使用「游客进入预览」"
+      guestPrimary={Platform.OS === 'web'}
     />
   );
 }

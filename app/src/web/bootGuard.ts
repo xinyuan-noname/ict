@@ -1,4 +1,17 @@
 // 必须最先执行：捕获模块加载阶段的异常（此时 React 尚未挂载）
+
+// 错误信息可能带出凭证或用户标识，渲染前统一脱敏并截断（FST-06）。
+export function sanitizeErrorMessage(raw: string): string {
+  return raw
+    .replace(/Bearer\s+[A-Za-z0-9._~+/-]+=*/gi, 'Bearer ***')
+    .replace(
+      /((?:sessionToken|session_token|access_token|refresh_token|authCode|authorization|token)\s*["']?\s*[:=]\s*["']?)[A-Za-z0-9._~+/-]{8,}/gi,
+      '$1***'
+    )
+    .replace(/\b[A-Za-z0-9_-]{32,}\b/g, '***')
+    .slice(0, 800);
+}
+
 function renderBootError(message: string): void {
   const root = document.getElementById('root');
   if (!root || root.childElementCount > 0) {
@@ -8,7 +21,7 @@ function renderBootError(message: string): void {
   root.innerHTML = '';
   const pre = document.createElement('pre');
   pre.style.cssText = 'padding:16px;color:#a61b1b;font-size:12px;line-height:18px;white-space:pre-wrap';
-  pre.textContent = `Web 启动失败：\n${message}`;
+  pre.textContent = `Web 启动失败：\n${sanitizeErrorMessage(message)}`;
   root.appendChild(pre);
 }
 

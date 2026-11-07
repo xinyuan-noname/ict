@@ -20,6 +20,8 @@ export interface AuthProviderDeps {
   deviceLabel?: string;
   guestStore?: GuestStore;
   networkGuard?: GuestNetworkGuard;
+  /** 冷启动无会话时是否自动恢复游客档案；Web 传 false，其余端省略（默认 true） */
+  resumeGuestOnBoot?: boolean;
 }
 
 export interface AuthSnapshot {
@@ -73,7 +75,7 @@ export class AuthProvider {
       return;
     }
 
-    if (this.deps.guestStore) {
+    if (this.deps.guestStore && this.deps.resumeGuestOnBoot !== false) {
       const result = await this.deps.guestStore.load();
       if (result.kind === 'profile') {
         this.deps.networkGuard?.enterGuestMode();
@@ -114,7 +116,14 @@ export class AuthProvider {
       return;
     }
     try {
-      const profile = await this.deps.guestStore.create();
+      const loaded = await this.deps.guestStore.load();
+      if (loaded.kind === 'unavailable') {
+        this.deps.networkGuard?.leaveGuestMode();
+        this.set({ state: 'anonymous', user: null, expiresAt: null, lastError: { message: GUEST_COPY.storageUnavailable } });
+        return;
+      }
+      // 复用既有档案，避免刷新后 guestId 变化；仅在无档案或档案损坏重建时才创建。
+      const profile = loaded.kind === 'profile' ? loaded.profile : await this.deps.guestStore.create();
       this.deps.networkGuard?.enterGuestMode();
       this.sessionToken = null;
       this.set({

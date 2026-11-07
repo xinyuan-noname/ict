@@ -11,6 +11,8 @@ export interface LoginScreenProps {
   onGuest?: () => void;
   loginDisabled?: boolean;
   loginHint?: string;
+  /** 游客入口是否为主操作（Web：华为登录禁用，游客是唯一主路径） */
+  guestPrimary?: boolean;
 }
 
 // 仅一个"华为账号登录"按钮，无账号密码输入（任务 33.1）。
@@ -22,7 +24,8 @@ export function LoginScreen({
   onLogin,
   onGuest,
   loginDisabled,
-  loginHint
+  loginHint,
+  guestPrimary
 }: LoginScreenProps): React.JSX.Element {
   const message = errorMessage ?? (errorCode ? userMessageFor(errorCode) : undefined);
   const showCode = errorCode !== undefined && errorCode !== 'AUTH_002';
@@ -40,14 +43,24 @@ export function LoginScreen({
         accessibilityRole="button"
         disabled={loading || loginDisabled}
         onPress={onLogin}
-        style={[styles.button, (loading || loginDisabled) && styles.buttonDisabled]}
+        style={[
+          styles.button,
+          (loading || loginDisabled) && styles.buttonDisabled,
+          guestPrimary && styles.buttonSecondary
+        ]}
       >
         {loading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.buttonText}>华为账号登录</Text>}
       </Pressable>
       {loginDisabled && loginHint ? <Text style={styles.loginHint}>{loginHint}</Text> : null}
       {onGuest ? (
-        <Pressable accessibilityRole="button" testID="guest-entry" disabled={loading} onPress={onGuest} style={styles.guest}>
-          <Text style={styles.guestText}>游客进入预览</Text>
+        <Pressable
+          accessibilityRole="button"
+          testID="guest-entry"
+          disabled={loading}
+          onPress={onGuest}
+          style={[styles.guest, guestPrimary && styles.guestPrimary]}
+        >
+          <Text style={guestPrimary ? styles.guestPrimaryText : styles.guestText}>游客进入预览</Text>
         </Pressable>
       ) : null}
     </View>
@@ -62,8 +75,11 @@ const styles = StyleSheet.create({
   codeText: { color: '#7a7a7a', fontSize: 12, marginTop: 4 },
   button: { backgroundColor: '#c7000b', borderRadius: 24, paddingVertical: 14, paddingHorizontal: 48 },
   buttonDisabled: { opacity: 0.6 },
+  buttonSecondary: { backgroundColor: '#e5e5e5' },
   loginHint: { color: '#999', fontSize: 12, textAlign: 'center', marginTop: 10, maxWidth: 280 },
   buttonText: { color: '#ffffff', fontSize: 16, fontWeight: '600' },
   guest: { marginTop: 16, padding: 10 },
-  guestText: { color: '#999', fontSize: 14 }
+  guestPrimary: { marginTop: 24, backgroundColor: '#c7000b', borderRadius: 24, paddingVertical: 14, paddingHorizontal: 48 },
+  guestText: { color: '#999', fontSize: 14 },
+  guestPrimaryText: { color: '#ffffff', fontSize: 16, fontWeight: '600' }
 });
