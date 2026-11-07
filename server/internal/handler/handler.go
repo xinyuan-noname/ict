@@ -23,6 +23,7 @@ type Deps struct {
 	Check     *service.CheckService
 	Pet       *service.PetService
 	Sport     *service.SportService
+	Sync      *service.SyncService
 	Sessions  *service.SessionService
 	Provider  interface{ Probe(context.Context) string }
 	Storage   interface{ Ping(context.Context) error }
@@ -79,6 +80,12 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("POST /v1/sport/records", s.sportAddRecord)
 	mux.HandleFunc("DELETE /v1/sport/records/{recordId}", s.sportDeleteRecord)
 	mux.HandleFunc("GET /v1/sport/achievements", s.sportAchievements)
+
+	// 同步域：游标、增量快照、批次上行与对账。
+	mux.HandleFunc("GET /v1/sync/cursor", s.syncCursor)
+	mux.HandleFunc("GET /v1/sync/snapshot", s.syncSnapshot)
+	mux.HandleFunc("POST /v1/sync/push", s.syncPush)
+	mux.HandleFunc("POST /v1/sync/reconcile", s.syncReconcile)
 
 	// 宠物 / 道具 / 好友 / PK。
 	mux.HandleFunc("GET /v1/pet", s.petGet)

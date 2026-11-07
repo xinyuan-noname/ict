@@ -23,7 +23,9 @@ type SportRecord struct {
 	DurationS  int       `json:"durationS"`
 	Steps      int       `json:"steps"`
 	Continuous bool      `json:"continuous"`
-	CreatedAt  time.Time `json:"createdAt"`
+	// Seq 是该用户运动域的单调序号，供同步增量游标使用。
+	Seq       int64     `json:"seq,omitempty"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 func ValidSportType(t SportType) bool {

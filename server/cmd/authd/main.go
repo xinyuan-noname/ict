@@ -178,16 +178,32 @@ func main() {
 		},
 	}
 
+	syncService := &service.SyncService{
+		Sport: sportService, Store: sportStore, Rewards: rewardService,
+		Clock: portClock{}, Logger: logger,
+	}
+
 	srv := &handler.Server{Deps: handler.Deps{
 		Cfg: cfg, Auth: authService, Reward: rewardService, Check: checkService,
-		Pet: petService, Sport: sportService, Sessions: sessions, Provider: provider,
+		Pet: petService, Sport: sportService, Sync: syncService, Sessions: sessions, Provider: provider,
 		Storage: store, Log: logger, StartedAt: time.Now(),
 	}}
 
+	// 同步批次体量大于默认 8KB；仅对 /v1/sync/push 放宽到 256KB（SYNC-12）。
+	routes := srv.Routes()
+	smallLimit := middleware.BodyLimit(8 * 1024)(routes)
+	largeLimit := middleware.BodyLimit(256 * 1024)(routes)
+	dispatch := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/v1/sync/push" {
+			largeLimit.ServeHTTP(w, r)
+			return
+		}
+		smallLimit.ServeHTTP(w, r)
+	})
+
 	chain := middleware.Recover(logger)(
 		middleware.TraceID()(
-			middleware.AccessLog(logger)(
-				middleware.BodyLimit(8 * 1024)(srv.Routes()))))
+			middleware.AccessLog(logger)(dispatch)))
 	root := http.NewServeMux()
 	root.Handle("/", chain)
 

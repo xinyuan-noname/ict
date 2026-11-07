@@ -127,6 +127,8 @@ func (s *SportService) AddRecord(ctx context.Context, userID string, in AddRecor
 		}
 		tx.Records[record.RecordID] = record
 		tx.Seq++
+		record.Seq = tx.Seq
+		tx.Records[record.RecordID] = record
 		records := sortedRecords(tx.Records)
 		now := s.now()
 		for _, state := range domain.EvaluateAll(records, toAthlete(profile)) {
