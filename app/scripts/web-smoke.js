@@ -36,6 +36,21 @@ if (bundle.includes('非产品实现') || html.includes('非产品实现')) {
   process.exit(1);
 }
 
+// T143：微信登录敏感值/开发态地址不得进入构建产物。
+const forbidden = [
+  /WECHAT_APP_SECRET/,
+  /wechat_app_secret/,
+  /access_token=/,
+  /openid=/,
+  /127\.0\.0\.1:8443/
+];
+for (const pattern of forbidden) {
+  if (pattern.test(bundle) || pattern.test(html)) {
+    console.error(`[web-smoke] 失败：构建产物包含敏感或开发态内容 ${pattern}`);
+    process.exit(1);
+  }
+}
+
 const errors = [];
 const virtualConsole = new VirtualConsole();
 virtualConsole.on('jsdomError', (err) => errors.push(`jsdomError: ${err.message}`));

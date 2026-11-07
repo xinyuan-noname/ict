@@ -37,6 +37,21 @@ export interface AppDependencies {
   wechatApi?: WeChatAuthApi;
 }
 
+// 微信仅 Web：同源请求；仅本地回环允许 http（生产必须 https）。
+function createWeChatApi(): WeChatAuthApi | undefined {
+  if (Platform.OS !== 'web') {
+    return undefined;
+  }
+  const origin = weChatOrigin();
+  if (!origin) {
+    return undefined;
+  }
+  const localOrigin = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+  return new WeChatAuthApi(
+    new ApiClient({ baseUrl: origin, allowInsecure: __DEV__ || localOrigin })
+  );
+}
+
 export function buildAuthProvider(deps: AppDependencies = {}): AuthProvider {
   const client = new ApiClient({
     baseUrl: deps.baseUrl ?? defaultBaseUrl(),
@@ -47,13 +62,7 @@ export function buildAuthProvider(deps: AppDependencies = {}): AuthProvider {
   const isWeb = Platform.OS === 'web';
   const isWindows = Platform.OS === 'windows' || process.env.RN_PLATFORM === 'windows';
   // 微信仅 Web：同源请求，不读 defaultBaseUrl（P5）。三端不构造该 API。
-  const wechatApi =
-    deps.wechatApi ??
-    (isWeb && weChatOrigin()
-      ? new WeChatAuthApi(
-          new ApiClient({ baseUrl: weChatOrigin(), allowInsecure: __DEV__ })
-        )
-      : undefined);
+  const wechatApi = deps.wechatApi ?? createWeChatApi();
   const strategy =
     deps.provider ??
     (isWeb
@@ -93,16 +102,7 @@ export default function App(): React.JSX.Element {
 function AppContent(): React.JSX.Element {
   const guard = useMemo(() => new GuestNetworkGuard(), []);
   // 微信仅在 Web 构造，且使用同源 baseUrl；三端为 undefined。
-  const wechatApi = useMemo(() => {
-    if (Platform.OS !== 'web') {
-      return undefined;
-    }
-    const origin = weChatOrigin();
-    if (!origin) {
-      return undefined;
-    }
-    return new WeChatAuthApi(new ApiClient({ baseUrl: origin, allowInsecure: __DEV__ }));
-  }, []);
+  const wechatApi = useMemo(() => createWeChatApi(), []);
   const provider = useMemo(() => buildAuthProvider({ guard, wechatApi }), [guard, wechatApi]);
   const initialWeChatCallback = useMemo(
     () => (Platform.OS === 'web' ? takePendingWeChatCallback() : null),
