@@ -58,7 +58,19 @@ export function buildAuthProvider(deps: AppDependencies = {}): AuthProvider {
   });
 }
 
+// 依赖构造放在 AppContent 内：异常会落在 ErrorBoundary 之内，避免整棵树被卸载成白屏。
 export default function App(): React.JSX.Element {
+  return (
+    <SafeAreaView style={styles.root}>
+      <ErrorBoundary>
+        <AppContent />
+        <AppDialogHost />
+      </ErrorBoundary>
+    </SafeAreaView>
+  );
+}
+
+function AppContent(): React.JSX.Element {
   const guard = useMemo(() => new GuestNetworkGuard(), []);
   const provider = useMemo(() => buildAuthProvider({ guard }), [guard]);
   const rewardsStore = useMemo(() => {
@@ -69,14 +81,7 @@ export default function App(): React.JSX.Element {
     const client = new ApiClient({ baseUrl: defaultBaseUrl(), allowInsecure: __DEV__, guard });
     return new CheckStore({ api: new CheckApi(client), getToken: () => provider.currentToken() });
   }, [provider, guard]);
-  return (
-    <SafeAreaView style={styles.root}>
-      <ErrorBoundary>
-        <AppRoot provider={provider} rewardsStore={rewardsStore} checkStore={checkStore} />
-        <AppDialogHost />
-      </ErrorBoundary>
-    </SafeAreaView>
-  );
+  return <AppRoot provider={provider} rewardsStore={rewardsStore} checkStore={checkStore} />;
 }
 
 const styles = StyleSheet.create({
