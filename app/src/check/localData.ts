@@ -101,9 +101,8 @@ export async function loadSport(): Promise<SportRecord[]> {
   } catch {
     /* ignore */
   }
-  const demo = demoSportRecords();
-  await writeJSON(LOCAL_KEYS.sport, demo);
-  return demo;
+  // 无用户记录时返回空数组：演示数据不得自动写入首屏（NAV-23）。
+  return [];
 }
 
 export function saveSport(records: SportRecord[]): Promise<void> {
