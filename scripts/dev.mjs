@@ -18,7 +18,9 @@ const TOOLS_BIN = join(ROOT, '.tools', 'bin');
 
 const flags = new Set(process.argv.slice(2));
 const apiOnly = flags.has('--api-only');
-const noMetro = flags.has('--no-metro') || apiOnly;
+const webOnly = flags.has('--web-only');
+const webMode = flags.has('--web') || webOnly;
+const noMetro = flags.has('--no-metro') || apiOnly || webMode;
 const noOpen = flags.has('--no-open');
 const selfTest = flags.has('--self-test');
 const buildOnly = flags.has('--build-only');
@@ -138,6 +140,18 @@ async function selfTestRun() {
   }
 }
 
+function openUrl(url) {
+  if (noOpen) return;
+  const cmd = process.platform === 'win32' ? 'cmd' : process.platform === 'darwin' ? 'open' : 'xdg-open';
+  const args = process.platform === 'win32' ? ['/c', 'start', '', url] : [url];
+  try {
+    spawn(cmd, args, { detached: true, stdio: 'ignore', windowsHide: true }).unref();
+    log(`browser opened: ${url}`);
+  } catch {
+    log(`open manually: ${url}`);
+  }
+}
+
 function openPreview() {
   if (noOpen) return;
   const file = join(ROOT, 'preview', 'index.html');
@@ -183,6 +197,14 @@ process.on('exit', () => {
 });
 
 async function main() {
+  if (webOnly) {
+    start('web', 'npx', ['webpack', 'serve', '--mode', 'development'], { cwd: APP });
+    log('Web: http://127.0.0.1:3000');
+    openUrl('http://127.0.0.1:3000');
+    log('press Ctrl+C to stop');
+    return;
+  }
+
   const go = findGo();
   log(`go: ${go.cmd}`);
   build(go);
@@ -224,7 +246,10 @@ async function main() {
     return;
   }
 
-  if (!noMetro) {
+  if (webMode) {
+    start('web', 'npx', ['webpack', 'serve', '--mode', 'development'], { cwd: APP });
+    log(`Web: http://127.0.0.1:3000`);
+  } else if (!noMetro) {
     start('metro', 'npx', ['react-native', 'start', '--port', String(METRO_PORT)], {
       cwd: APP,
       env: { ...process.env, RCT_METRO_PORT: String(METRO_PORT) }
@@ -234,7 +259,11 @@ async function main() {
     log('Metro skipped (--no-metro)');
   }
 
-  openPreview();
+  if (webMode) {
+    openUrl('http://127.0.0.1:3000');
+  } else {
+    openPreview();
+  }
   log('press Ctrl+C to stop everything');
   log('');
   log('quick check:');

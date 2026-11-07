@@ -311,12 +311,44 @@ function toModelRecord(record: SportRecord): ModelSportRecord {
   };
 }
 
+// 周 / 月 / 季度 三种粒度的步数序列
+function sportSeries(
+  range: 'week' | 'month' | 'quarter',
+  records: SportRecord[],
+  today: string
+): { label: string; value: number }[] {
+  if (range === 'month') {
+    return Array.from({ length: 30 }, (_, i) => {
+      const day = addDays(today, -(29 - i));
+      const value = records.filter((r) => r.day === day).reduce((sum, r) => sum + r.steps, 0);
+      return { label: i % 5 === 0 || i === 29 ? day.slice(5) : '', value };
+    });
+  }
+  if (range === 'quarter') {
+    return Array.from({ length: 13 }, (_, i) => {
+      const weekStart = addDays(today, -(12 - i) * 7);
+      const days = Array.from({ length: 7 }, (_, d) => addDays(weekStart, d)).filter((d) => d <= today);
+      const recorded = days.filter((d) => records.some((r) => r.day === d));
+      const total = days.reduce(
+        (sum, d) => sum + records.filter((r) => r.day === d).reduce((s, r) => s + r.steps, 0),
+        0
+      );
+      return { label: i % 2 === 0 ? weekStart.slice(5) : '', value: recorded.length > 0 ? Math.round(total / recorded.length) : 0 };
+    });
+  }
+  return Array.from({ length: 7 }, (_, i) => {
+    const day = addDays(today, -(6 - i));
+    return { label: day.slice(5), value: records.filter((r) => r.day === day).reduce((sum, r) => sum + r.steps, 0) };
+  });
+}
+
 export function SportPanel({ tab }: { tab: PanelTab }): React.JSX.Element {
   const [records, setRecords] = useState<SportRecord[]>([]);
   const [type, setType] = useState<SportRecord['type']>('walking');
   const [distanceKm, setDistanceKm] = useState('');
   const [minutes, setMinutes] = useState('');
   const [steps, setSteps] = useState('');
+  const [range, setRange] = useState<'week' | 'month' | 'quarter'>('week');
 
   useEffect(() => {
     void loadSport().then(setRecords);
@@ -388,14 +420,15 @@ export function SportPanel({ tab }: { tab: PanelTab }): React.JSX.Element {
           </View>
           <Text style={styles.paceHint}>依据性别/年龄/体重估算，仅用于成就激励，不构成训练或医学建议。</Text>
         </View>
-        <Text style={styles.section}>近 7 天步数</Text>
-        <TrendChart
-          values={Array.from({ length: 7 }, (_, i) => {
-            const day = addDays(today, -(6 - i));
-            return { label: day.slice(5), value: records.filter((r) => r.day === day).reduce((s, r) => s + r.steps, 0) };
-          })}
-          unit="步"
-        />
+        <Text style={styles.section}>运动趋势</Text>
+        <View style={styles.rangeRow}>
+          {([['week', '周记'], ['month', '月记'], ['quarter', '季度记']] as [typeof range, string][]).map(([key, label]) => (
+            <Pressable key={key} style={[styles.rangeChip, range === key && styles.rangeChipOn]} onPress={() => setRange(key)}>
+              <Text style={[styles.rangeChipText, range === key && styles.rangeChipTextOn]}>{label}</Text>
+            </Pressable>
+          ))}
+        </View>
+        <TrendChart values={sportSeries(range, records, today)} unit="步" />
         <Text style={styles.section}>成就（{ACHIEVEMENTS.length} 个）</Text>
         <AchievementWall groups={groups} />
       </ScrollView>
@@ -651,5 +684,10 @@ const styles = StyleSheet.create({
   paceValue: { fontSize: 14, color: '#c7000b', fontWeight: '700' },
   paceTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 8 },
   paceTag: { fontSize: 10, color: '#a61b1b', backgroundColor: '#fff', borderWidth: 1, borderColor: '#f3d9db', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 1 },
-  paceHint: { fontSize: 10, color: '#aaa', marginTop: 8, lineHeight: 15 }
+  paceHint: { fontSize: 10, color: '#aaa', marginTop: 8, lineHeight: 15 },
+  rangeRow: { flexDirection: 'row', gap: 6, marginBottom: 8 },
+  rangeChip: { flex: 1, borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 12, paddingVertical: 6, alignItems: 'center' },
+  rangeChipOn: { borderColor: '#c7000b', backgroundColor: '#fff5f5' },
+  rangeChipText: { fontSize: 12, color: '#888' },
+  rangeChipTextOn: { color: '#c7000b', fontWeight: '600' }
 });
