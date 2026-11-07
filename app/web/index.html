@@ -12,16 +12,27 @@
       background: #eef0f4;
       display: flex;
       justify-content: center;
+      align-items: stretch;
       font-family: -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
       -webkit-tap-highlight-color: transparent;
     }
+    /* RNW 把应用挂到 #root 下的 div；这里补全 flex 链，否则 flex:1 失效、底栏随内容浮动 */
     #root {
+      position: relative;
+      display: flex;
+      flex-direction: column;
       width: 100%;
       max-width: 480px;
       height: 100%;
       background: #ffffff;
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.10);
       overflow: hidden;
+    }
+    #root > div {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
     }
     @media (max-width: 480px) {
       #root { box-shadow: none; }
