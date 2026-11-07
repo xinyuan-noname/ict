@@ -66,10 +66,16 @@ export function isCancelledResult(
   return (result as WeChatCancelledResult).cancelled === true;
 }
 
-// 仅在装配层使用：保证微信请求同源；非浏览器环境返回空串并禁用微信。
+// 仅在装配层使用：保证微信请求同源；非浏览器/非 http(s) 环境返回空串并禁用微信。
+// 注意 file:// 打开时 location.origin 是字符串 "null"，必须视为不可用，
+// 否则会构造出非法 baseUrl 并在渲染期抛 ProtocolError（白屏）。
 export function weChatOrigin(): string {
-  if (typeof window !== 'undefined' && window.location && window.location.origin) {
-    return window.location.origin;
+  if (typeof window === 'undefined' || !window.location) {
+    return '';
   }
-  return '';
+  const origin = window.location.origin;
+  if (!origin || origin === 'null' || !/^https?:\/\//.test(origin)) {
+    return '';
+  }
+  return origin;
 }
