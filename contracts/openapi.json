@@ -143,20 +143,33 @@
       },
       "HealthResponse": {
         "type": "object",
-        "required": ["status", "version", "env", "checks", "time"],
+        "required": ["status", "version", "env", "checks", "cloud", "time"],
         "properties": {
           "status": { "type": "string", "enum": ["ok", "degraded", "fail"] },
           "version": { "type": "string" },
           "env": { "type": "string" },
           "checks": {
             "type": "object",
-            "required": ["config", "storage", "huawei"],
+            "required": ["config", "storage", "huawei", "rds", "redis", "maas"],
             "properties": {
               "config": { "type": "string", "enum": ["ok", "fail"] },
               "storage": { "type": "string", "enum": ["ok", "fail"] },
-              "huawei": { "type": "string", "enum": ["ok", "degraded", "unknown"] }
+              "huawei": { "type": "string", "enum": ["ok", "degraded", "unknown"] },
+              "rds": { "type": "string", "enum": ["ok", "fail", "not_configured"] },
+              "redis": { "type": "string", "enum": ["ok", "fail", "not_configured"] },
+              "maas": { "type": "string", "enum": ["ok", "degraded", "fail", "not_configured"] }
             }
           },
+          "cloud": {
+            "type": "object",
+            "required": ["provider", "region", "deploymentId"],
+            "properties": {
+              "provider": { "type": "string", "enum": ["huaweicloud"] },
+              "region": { "type": "string" },
+              "deploymentId": { "type": "string" }
+            }
+          },
+          "traceId": { "type": "string" },
           "time": { "type": "string", "format": "date-time" }
         }
       },

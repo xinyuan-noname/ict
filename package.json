@@ -2,9 +2,10 @@
   "name": "ict",
   "version": "1.0.0",
   "private": true,
-  "description": "Huawei ID minimal login system (React Native + Go)",
+  "description": "check · 每日健康清单（Huawei ICT Competition Track 1）",
   "scripts": {
     "start": "node scripts/dev.mjs",
+    "demo": "node scripts/dev.mjs --web --no-metro",
     "start:api": "node scripts/dev.mjs --api-only --no-open",
     "start:test": "node scripts/dev.mjs --self-test --no-metro --no-open",
     "gen:contracts": "node scripts/gen-contracts.mjs",

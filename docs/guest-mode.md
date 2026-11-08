@@ -11,7 +11,7 @@
 | 身份 | 本地生成 `guest_` + 32 位十六进制，昵称固定「游客」 |
 | 存储 | AsyncStorage 单键 `guest.profile.v1`，字段白名单、≤2 KB、`schemaVersion` 在 JSON 内 |
 | 网络 | 游客窗口内 `ApiClient` 直接阻断并计数（`attempts/outbound`），不调用 `/v1/auth/*`、`/v1/rewards/*`、`/v1/health` |
-| 可见性 | 游客主页为独立组件 `GuestHomeScreen`；签到/积分/商城入口不渲染 |
+| 可见性 | 游客与登录共用 `CheckShell`，通过 `isGuest` 关闭签到/积分/云端入口 |
 | 退出 | 仅本地清理，不调用 `/v1/auth/logout`，不产生 AUTH 码 |
 | 升级 | 确认 → 离游客窗口 → 授权 → 写凭证 → 清档案 → `authenticated`；清理失败则吊销新会话、清凭证、回游客 |
 | 取消/失败 | 回游客态并保留原 `guestId` |
@@ -39,7 +39,8 @@
 | `app/src/guest/GuestStorage.ts` | Port + AsyncStorage/Memory 实现 |
 | `app/src/guest/GuestStore.ts` | 单飞加载、写后复核、损坏重建、清理复核 |
 | `app/src/guest/GuestNetworkGuard.ts` | 游客窗口网络阻断与计数 |
-| `app/src/screens/GuestHomeScreen.tsx` | 游客主页（像素头像、标签、本机说明） |
+| `app/src/screens/CheckShell.tsx` | 游客 / 登录共用外壳（`isGuest` 控制入口） |
+| `app/src/features/profile/ProfilePanel.tsx` | 游客身份、升级与本地数据说明 |
 | `app/src/auth/AuthProvider.ts` | 五态、`enterGuest`/`exitGuest`、升级时序 |
 | `app/App.tsx` | 注入 GuestStore 与 guard |
 
@@ -48,7 +49,7 @@
 ```bash
 cd app
 npm run typecheck
-npm test          # 55 项，含游客档案/存储/五态/零网络/升级回退
+npm test          # 115 项，含游客档案/存储/五态/零网络/升级回退
 ```
 
 关键用例：

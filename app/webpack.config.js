@@ -11,7 +11,9 @@ module.exports = (_env, argv) => {
     output: {
       path: path.resolve(__dirname, 'dist'),
       filename: isDev ? 'bundle.js' : 'bundle.[contenthash:8].js',
-      publicPath: './',
+      // 生产产物要能从 file:// / 子目录打开，使用相对路径；
+      // 开发服务器必须挂在根路径，否则 / 会 404。
+      publicPath: isDev ? '/' : './',
       clean: true
     },
     resolve: {
@@ -73,7 +75,10 @@ module.exports = (_env, argv) => {
     devServer: {
       port: 3000,
       hot: true,
-      historyApiFallback: true,
+      // HtmlWebpackPlugin 的 index.html 在内存文件系统里，必须由 dev middleware 提供。
+      static: false,
+      devMiddleware: { publicPath: '/', index: 'index.html' },
+      historyApiFallback: { index: '/index.html' },
       allowedHosts: 'all',
       client: { overlay: { warnings: false, errors: true } },
       // 开发态同源：浏览器请求 3000 端口的 /v1 转发到 authd，

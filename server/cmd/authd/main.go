@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"ict/server/internal/adapter/audit"
+	"ict/server/internal/adapter/cloud"
 	"ict/server/internal/adapter/huawei"
 	"ict/server/internal/adapter/store/filestore"
 	"ict/server/internal/adapter/wechat"
@@ -221,10 +222,16 @@ func main() {
 		}
 	}
 
+	cloudProbes := map[string]interface{ Probe(context.Context) string }{
+		"rds":   cloud.TCPProbe{Name: "rds", Addr: cfg.RDSAddr, Timeout: 900 * time.Millisecond},
+		"redis": cloud.TCPProbe{Name: "redis", Addr: cfg.RedisAddr, Timeout: 900 * time.Millisecond},
+		"maas":  cloud.HTTPProbe{URL: cfg.MaaSHealthURL, Token: cfg.MaaSAPIKey, Timeout: 1200 * time.Millisecond},
+	}
+
 	srv := &handler.Server{Deps: handler.Deps{
 		Cfg: cfg, Auth: authService, Reward: rewardService, Check: checkService,
 		Pet: petService, Sport: sportService, Sync: syncService, WeChat: weChatService,
-		Sessions: sessions, Provider: provider,
+		Sessions: sessions, Provider: provider, Cloud: cloudProbes,
 		Storage: store, Log: logger, StartedAt: time.Now(),
 	}}
 

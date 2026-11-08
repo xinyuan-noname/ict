@@ -15,6 +15,11 @@ audit.jsonl
 coverage/
 app/android/.gradle/
 app/android/app/build/
+app/android/app/.cxx/
+app/android/app/libs/*.aar
+app/android/app/libs/*.jar
+app/android/build/
+app/android/local.properties
 app/ios/Pods/
 app/windows/**/Debug/
 app/windows/**/Release/

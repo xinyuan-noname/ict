@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Platform, SafeAreaView, StyleSheet } from 'react-native';
+import { Platform } from 'react-native';
 import { AuthApi } from './src/api/authApi';
 import { ApiClient } from './src/api/client';
 import { AppRoot } from './src/app/AppRoot';
+import { AppFrame } from './src/app/AppFrame';
 import { AuthProvider } from './src/auth/AuthProvider';
 import { NativeAccountKitProvider } from './src/auth/providers/nativeAccountKit';
 import { WebOAuthProvider, WindowsCapabilityProbe } from './src/auth/providers/webOAuth';
@@ -23,9 +24,10 @@ import { GuestNetworkGuard } from './src/guest/GuestNetworkGuard';
 import { GuestStore } from './src/guest/GuestStore';
 import { AsyncStorageGuestStorage } from './src/guest/GuestStorage';
 import { KeychainVault } from './src/native/SecureVault';
-import { APP_VERSION, WINDOWS_REDIRECT_URI, defaultBaseUrl } from './src/shared/config';
+import { APP_VERSION, WINDOWS_REDIRECT_URI, clientAllowInsecure, clientBaseUrl } from './src/shared/config';
 import { WeChatAuthApi, weChatOrigin } from './src/api/wechatAuthApi';
 import { takePendingWeChatCallback } from './src/web/wechatCallback';
+import { ThemeProvider } from './src/ui/theme';
 
 export interface AppDependencies {
   baseUrl?: string;
@@ -54,8 +56,8 @@ function createWeChatApi(): WeChatAuthApi | undefined {
 
 export function buildAuthProvider(deps: AppDependencies = {}): AuthProvider {
   const client = new ApiClient({
-    baseUrl: deps.baseUrl ?? defaultBaseUrl(),
-    allowInsecure: __DEV__,
+    baseUrl: deps.baseUrl ?? clientBaseUrl(),
+    allowInsecure: clientAllowInsecure(),
     guard: deps.guard
   });
   const api = new AuthApi(client);
@@ -90,12 +92,14 @@ export function buildAuthProvider(deps: AppDependencies = {}): AuthProvider {
 // 依赖构造放在 AppContent 内：异常会落在 ErrorBoundary 之内，避免整棵树被卸载成白屏。
 export default function App(): React.JSX.Element {
   return (
-    <SafeAreaView style={styles.root}>
-      <ErrorBoundary>
-        <AppContent />
-        <AppDialogHost />
-      </ErrorBoundary>
-    </SafeAreaView>
+    <ThemeProvider>
+      <AppFrame>
+        <ErrorBoundary>
+          <AppContent />
+          <AppDialogHost />
+        </ErrorBoundary>
+      </AppFrame>
+    </ThemeProvider>
   );
 }
 
@@ -141,19 +145,19 @@ function AppContent(): React.JSX.Element {
     };
   }, [wechatApi]);
   const rewardsStore = useMemo(() => {
-    const client = new ApiClient({ baseUrl: defaultBaseUrl(), allowInsecure: __DEV__, guard });
+    const client = new ApiClient({ baseUrl: clientBaseUrl(), allowInsecure: clientAllowInsecure(), guard });
     return new RewardsStore({ api: new RewardsApi(client), getToken: () => provider.currentToken() });
   }, [provider, guard]);
   const checkStore = useMemo(() => {
-    const client = new ApiClient({ baseUrl: defaultBaseUrl(), allowInsecure: __DEV__, guard });
+    const client = new ApiClient({ baseUrl: clientBaseUrl(), allowInsecure: clientAllowInsecure(), guard });
     return new CheckStore({ api: new CheckApi(client), getToken: () => provider.currentToken() });
   }, [provider, guard]);
   const sportStore = useMemo(() => {
-    const client = new ApiClient({ baseUrl: defaultBaseUrl(), allowInsecure: __DEV__, guard });
+    const client = new ApiClient({ baseUrl: clientBaseUrl(), allowInsecure: clientAllowInsecure(), guard });
     return new SportStore({ api: new SportApi(client), getToken: () => provider.currentToken() });
   }, [provider, guard]);
   const syncEngine = useMemo(() => {
-    const client = new ApiClient({ baseUrl: defaultBaseUrl(), allowInsecure: __DEV__, guard });
+    const client = new ApiClient({ baseUrl: clientBaseUrl(), allowInsecure: clientAllowInsecure(), guard });
     return new SyncEngine({
       client: new SyncClient(client),
       queue: new SyncQueue(),
@@ -185,7 +189,3 @@ function AppContent(): React.JSX.Element {
     />
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1, minHeight: 0, overflow: 'hidden', backgroundColor: '#ffffff' }
-});

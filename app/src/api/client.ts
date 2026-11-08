@@ -58,13 +58,18 @@ export interface RawResponse<T> {
 }
 
 const INSECURE_ALLOWED = ['http://10.0.2.2', 'http://127.0.0.1', 'http://localhost'];
+const PRIVATE_HTTP = /^http:\/\/(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)[^/]+/;
 
 export function assertBaseUrl(baseUrl: string, allowInsecure = false): string {
   const trimmed = baseUrl.replace(/\/+$/, '');
   if (trimmed.startsWith('https://')) {
     return trimmed;
   }
-  if (allowInsecure && INSECURE_ALLOWED.some((p) => trimmed === p || trimmed.startsWith(`${p}:`))) {
+  if (
+    allowInsecure &&
+    (INSECURE_ALLOWED.some((p) => trimmed === p || trimmed.startsWith(`${p}:`)) ||
+      PRIVATE_HTTP.test(trimmed))
+  ) {
     return trimmed;
   }
   throw new ProtocolError('API_BASE_URL must be https:// (http only allowed for local dev)');

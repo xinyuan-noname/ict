@@ -27,7 +27,7 @@ const selfTest = flags.has('--self-test');
 const buildOnly = flags.has('--build-only');
 
 const HWSIM_PORT = 18081;
-const AUTHD_PORT = 18443;
+const AUTHD_PORT = 8443;
 const METRO_PORT = 8081;
 const BASE = `http://127.0.0.1:${AUTHD_PORT}`;
 

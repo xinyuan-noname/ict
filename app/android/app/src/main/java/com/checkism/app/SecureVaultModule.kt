@@ -1,4 +1,4 @@
-package com.ict.app
+package com.checkism.app
 
 import android.content.Context
 import android.security.keystore.KeyGenParameterSpec

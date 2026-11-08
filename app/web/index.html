@@ -4,17 +4,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#c7000b" />
-  <title>check</title>
+  <meta name="description" content="check · 每日健康清单：饮水、服药、运动与英语，一份真正能坚持的清单。" />
+  <title>check · 每日健康清单</title>
   <style>
     html, body { height: 100%; }
     body {
       margin: 0;
-      background: #eef0f4;
-      display: flex;
-      justify-content: center;
-      align-items: stretch;
+      background: #0b0e14;
+      overflow: hidden;
       font-family: -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
       -webkit-tap-highlight-color: transparent;
+      -webkit-font-smoothing: antialiased;
     }
     /* RNW 把应用挂到 #root 下的 div；这里补全 flex 链，否则 flex:1 失效、底栏随内容浮动 */
     #root {
@@ -22,10 +22,7 @@
       display: flex;
       flex-direction: column;
       width: 100%;
-      max-width: 480px;
       height: 100%;
-      background: #ffffff;
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.10);
       overflow: hidden;
     }
     #root > div {
@@ -38,9 +35,6 @@
       display: flex;
       flex-direction: column;
       min-height: 0;
-    }
-    @media (max-width: 480px) {
-      #root { box-shadow: none; }
     }
     img { image-rendering: pixelated; }
   </style>

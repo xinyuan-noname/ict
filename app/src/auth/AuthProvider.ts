@@ -221,7 +221,8 @@ export class AuthProvider {
       return;
     }
     if (result.kind === 'error') {
-      backToGuest('唤起华为账号授权失败，请重试');
+      const detail = result.reason.length > 160 ? `${result.reason.slice(0, 160)}…` : result.reason;
+      backToGuest(`华为账号登录失败：${detail}`);
       logEvent('auth_provider_error', { reason: result.reason });
       return;
     }
@@ -446,6 +447,12 @@ function toErrorInfo(err: unknown): NonNullable<AuthSnapshot['lastError']> {
   }
   if (err instanceof NetworkError) {
     return { message: '网络异常，请重试' };
+  }
+  if (err instanceof ProtocolError) {
+    return { message: '服务端响应异常，请检查 API 地址或后端服务' };
+  }
+  if (err instanceof Error && err.message) {
+    return { message: `登录失败：${err.message}` };
   }
   return { message: '操作失败，请稍后重试' };
 }

@@ -8,6 +8,10 @@ buildscript {
         kotlinVersion = "1.9.25"
     }
     repositories {
+        // 国内网络优先走华为云 / 阿里云镜像，避免 Maven Central 超时。
+        maven { url 'https://repo.huaweicloud.com/repository/maven/' }
+        maven { url 'https://maven.aliyun.com/repository/google' }
+        maven { url 'https://maven.aliyun.com/repository/public' }
         google()
         mavenCentral()
         // 华为 HMS SDK（Account Kit）仓库
@@ -21,3 +25,18 @@ buildscript {
 }
 
 apply plugin: "com.facebook.react.rootproject"
+
+// 应用模块依赖（华为 Account Kit）也需要显式声明 HMS 仓库。
+allprojects {
+    repositories {
+        // RN 的大体积 AAR 已预置到 ~/.m2，先命中本地，避免任何外网下载。
+        mavenLocal()
+        // 本地缓存 React Native 的大体积 AAR，避免 Maven Central 卡死。
+        maven { url uri("${rootDir}/../../.tools/m2") }
+        // 只保留国内镜像，避免 Gradle 回退到 Maven Central 后长时间卡住。
+        maven { url 'https://repo.huaweicloud.com/repository/maven/' }
+        maven { url 'https://maven.aliyun.com/repository/google' }
+        maven { url 'https://maven.aliyun.com/repository/public' }
+        maven { url 'https://developer.huawei.com/repo/' }
+    }
+}

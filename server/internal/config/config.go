@@ -35,10 +35,10 @@ func (c Credential) Present() bool { return c.ClientID != "" && c.Secret != "" }
 
 type Config struct {
 	// 模式与环境
-	Env         string
-	AuthMode    string
-	AllowMock   bool
-	HwsimBase   string
+	Env          string
+	AuthMode     string
+	AllowMock    bool
+	HwsimBase    string
 	IdentityMode string
 
 	ServerAddr  string
@@ -54,15 +54,15 @@ type Config struct {
 	PlatformCredentials map[string]Credential
 
 	// 端点（real 模式必须精确等于官方常量）
-	HuaweiOAuthBaseURL  string
-	HuaweiTokenURL      string
-	HuaweiJWKSURL       string
-	HuaweiTokeninfoURL  string
-	HuaweiAuthorizeURL  string
-	IssuerAllowlist     []string
-	ClockSkew           time.Duration
-	JWKSMaxTTL          time.Duration
-	DualSourceCheck     string
+	HuaweiOAuthBaseURL string
+	HuaweiTokenURL     string
+	HuaweiJWKSURL      string
+	HuaweiTokeninfoURL string
+	HuaweiAuthorizeURL string
+	IssuerAllowlist    []string
+	ClockSkew          time.Duration
+	JWKSMaxTTL         time.Duration
+	DualSourceCheck    string
 
 	HuaweiTimeout     time.Duration
 	HuaweiBreakerOpen time.Duration
@@ -92,39 +92,48 @@ type Config struct {
 	TrustedProxies      []string
 	ClientMinVersion    map[string]string
 
-	AuditSink        string
-	AuditQueueSize   int
-	AlertSink        string
-	AlertWebhookURL  string
-	LastKnownGood    string
-	CredentialVersion string
-	CredentialChangedBy string
+	AuditSink             string
+	AuditQueueSize        int
+	AlertSink             string
+	AlertWebhookURL       string
+	LastKnownGood         string
+	CredentialVersion     string
+	CredentialChangedBy   string
 	CredentialEffectiveAt string
 
-	TLSVerify bool
-	SmokeAllow bool
-	LogLevel  string
+	TLSVerify   bool
+	SmokeAllow  bool
+	LogLevel    string
 	MetricsAddr string
-	Version   string
+	Version     string
 
 	// 微信开放平台扫码登录（默认关闭，未配置时仅降级为不可用）。
-	WeChatEnabled           bool
-	WeChatMode              string
-	WeChatAppID             string
-	WeChatAppSecret         string
-	WeChatAppSecretPrevious string
-	WeChatRedirectURIs      []string
+	WeChatEnabled            bool
+	WeChatMode               string
+	WeChatAppID              string
+	WeChatAppSecret          string
+	WeChatAppSecretPrevious  string
+	WeChatRedirectURIs       []string
 	WeChatPrimaryRedirectURI string
-	WeChatAuthorizeURL      string
-	WeChatTokenURL          string
-	WeChatUserInfoURL       string
-	WeChatTimeout           time.Duration
-	WeChatConnectRetries    int
-	WeChatBreakerOpen       time.Duration
-	WeChatBreakerThreshold  int
-	WeChatStateTTL          time.Duration
-	WeChatMaxPendingState   int
-	WeChatWarnings          []string
+	WeChatAuthorizeURL       string
+	WeChatTokenURL           string
+	WeChatUserInfoURL        string
+	WeChatTimeout            time.Duration
+	WeChatConnectRetries     int
+	WeChatBreakerOpen        time.Duration
+	WeChatBreakerThreshold   int
+	WeChatStateTTL           time.Duration
+	WeChatMaxPendingState    int
+	WeChatWarnings           []string
+
+	// 华为云 Track 1 资源探活（只读状态，不参与业务数据面）。
+	// RDS_ADDR / REDIS_ADDR 为 VPC 内网 host:port；未配置时 /v1/health 返回 not_configured。
+	CloudRegion   string
+	DeploymentID  string
+	RDSAddr       string
+	RedisAddr     string
+	MaaSHealthURL string
+	MaaSAPIKey    string
 }
 
 // Load 解析环境变量；任何解析失败一律拒绝启动（design 1.2.2 第 4 条）。
@@ -252,6 +261,14 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 
+	// Track 1 云资源：只读取地址用于健康探活；未配置时保持本地零依赖运行。
+	c.CloudRegion = env("CLOUD_REGION", "cn-north-4")
+	c.DeploymentID = env("DEPLOYMENT_ID", "local")
+	c.RDSAddr = env("RDS_ADDR", "")
+	c.RedisAddr = env("REDIS_ADDR", "")
+	c.MaaSHealthURL = env("MAAS_HEALTH_URL", "")
+	c.MaaSAPIKey = env("MAAS_API_KEY", "")
+
 	c.resolveEndpoints()
 	if problems := c.SelfCheck(); len(problems) > 0 {
 		sort.Strings(problems)
@@ -316,9 +333,10 @@ func (c *Config) CredentialFor(platform string) (Credential, bool) {
 
 // Redacted 返回可安全写入日志的摘要，任何路径都不输出 secret。
 func (c *Config) Redacted() string {
-	return fmt.Sprintf("mode=%s env=%s addr=%s identity=%s token_url=%s secret=%s pepper=%s ttl=%s",
+	return fmt.Sprintf("mode=%s env=%s addr=%s identity=%s token_url=%s secret=%s pepper=%s ttl=%s cloud=%s/%s rds=%t redis=%t maas=%t",
 		c.AuthMode, c.Env, c.ServerAddr, c.IdentityMode, c.HuaweiTokenURL,
-		MaskSecret(c.HuaweiClientSecret), MaskSecret(c.SessionPepper), c.SessionTTL)
+		MaskSecret(c.HuaweiClientSecret), MaskSecret(c.SessionPepper), c.SessionTTL,
+		c.CloudRegion, c.DeploymentID, c.RDSAddr != "", c.RedisAddr != "", c.MaaSHealthURL != "")
 }
 
 // MaskSecret 保留末 4 位用于人工核对，其余隐藏。

@@ -1,4 +1,4 @@
-package com.ict.app
+package com.checkism.app
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

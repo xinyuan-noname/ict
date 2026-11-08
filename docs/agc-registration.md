@@ -9,7 +9,7 @@
 |---|---|---|---|---|---|---|
 | R1 | 注册/登录华为开发者账号并完成实名 | AGC 控制台 | **人工** | 账号可用 | 无 | 全链路 |
 | R2 | 创建应用（App） | AGC → 我的应用 → 新建 | **人工** | app_id | `AUTH_APP_ID` 非空 | 全链路 |
-| R3 | 配置 Android 包名 `com.ict.app` | AGC → 项目设置 | **人工** | 包名记录 | `AUTH_ANDROID_PACKAGE_NAME` | Android 授权 |
+| R3 | 配置 Android 包名 `com.checkism.app` | AGC → 项目设置 | **人工** | 包名记录 | `AUTH_ANDROID_PACKAGE_NAME` | Android 授权 |
 | R4 | 上传 Android 发布证书 SHA-256 | AGC → 证书指纹 | **人工** | 指纹记录 | `AUTH_ANDROID_RELEASE_CERT_SHA256_DIGEST` 为 64 位 hex | Android 授权 |
 | R5 | 配置 iOS Bundle ID 与 Team ID | AGC → iOS 设置 | **人工** | Bundle/Team | `AUTH_IOS_BUNDLE_ID`、`AUTH_IOS_TEAM_ID` | iOS 授权 |
 | R6 | 配置 URL Scheme（iOS 回调） | AGC / Xcode | **人工** | Scheme 名称 | 工程 Info.plist 中存在 | iOS 授权 |
@@ -44,7 +44,7 @@
 操作人：
 app_id（掩码，仅末 4 位）：***
 三端 client_id（掩码）：android=***  ios=***  windows=***
-Android 包名：com.ict.app
+Android 包名：com.checkism.app
 Android 发布证书 SHA-256（摘要前 8 位）：
 iOS Bundle ID / Team ID：
 Windows 回调：

@@ -18,8 +18,14 @@ const rnwPath = fs.realpathSync(
  */
 
 const config = {
-  //
+  // contracts/ 位于 app/ 的上一级；Metro 默认只监听项目根，必须显式加入父目录。
+  watchFolders: [path.resolve(__dirname, '..')],
   resolver: {
+    // 允许从 app/ 解析到仓库根目录的 contracts 生成物。
+    nodeModulesPaths: [
+      path.resolve(__dirname, 'node_modules'),
+      path.resolve(__dirname, '..', 'node_modules'),
+    ],
     blockList: exclusionList([
       // This stops "npx @react-native-community/cli run-windows" from causing the metro server to crash if its already running
       new RegExp(

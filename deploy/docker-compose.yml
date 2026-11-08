@@ -1,0 +1,111 @@
+# check · 本地/云上单机编排（Track 1 Demo）
+#
+# 生产建议：
+#   - RDS / DCS 使用华为云托管实例，删除 mysql / redis 两个容器；
+#   - authd 的 RDS_ADDR / REDIS_ADDR 指向 VPC 内网地址；
+#   - HTTPS 在 ELB / WAF 或 Nginx 443 终止。
+#
+# 本文件同时提供离线可复现的 Demo 依赖，便于评委在三分钟内启动。
+
+services:
+  mysql:
+    image: mysql:8.0
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-check_app}
+      MYSQL_USER: ${MYSQL_USER:-check}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change-me}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-root}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ../db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-change-redis}", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping | grep PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change-redis}
+    restart: unless-stopped
+
+  hwsim:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.server
+      args:
+        TARGET: ./cmd/hwsim
+    command: ["/usr/local/bin/app", "--addr", ":8081", "--scenario", "success"]
+    expose:
+      - "8081"
+    restart: unless-stopped
+
+  authd:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.server
+      args:
+        TARGET: ./cmd/authd
+    environment:
+      ENV: ${ENV:-development}
+      AUTH_MODE: ${AUTH_MODE:-mock}
+      AUTH_ALLOW_MOCK: ${AUTH_ALLOW_MOCK:-1}
+      HWSIM_BASE_URL: http://hwsim:8081
+      SERVER_ADDR: :8443
+      SESSION_TTL: ${SESSION_TTL:-24h}
+      SESSION_PEPPER: ${SESSION_PEPPER:-local-demo-pepper-change-me}
+      AUTH_STORAGE_NAMESPACE: ${AUTH_STORAGE_NAMESPACE:-cloud-mock}
+      DEPLOYMENT_ID: ${DEPLOYMENT_ID:-check-demo-001}
+      DATABASE_DSN: /data/auth.json
+      CLOUD_REGION: ${CLOUD_REGION:-cn-north-4}
+      RDS_ADDR: ${RDS_ADDR:-mysql:3306}
+      REDIS_ADDR: ${REDIS_ADDR:-redis:6379}
+      MAAS_HEALTH_URL: ${MAAS_HEALTH_URL:-}
+      MAAS_API_KEY: ${MAAS_API_KEY:-}
+      AUDIT_SINK: ${AUDIT_SINK:-file}
+    volumes:
+      - authd-data:/data
+    expose:
+      - "8443"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      hwsim:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8443/readyz || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 8
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.web
+    ports:
+      - "${WEB_PORT:-8088}:80"
+    depends_on:
+      authd:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
+  redis-data:
+  authd-data:

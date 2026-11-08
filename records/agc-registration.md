@@ -9,7 +9,7 @@
 | 登记时间 | 未登记 |
 | 操作人 | 未登记 |
 | app_id（掩码） | *** |
-| Android 包名 | com.ict.app |
+| Android 包名 | com.checkism.app |
 | Android 发布证书 SHA-256（前 8 位） | 待填写 |
 | iOS Bundle ID | 待填写 |
 | iOS Team ID | 待填写 |

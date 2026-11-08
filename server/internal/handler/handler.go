@@ -17,17 +17,19 @@ import (
 
 // Deps 是 handler 层的全部依赖；handler 只做协议转换，不含业务判断（任务 23.4）。
 type Deps struct {
-	Cfg       *config.Config
-	Auth      *service.AuthService
-	Reward    *service.RewardService
-	Check     *service.CheckService
-	Pet       *service.PetService
-	Sport     *service.SportService
-	Sync      *service.SyncService
-	WeChat    *service.WeChatAuthService
-	Sessions  *service.SessionService
-	Provider  interface{ Probe(context.Context) string }
-	Storage   interface{ Ping(context.Context) error }
+	Cfg      *config.Config
+	Auth     *service.AuthService
+	Reward   *service.RewardService
+	Check    *service.CheckService
+	Pet      *service.PetService
+	Sport    *service.SportService
+	Sync     *service.SyncService
+	WeChat   *service.WeChatAuthService
+	Sessions *service.SessionService
+	Provider interface{ Probe(context.Context) string }
+	Storage  interface{ Ping(context.Context) error }
+	// Cloud 是只读资源探活；key 固定为 rds / redis / maas。
+	Cloud     map[string]interface{ Probe(context.Context) string }
 	Log       *logx.Logger
 	StartedAt time.Time
 }
@@ -250,6 +252,15 @@ type healthChecks struct {
 	Config  string `json:"config"`
 	Storage string `json:"storage"`
 	Huawei  string `json:"huawei"`
+	RDS     string `json:"rds"`
+	Redis   string `json:"redis"`
+	MaaS    string `json:"maas"`
+}
+
+type healthCloud struct {
+	Provider     string `json:"provider"`
+	Region       string `json:"region"`
+	DeploymentID string `json:"deploymentId"`
 }
 
 type healthResponse struct {
@@ -257,6 +268,7 @@ type healthResponse struct {
 	Version string       `json:"version"`
 	Env     string       `json:"env"`
 	Checks  healthChecks `json:"checks"`
+	Cloud   healthCloud  `json:"cloud"`
 	Time    string       `json:"time"`
 	TraceID string       `json:"traceId,omitempty"`
 }
@@ -264,25 +276,52 @@ type healthResponse struct {
 func (s *Server) health(w http.ResponseWriter, r *http.Request) {
 	tid := logx.TraceID(r.Context())
 	storage := "ok"
-	ctx, cancel := context.WithTimeout(r.Context(), 500*time.Millisecond)
+	ctx, cancel := context.WithTimeout(r.Context(), 1200*time.Millisecond)
 	defer cancel()
 	if err := s.Storage.Ping(ctx); err != nil {
 		storage = "fail"
 	}
 	huawei := s.Provider.Probe(r.Context())
+	checks := healthChecks{Config: "ok", Storage: storage, Huawei: huawei, RDS: "not_configured", Redis: "not_configured", MaaS: "not_configured"}
+	for key, probe := range s.Cloud {
+		state := probe.Probe(ctx)
+		switch key {
+		case "rds":
+			checks.RDS = state
+		case "redis":
+			checks.Redis = state
+		case "maas":
+			checks.MaaS = state
+		}
+	}
 	status := "ok"
 	code := http.StatusOK
 	if storage == "fail" {
 		status = "fail"
 		code = http.StatusServiceUnavailable
-	} else if huawei == "degraded" {
+	} else if huawei == "degraded" || cloudDegraded(checks) {
 		status = "degraded"
 	}
 	writeJSON(w, tid, code, healthResponse{
 		Status: status, Version: s.Cfg.Version, Env: s.Cfg.Env,
-		Checks: healthChecks{Config: "ok", Storage: storage, Huawei: huawei},
-		Time:   time.Now().UTC().Format(time.RFC3339), TraceID: tid,
+		Checks: checks,
+		Cloud: healthCloud{
+			Provider:     "huaweicloud",
+			Region:       s.Cfg.CloudRegion,
+			DeploymentID: s.Cfg.DeploymentID,
+		},
+		Time: time.Now().UTC().Format(time.RFC3339), TraceID: tid,
 	})
+}
+
+// cloudDegraded：已配置但探活失败的云资源只降级，不阻断登录主链路。
+func cloudDegraded(c healthChecks) bool {
+	for _, state := range []string{c.RDS, c.Redis, c.MaaS} {
+		if state == "fail" || state == "degraded" {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *Server) ready(w http.ResponseWriter, r *http.Request) {

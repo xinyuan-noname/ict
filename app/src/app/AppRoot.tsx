@@ -8,7 +8,10 @@ import type { SyncEngine } from '../sync/syncEngine';
 import { CheckShell } from '../screens/CheckShell';
 import { LoginScreen } from '../screens/LoginScreen';
 import { RewardsScreen } from '../screens/RewardsScreen';
+import { SystemScreen } from '../screens/SystemScreen';
 import { userMessageFor } from '../shared/errorCatalog';
+import { BrandMark, UIText } from '../ui/primitives';
+import { palette } from '../ui/theme';
 
 export interface AppRootProps {
   provider: AuthProvider;
@@ -40,7 +43,30 @@ export function AppRoot({
   const [snapshot, setSnapshot] = useState<AuthSnapshot>(provider.getSnapshot());
   const [busy, setBusy] = useState(false);
   const [showRewards, setShowRewards] = useState(false);
+  const [showSystem, setShowSystem] = useState(false);
   const [wechatError, setWechatError] = useState<string | undefined>(undefined);
+  const [pointsBalance, setPointsBalance] = useState<number | undefined>(
+    rewardsStore.getSnapshot().status?.pointsBalance
+  );
+
+  useEffect(() => {
+    const unsubscribe = rewardsStore.subscribe((next) => {
+      setPointsBalance(next.status?.pointsBalance);
+    });
+    return unsubscribe;
+  }, [rewardsStore]);
+
+  // Demo 直达：Web 演示链接可用 ?demo=guest 直接进入游客主页，方便评审与截图。
+  // 仅在 Web 生效，且必须由用户此次访问显式携带；不改变默认真实登录流程。
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') {
+      return;
+    }
+    const demo = new URLSearchParams(window.location.search).get('demo');
+    if (demo === 'guest' && snapshot.state === 'anonymous') {
+      void provider.enterGuest();
+    }
+  }, [provider, snapshot.state]);
 
   // 回跳上下文只消费一次；成功即换票，异常直接回登录页提示。
   useEffect(() => {
@@ -76,6 +102,9 @@ export function AppRoot({
       if (next.state !== 'guest') {
         checkStore.reset();
       }
+      if (next.state !== 'guest' && next.state !== 'authenticated') {
+        setShowSystem(false);
+      }
     });
     if (provider.getSnapshot().state === 'restoring') {
       void provider.bootstrap();
@@ -100,19 +129,27 @@ export function AppRoot({
   if (snapshot.state === 'restoring') {
     return (
       <View style={styles.center}>
-        <ActivityIndicator />
-        <Text style={styles.hint}>登录态恢复中…</Text>
+        <BrandMark size={44} />
+        <UIText variant="h2" style={{ marginTop: 14 }}>
+          正在恢复登录态
+        </UIText>
+        <ActivityIndicator color={palette.brand} style={{ marginTop: 14 }} />
+        <Text style={styles.hint}>校验云端会话，请稍候…</Text>
       </View>
     );
   }
 
   if (snapshot.state === 'guest') {
+    if (showSystem) {
+      return <SystemScreen isGuest onBack={() => setShowSystem(false)} />;
+    }
     return (
       <CheckShell
         store={checkStore}
         isGuest
         displayName="游客"
         sportStore={sportStore}
+        pointsBalance={pointsBalance}
         onSync={() => void syncEngine?.flush()}
         onUpgrade={() => {
           upgrade();
@@ -120,11 +157,15 @@ export function AppRoot({
         onExit={() => {
           void provider.exitGuest();
         }}
+        onOpenSystem={() => setShowSystem(true)}
       />
     );
   }
 
   if (snapshot.state === 'authenticated') {
+    if (showSystem) {
+      return <SystemScreen isGuest={false} onBack={() => setShowSystem(false)} />;
+    }
     if (showRewards) {
       return (
         <RewardsScreen
@@ -140,8 +181,10 @@ export function AppRoot({
         isGuest={false}
         displayName={snapshot.user?.displayName ?? '华为用户'}
         sportStore={sportStore}
+        pointsBalance={pointsBalance}
         onSync={() => void syncEngine?.flush()}
         onOpenRewards={() => setShowRewards(true)}
+        onOpenSystem={() => setShowSystem(true)}
         onExit={() => {
           void provider.logout();
         }}
@@ -188,6 +231,6 @@ export function AppRoot({
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  hint: { marginTop: 12, color: '#666' }
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: palette.canvas },
+  hint: { marginTop: 8, color: palette.muted, fontSize: 12 }
 });
