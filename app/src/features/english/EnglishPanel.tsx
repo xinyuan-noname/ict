@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { DEFAULT_ENGLISH, loadEnglish, saveEnglish, type EnglishData } from '../../check/localData';
 import { LineChart } from '../../components/LineChart';
-import { englishStreak, englishTotal } from '../../model/english';
 import { ENGLISH_CHECKLIST_GROUPS, ENGLISH_ITEM_DEFAULTS, ENGLISH_ITEM_TARGETS, ENGLISH_SKILLS, type EnglishSkill } from '../../model/englishChecklist';
 import { businessToday } from '../../model/waterGoal';
 import { formatMonthDay } from '../../shared/format';
@@ -31,6 +30,76 @@ function addDays(day: string, delta: number): string {
 function safeNumber(value: string): number {
   const number = Number(value);
   return Number.isFinite(number) ? number : 0;
+}
+
+const SKILL_UI: Record<
+  EnglishSkill,
+  {
+    label: string;
+    icon: string;
+    heroTitle: string;
+    unit: string;
+    quickValues: number[];
+    progressGroup: string;
+    defaultTarget: number;
+  }
+> = {
+  listening: {
+    label: '听力',
+    icon: '🎧',
+    heroTitle: '今日听力',
+    unit: '章',
+    quickValues: [1, 2, 5],
+    progressGroup: '听力',
+    defaultTarget: 1
+  },
+  speaking: {
+    label: '口语',
+    icon: '🗣️',
+    heroTitle: '今日口语',
+    unit: '次',
+    quickValues: [1, 3, 5],
+    progressGroup: '口语',
+    defaultTarget: 1
+  },
+  reading: {
+    label: '词汇',
+    icon: '📖',
+    heroTitle: '今日词汇',
+    unit: '词',
+    quickValues: [5, 10, 20],
+    progressGroup: '百词斩',
+    defaultTarget: 20
+  },
+  writing: {
+    label: '写作',
+    icon: '✍️',
+    heroTitle: '今日写作',
+    unit: '篇',
+    quickValues: [1, 2, 3],
+    progressGroup: '写作',
+    defaultTarget: 1
+  }
+};
+
+function dailyMapFor(data: EnglishData, skill: EnglishSkill): Record<string, number> {
+  return skill === 'reading' ? data.wordsByDay : data.dailyBySkill?.[skill] ?? {};
+}
+
+function skillStreakValue(
+  data: EnglishData,
+  skill: EnglishSkill,
+  today: string,
+  addDays: (day: string, delta: number) => string
+): number {
+  const daily = dailyMapFor(data, skill);
+  let count = 0;
+  let day = today;
+  while ((daily[day] ?? 0) > 0) {
+    count += 1;
+    day = addDays(day, -1);
+  }
+  return count;
 }
 
 export function EnglishPanel({
@@ -74,17 +143,38 @@ export function EnglishPanel({
     });
   }, []);
 
+  useEffect(() => {
+    setTarget(
+      String(
+        skill === 'reading'
+          ? data.target
+          : data.targetsBySkill?.[skill] ?? SKILL_UI[skill].defaultTarget
+      )
+    );
+  }, [skill, data.target, data.targetsBySkill]);
+
   const persist = (next: EnglishData): void => {
     setData(next);
     void saveEnglish(next);
   };
 
   const today = businessToday();
-  const todayWords = data.wordsByDay[today] ?? 0;
-  const total = englishTotal(data);
-  const streak = englishStreak(data, today, addDays);
-  const ratio = Math.min(1, todayWords / Math.max(1, data.target));
+  const ui = SKILL_UI[skill];
+  const dailyMap = dailyMapFor(data, skill);
+  const todayWords = dailyMap[today] ?? 0;
+  const skillTarget = skill === 'reading' ? data.target : data.targetsBySkill?.[skill] ?? ui.defaultTarget;
+  const streak = skillStreakValue(data, skill, today, addDays);
+  const ratio = Math.min(1, todayWords / Math.max(1, skillTarget));
   const skillLabel = ENGLISH_SKILLS.find((item) => item.key === skill)?.label ?? '读';
+  const progressGroup = ENGLISH_CHECKLIST_GROUPS.find((group) => group.name === ui.progressGroup);
+  const skillTotal = progressGroup
+    ? Math.max(
+        0,
+        ...progressGroup.items.map(
+          (item) => data.itemProgress?.[item.id] ?? ENGLISH_ITEM_DEFAULTS[item.id] ?? 0
+        )
+      )
+    : 0;
 
   const allGroups = useMemo(
     () =>
@@ -133,37 +223,80 @@ export function EnglishPanel({
     />
   );
 
-  const addWords = (count: number): void => {
+  const addRecord = (count: number): void => {
     if (!(count > 0 && count <= 500)) {
       setNoticeTone('warning');
-      setNotice('单次记录需在 1–500 词之间');
+      setNotice(`单次记录需在 1–500 ${ui.unit}之间`);
       return;
     }
     setNotice('');
-    const nextTotal = total + count;
     const nextProgress = { ...(data.itemProgress ?? {}) };
-    for (const item of ENGLISH_CHECKLIST_GROUPS[0]?.items ?? []) {
-      nextProgress[item.id] = Math.max(nextProgress[item.id] ?? ENGLISH_ITEM_DEFAULTS[item.id] ?? 0, nextTotal);
+    if (skill === 'reading') {
+      const nextTotal = skillTotal + count;
+      for (const item of ENGLISH_CHECKLIST_GROUPS[0]?.items ?? []) {
+        nextProgress[item.id] = Math.max(
+          nextProgress[item.id] ?? ENGLISH_ITEM_DEFAULTS[item.id] ?? 0,
+          nextTotal
+        );
+      }
+      setDraft((current) => {
+        const next = { ...current };
+        for (const item of ENGLISH_CHECKLIST_GROUPS[0]?.items ?? []) {
+          next[item.id] = String(nextProgress[item.id] ?? 0);
+        }
+        return next;
+      });
+      persist({
+        ...data,
+        wordsByDay: { ...data.wordsByDay, [today]: todayWords + count },
+        itemProgress: nextProgress
+      });
+      return;
+    }
+
+    for (const item of progressGroup?.items ?? []) {
+      nextProgress[item.id] =
+        (nextProgress[item.id] ?? ENGLISH_ITEM_DEFAULTS[item.id] ?? 0) + count;
     }
     setDraft((current) => {
       const next = { ...current };
-      for (const item of ENGLISH_CHECKLIST_GROUPS[0]?.items ?? []) {
+      for (const item of progressGroup?.items ?? []) {
         next[item.id] = String(nextProgress[item.id] ?? 0);
       }
       return next;
     });
-    persist({ ...data, wordsByDay: { ...data.wordsByDay, [today]: todayWords + count }, itemProgress: nextProgress });
+    persist({
+      ...data,
+      dailyBySkill: {
+        ...data.dailyBySkill,
+        [skill]: {
+          ...(data.dailyBySkill?.[skill] ?? {}),
+          [today]: todayWords + count
+        }
+      },
+      itemProgress: nextProgress
+    });
   };
 
   const applyTarget = (): void => {
     const value = Math.round(safeNumber(target));
     if (value < 1 || value > 500) {
       setNoticeTone('warning');
-      setNotice('每日目标需在 1–500 词之间');
+      setNotice(`每日目标需在 1–500 ${ui.unit}之间`);
       return;
     }
     setNotice('');
-    persist({ ...data, target: value });
+    if (skill === 'reading') {
+      persist({ ...data, target: value });
+    } else {
+      persist({
+        ...data,
+        targetsBySkill: {
+          ...data.targetsBySkill,
+          [skill]: value
+        }
+      });
+    }
   };
 
   const saveGroupProgress = (): void => {
@@ -183,7 +316,7 @@ export function EnglishPanel({
 
   const weekSeries = Array.from({ length: 7 }, (_, index) => {
     const day = addDays(today, -(6 - index));
-    return { day, label: day.slice(5), value: data.wordsByDay[day] ?? 0 };
+    return { day, label: day.slice(5), value: dailyMap[day] ?? 0 };
   });
 
   const progressEditor = (
@@ -255,7 +388,7 @@ export function EnglishPanel({
             <View style={{ flex: 1 }}>
               <UIText variant="bodyStrong">{skillLabel}成就</UIText>
               <UIText variant="caption" tone="muted" style={{ marginTop: 2 }}>
-                累计 {total} 词 · 连续 {streak} 天
+                累计 {skillTotal} {ui.unit} · 连续 {streak} 天
               </UIText>
             </View>
             <Pill label={`${unlockedCount}/${achievementCount}`} accent={english.main} tone="solid" />
@@ -274,7 +407,7 @@ export function EnglishPanel({
     return (
       <PageScroll>
        <View style={{ flexDirection: 'row', gap: 8 }}>
-          <StatTile value={total} unit="词" label="累计词数" accent={english.deep} icon="📚" />
+          <StatTile value={skillTotal} unit={ui.unit} label={`累计${ui.label}`} accent={english.deep} icon={ui.icon} />
           <StatTile value={streak} unit="天" label="连续打卡" accent={english.deep} icon="🔥" />
           <StatTile value={unlockedCount} unit="项" label="已解锁" accent={english.deep} icon="🏅" />
         </View>
@@ -296,18 +429,18 @@ export function EnglishPanel({
           </Surface>
         ) : null}
 
-        <SectionHeader title="近 7 天词数" caption="每天一点点，积累看得见" style={{ marginTop: 22 }} />
+        <SectionHeader title={`${ui.label}近 7 天`} caption="每天一点点，积累看得见" style={{ marginTop: 22 }} />
         <Surface>
           <LineChart
             values={weekSeries.map((point) => point.value)}
             labels={weekSeries.map((point) => point.day.slice(8))}
             pointLabels={weekSeries.map((point) => formatMonthDay(point.day))}
-            unit="词"
-            target={data.target}
+            unit={ui.unit}
+            target={skillTarget}
             accent={english.main}
           />
           <UIText variant="caption" tone="faint" style={{ marginTop: 8, textAlign: 'center' }}>
-            虚线为每日目标 {data.target} 词。
+            虚线为每日目标 {skillTarget} {ui.unit}。
           </UIText>
         </Surface>
 
@@ -319,7 +452,7 @@ export function EnglishPanel({
           </View>
           <ProgressBar ratio={ratio} color={english.main} height={8} />
           <UIText variant="caption" tone="muted" style={{ marginTop: 8 }}>
-            {todayWords >= data.target ? '今天的目标已经完成，可以适当超额。' : `还差 ${data.target - todayWords} 词完成今天的目标。`}
+            {todayWords >= skillTarget ? '今天的目标已经完成，可以适当超额。' : `还差 ${skillTarget - todayWords} ${ui.unit}完成今天的目标。`}
           </UIText>
         </Surface>
       </PageScroll>
@@ -332,8 +465,8 @@ export function EnglishPanel({
       <Surface padding={0} radiusValue={radius.xl} style={{ overflow: 'hidden' }}>
         <View style={{ backgroundColor: english.wash, padding: 18 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Pill label="今日词汇" accent={english.main} dot />
-            <IconBadge icon="📖" accent={english.main} size={38} />
+            <Pill label={ui.heroTitle} accent={english.main} dot />
+            <IconBadge icon={ui.icon} accent={english.main} size={38} />
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
             <View style={{ flex: 1 }}>
@@ -342,15 +475,15 @@ export function EnglishPanel({
                   {todayWords}
                 </UIText>
                 <UIText variant="small" tone="muted">
-                  / {data.target} 词
+                  / {skillTarget} {ui.unit}
                 </UIText>
               </View>
               <UIText variant="small" tone="muted" style={{ marginTop: 2 }}>
-                {todayWords >= data.target ? '今日目标已达成，保持节奏' : `还差 ${data.target - todayWords} 词`}
+                {todayWords >= skillTarget ? '今日目标已达成，保持节奏' : `还差 ${skillTarget - todayWords} ${ui.unit}`}
               </UIText>
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
                 <Pill label={`连续 ${streak} 天`} accent={english.main} />
-                <Pill label={`累计 ${total} 词`} accent={english.main} tone="outline" />
+                <Pill label={`累计 ${skillTotal} ${ui.unit}`} accent={english.main} tone="outline" />
               </View>
             </View>
             <ProgressRing
@@ -385,18 +518,18 @@ export function EnglishPanel({
 
       <SectionHeader title="快速记录" caption="学完一组就点一下" style={{ marginTop: 22 }} />
       <View style={{ flexDirection: 'row', gap: 8 }}>
-        {[5, 10, 20].map((count) => (
+        {ui.quickValues.map((count) => (
           <Pressable
             key={count}
             accessibilityRole="button"
-            onPress={() => addWords(count)}
+            onPress={() => addRecord(count)}
             style={({ pressed }) => [styles.quickCard, pressed && { opacity: 0.72 }]}
           >
             <UIText variant="h2" color={english.deep}>
               +{count}
             </UIText>
             <UIText variant="caption" tone="muted" style={{ marginTop: 1 }}>
-              词
+              {ui.unit}
             </UIText>
           </Pressable>
         ))}
@@ -412,7 +545,7 @@ export function EnglishPanel({
           <Pressable
             accessibilityRole="button"
             onPress={() => {
-              addWords(Math.round(safeNumber(custom)));
+              addRecord(Math.round(safeNumber(custom)));
               setCustom('');
             }}
             hitSlop={6}
@@ -428,7 +561,7 @@ export function EnglishPanel({
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <View style={{ flex: 1 }}>
             <UIText variant="caption" tone="muted" style={styles.fieldLabel}>
-              每日目标（词）
+              每日目标（{ui.unit}）
             </UIText>
             <TextInput
               value={target}
@@ -442,7 +575,7 @@ export function EnglishPanel({
           <AppButton label="保存目标" variant="soft" accent={english.main} onPress={applyTarget} style={{ marginTop: 16 }} />
         </View>
         <UIText variant="caption" tone="faint" style={{ marginTop: 8 }}>
-          建议从 10–30 词开始，连续比单次数量更重要。
+          建议先定一个轻量目标，连续比单次数量更重要。
         </UIText>
       </Surface>
 
@@ -459,14 +592,14 @@ export function EnglishPanel({
         </View>
       </Surface>
 
-      <SectionHeader title="近 7 天" caption="词数趋势" style={{ marginTop: 22 }} />
+      <SectionHeader title={`${ui.label}近 7 天`} caption={`${ui.unit}趋势`} style={{ marginTop: 22 }} />
       <Surface>
         <LineChart
           values={weekSeries.map((point) => point.value)}
           labels={weekSeries.map((point) => point.day.slice(8))}
           pointLabels={weekSeries.map((point) => formatMonthDay(point.day))}
-          unit="词"
-          target={data.target}
+          unit={ui.unit}
+          target={skillTarget}
           accent={english.main}
         />
       </Surface>
