@@ -34,6 +34,8 @@ itemProgress: Record<itemId, number>
 itemTargets: Record<itemId, number>
 dailyBySkill: Partial<Record<EnglishSkill, Record<day, number>>>
 targetsBySkill: Partial<Record<EnglishSkill, number>>
+targetPeriod: 'day' | 'week' | 'month'
+periodsBySkill: Partial<Record<EnglishSkill, 'day' | 'week' | 'month'>>
 ```
 
 不要新增 `readingPages`、`vocabulary`、`movies` 这类固定字段，也不要把某个条目绑定到固定书名。新增条目只需在 `englishChecklist.ts` 注册：
@@ -95,3 +97,4 @@ gradlew.bat assembleDebug -PreactNativeArchitectures=arm64-v8a --no-daemon -I ..
 
 - 2026-11-09：一级「学习」改为「英语」；英语二级定为听说读写；洞察不重复技能 nav；成就跟随当前技能；成就 hero 与喝水统一。
 - 2026-11-09：清单页四个技能不再共用词汇内容；听/说/读/写分别记录章/次/词/篇，近 7 天和每日目标按技能切换。
+- 2026-11-09：目标支持按天/按周/按月；周目标按本周一至今天累计，月目标按当月累计。

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { DEFAULT_ENGLISH, loadEnglish, saveEnglish, type EnglishData } from '../../check/localData';
+import { DEFAULT_ENGLISH, loadEnglish, saveEnglish, type EnglishData, type EnglishTargetPeriod } from '../../check/localData';
 import { LineChart } from '../../components/LineChart';
 import { ENGLISH_CHECKLIST_GROUPS, ENGLISH_ITEM_DEFAULTS, ENGLISH_ITEM_TARGETS, ENGLISH_SKILLS, type EnglishSkill } from '../../model/englishChecklist';
 import { businessToday } from '../../model/waterGoal';
@@ -102,6 +102,45 @@ function skillStreakValue(
   return count;
 }
 
+const PERIOD_LABELS: Record<EnglishTargetPeriod, string> = {
+  day: '今日',
+  week: '本周',
+  month: '本月'
+};
+
+const PERIOD_OPTIONS: { key: EnglishTargetPeriod; label: string }[] = [
+  { key: 'day', label: '按天' },
+  { key: 'week', label: '按周' },
+  { key: 'month', label: '按月' }
+];
+
+function periodStart(period: EnglishTargetPeriod, today: string, addDays: (day: string, delta: number) => string): string {
+  if (period === 'day') {
+    return today;
+  }
+  if (period === 'month') {
+    return `${today.slice(0, 7)}-01`;
+  }
+  const date = new Date(`${today}T00:00:00Z`);
+  const weekday = date.getUTCDay() || 7;
+  return addDays(today, -(weekday - 1));
+}
+
+function periodCount(
+  daily: Record<string, number>,
+  period: EnglishTargetPeriod,
+  today: string,
+  addDays: (day: string, delta: number) => string
+): number {
+  let cursor = periodStart(period, today, addDays);
+  let sum = 0;
+  while (cursor <= today) {
+    sum += daily[cursor] ?? 0;
+    cursor = addDays(cursor, 1);
+  }
+  return sum;
+}
+
 export function EnglishPanel({
   tab,
   skill,
@@ -116,6 +155,7 @@ export function EnglishPanel({
   const [data, setData] = useState<EnglishData>(DEFAULT_ENGLISH);
   const [custom, setCustom] = useState('');
   const [target, setTarget] = useState('20');
+  const [targetPeriod, setTargetPeriod] = useState<EnglishTargetPeriod>('day');
   const [notice, setNotice] = useState('');
   const [noticeTone, setNoticeTone] = useState<'warning' | 'success'>('warning');
   const [activeGroup, setActiveGroup] = useState(
@@ -144,6 +184,11 @@ export function EnglishPanel({
   }, []);
 
   useEffect(() => {
+    const period =
+      skill === 'reading'
+        ? data.targetPeriod ?? 'day'
+        : data.periodsBySkill?.[skill] ?? 'day';
+    setTargetPeriod(period);
     setTarget(
       String(
         skill === 'reading'
@@ -151,7 +196,7 @@ export function EnglishPanel({
           : data.targetsBySkill?.[skill] ?? SKILL_UI[skill].defaultTarget
       )
     );
-  }, [skill, data.target, data.targetsBySkill]);
+  }, [skill, data.target, data.targetsBySkill, data.targetPeriod, data.periodsBySkill]);
 
   const persist = (next: EnglishData): void => {
     setData(next);
@@ -162,9 +207,13 @@ export function EnglishPanel({
   const ui = SKILL_UI[skill];
   const dailyMap = dailyMapFor(data, skill);
   const todayWords = dailyMap[today] ?? 0;
+  const savedPeriod =
+    skill === 'reading' ? data.targetPeriod ?? 'day' : data.periodsBySkill?.[skill] ?? 'day';
+  const periodLabel = PERIOD_LABELS[savedPeriod];
+  const targetCount = periodCount(dailyMap, savedPeriod, today, addDays);
   const skillTarget = skill === 'reading' ? data.target : data.targetsBySkill?.[skill] ?? ui.defaultTarget;
   const streak = skillStreakValue(data, skill, today, addDays);
-  const ratio = Math.min(1, todayWords / Math.max(1, skillTarget));
+  const ratio = Math.min(1, targetCount / Math.max(1, skillTarget));
   const skillLabel = ENGLISH_SKILLS.find((item) => item.key === skill)?.label ?? '读';
   const progressGroup = ENGLISH_CHECKLIST_GROUPS.find((group) => group.name === ui.progressGroup);
   const skillTotal = progressGroup
@@ -287,13 +336,17 @@ export function EnglishPanel({
     }
     setNotice('');
     if (skill === 'reading') {
-      persist({ ...data, target: value });
+      persist({ ...data, target: value, targetPeriod });
     } else {
       persist({
         ...data,
         targetsBySkill: {
           ...data.targetsBySkill,
           [skill]: value
+        },
+        periodsBySkill: {
+          ...data.periodsBySkill,
+          [skill]: targetPeriod
         }
       });
     }
@@ -436,23 +489,25 @@ export function EnglishPanel({
             labels={weekSeries.map((point) => point.day.slice(8))}
             pointLabels={weekSeries.map((point) => formatMonthDay(point.day))}
             unit={ui.unit}
-            target={skillTarget}
+            target={savedPeriod === 'day' ? skillTarget : undefined}
             accent={english.main}
           />
           <UIText variant="caption" tone="faint" style={{ marginTop: 8, textAlign: 'center' }}>
-            虚线为每日目标 {skillTarget} {ui.unit}。
+            {savedPeriod === 'day'
+              ? `虚线为每日目标 ${skillTarget} ${ui.unit}。`
+              : `${periodLabel}目标 ${skillTarget} ${ui.unit}，下方为每日记录。`}
           </UIText>
         </Surface>
 
         <SectionHeader title="英语节奏" style={{ marginTop: 22 }} />
         <Surface tone="soft">
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <UIText variant="bodyStrong">今日目标完成度</UIText>
+            <UIText variant="bodyStrong">{periodLabel}目标完成度</UIText>
             <Pill label={`${Math.round(ratio * 100)}%`} accent={english.main} tone="solid" />
           </View>
           <ProgressBar ratio={ratio} color={english.main} height={8} />
           <UIText variant="caption" tone="muted" style={{ marginTop: 8 }}>
-            {todayWords >= skillTarget ? '今天的目标已经完成，可以适当超额。' : `还差 ${skillTarget - todayWords} ${ui.unit}完成今天的目标。`}
+            {targetCount >= skillTarget ? `${periodLabel}目标已经完成，可以适当超额。` : `还差 ${skillTarget - targetCount} ${ui.unit}完成${periodLabel}目标。`}
           </UIText>
         </Surface>
       </PageScroll>
@@ -465,21 +520,21 @@ export function EnglishPanel({
       <Surface padding={0} radiusValue={radius.xl} style={{ overflow: 'hidden' }}>
         <View style={{ backgroundColor: english.wash, padding: 18 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Pill label={ui.heroTitle} accent={english.main} dot />
+            <Pill label={`${periodLabel}${ui.label}`} accent={english.main} dot />
             <IconBadge icon={ui.icon} accent={english.main} size={38} />
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
                 <UIText variant="display" color={english.deep}>
-                  {todayWords}
+                  {targetCount}
                 </UIText>
                 <UIText variant="small" tone="muted">
                   / {skillTarget} {ui.unit}
                 </UIText>
               </View>
               <UIText variant="small" tone="muted" style={{ marginTop: 2 }}>
-                {todayWords >= skillTarget ? '今日目标已达成，保持节奏' : `还差 ${skillTarget - todayWords} ${ui.unit}`}
+                {targetCount >= skillTarget ? `${periodLabel}目标已达成，保持节奏` : `还差 ${skillTarget - targetCount} ${ui.unit}`}
               </UIText>
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
                 <Pill label={`连续 ${streak} 天`} accent={english.main} />
@@ -493,7 +548,7 @@ export function EnglishPanel({
               trackColor={`${english.main}16`}
               value={`${Math.round(ratio * 100)}`}
               unit="%"
-              label="今日"
+              label={periodLabel}
             />
           </View>
         </View>
@@ -558,24 +613,34 @@ export function EnglishPanel({
       </View>
 
       <Surface style={{ marginTop: 14 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <UIText variant="caption" tone="muted" style={styles.fieldLabel}>
+          目标周期
+        </UIText>
+        <Segmented
+          options={PERIOD_OPTIONS}
+          value={targetPeriod}
+          onChange={setTargetPeriod}
+          accent={english.main}
+          compact
+        />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 }}>
           <View style={{ flex: 1 }}>
             <UIText variant="caption" tone="muted" style={styles.fieldLabel}>
-              每日目标（{ui.unit}）
+              目标量（{ui.unit}）
             </UIText>
             <TextInput
               value={target}
               onChangeText={setTarget}
               keyboardType="number-pad"
               style={styles.input}
-              placeholder="20"
+              placeholder={String(ui.defaultTarget)}
               placeholderTextColor={palette.faint}
             />
           </View>
           <AppButton label="保存目标" variant="soft" accent={english.main} onPress={applyTarget} style={{ marginTop: 16 }} />
         </View>
         <UIText variant="caption" tone="faint" style={{ marginTop: 8 }}>
-          建议先定一个轻量目标，连续比单次数量更重要。
+          {periodLabel}已累计 {targetCount} {ui.unit}；目标可以按天、按周或按月设置。
         </UIText>
       </Surface>
 
@@ -599,7 +664,7 @@ export function EnglishPanel({
           labels={weekSeries.map((point) => point.day.slice(8))}
           pointLabels={weekSeries.map((point) => formatMonthDay(point.day))}
           unit={ui.unit}
-          target={skillTarget}
+          target={savedPeriod === 'day' ? skillTarget : undefined}
           accent={english.main}
         />
       </Surface>

@@ -1,6 +1,8 @@
 // 服药 / 运动 / 英语 的本地数据层（游客与 Web 共用；登录用户后续接云端）
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ENGLISH_ITEM_DEFAULTS, ENGLISH_ITEM_TARGETS, type EnglishSkill } from '../model/englishChecklist';
+
+export type EnglishTargetPeriod = 'day' | 'week' | 'month';
 import { businessToday } from '../model/waterGoal';
 
 export const LOCAL_KEYS = {
@@ -48,6 +50,10 @@ export interface EnglishData {
   dailyBySkill?: Partial<Record<EnglishSkill, Record<string, number>>>;
   /** 听说读写各技能的每日目标 */
   targetsBySkill?: Partial<Record<EnglishSkill, number>>;
+  /** 阅读目标周期 */
+  targetPeriod?: EnglishTargetPeriod;
+  /** 听说读写各技能的目标周期 */
+  periodsBySkill?: Partial<Record<EnglishSkill, EnglishTargetPeriod>>;
 }
 
 export const MED_SLOTS: [string, string][] = [
@@ -63,7 +69,9 @@ export const DEFAULT_ENGLISH: EnglishData = {
   baselineWords: 3000,
   itemProgress: { ...ENGLISH_ITEM_DEFAULTS },
   itemTargets: { ...ENGLISH_ITEM_TARGETS },
-  targetsBySkill: { listening: 1, speaking: 1, writing: 1 }
+  targetPeriod: 'day',
+  targetsBySkill: { listening: 1, speaking: 1, writing: 1 },
+  periodsBySkill: { listening: 'day', speaking: 'day', writing: 'day' }
 };
 
 /** 内置演示数据：仅首次进入时写入，可整体清除 */
