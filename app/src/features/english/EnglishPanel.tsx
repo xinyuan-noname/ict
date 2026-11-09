@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { DEFAULT_ENGLISH, loadEnglish, saveEnglish, type EnglishData } from '../../check/localData';
 import { LineChart } from '../../components/LineChart';
 import { englishStreak, englishTotal } from '../../model/english';
-import { ENGLISH_CHECKLIST_GROUPS, ENGLISH_ITEM_DEFAULTS, ENGLISH_ITEM_TARGETS } from '../../model/englishChecklist';
+import { ENGLISH_CHECKLIST_GROUPS, ENGLISH_ITEM_DEFAULTS, ENGLISH_ITEM_TARGETS, ENGLISH_SKILLS, type EnglishSkill } from '../../model/englishChecklist';
 import { businessToday } from '../../model/waterGoal';
 import { formatMonthDay } from '../../shared/format';
 import { AchievementGrid, AchievementGroupNav, type AchievementItem } from '../../ui/AchievementGrid';
@@ -15,6 +15,7 @@ import {
   Pill,
   ProgressBar,
   SectionHeader,
+  Segmented,
   StatTile,
   Surface,
   UIText
@@ -40,7 +41,10 @@ export function EnglishPanel({ tab }: { tab: 'today' | 'stats' | 'achievements' 
   const [target, setTarget] = useState('20');
   const [notice, setNotice] = useState('');
   const [noticeTone, setNoticeTone] = useState<'warning' | 'success'>('warning');
-  const [activeGroup, setActiveGroup] = useState(ENGLISH_CHECKLIST_GROUPS[0]?.name ?? '百词斩');
+  const [skill, setSkill] = useState<EnglishSkill>('reading');
+  const [activeGroup, setActiveGroup] = useState(
+    ENGLISH_CHECKLIST_GROUPS.find((group) => group.skill === 'reading')?.name ?? '百词斩'
+  );
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [targetDraft, setTargetDraft] = useState<Record<string, string>>({});
 
@@ -74,7 +78,7 @@ export function EnglishPanel({ tab }: { tab: 'today' | 'stats' | 'achievements' 
   const streak = englishStreak(data, today, addDays);
   const ratio = Math.min(1, todayWords / Math.max(1, data.target));
 
-  const groups = useMemo(
+  const allGroups = useMemo(
     () =>
       ENGLISH_CHECKLIST_GROUPS.map((group) => {
         const items: AchievementItem[] = group.items.map((definition) => {
@@ -91,16 +95,35 @@ export function EnglishPanel({ tab }: { tab: 'today' | 'stats' | 'achievements' 
             need
           };
         });
-        return { name: group.name, items };
+        return { name: group.name, skill: group.skill, items };
       }),
     [data]
   );
 
+  const groups = allGroups.filter((group) => group.skill === skill);
   const selectedGroup = groups.find((group) => group.name === activeGroup) ?? groups[0];
   const selectedDefinitionGroup =
-    ENGLISH_CHECKLIST_GROUPS.find((group) => group.name === activeGroup) ?? ENGLISH_CHECKLIST_GROUPS[0];
+    ENGLISH_CHECKLIST_GROUPS.find((group) => group.name === activeGroup && group.skill === skill) ??
+    ENGLISH_CHECKLIST_GROUPS.find((group) => group.skill === skill) ??
+    ENGLISH_CHECKLIST_GROUPS[0];
   const unlockedCount = groups.reduce((sum, group) => sum + group.items.filter((item) => item.unlocked).length, 0);
   const achievementCount = groups.reduce((sum, group) => sum + group.items.length, 0);
+
+  const changeSkill = (next: EnglishSkill): void => {
+    setSkill(next);
+    setActiveGroup(ENGLISH_CHECKLIST_GROUPS.find((group) => group.skill === next)?.name ?? '百词斩');
+  };
+
+  const skillNav = (
+    <Segmented
+      options={ENGLISH_SKILLS.map((item) => ({ key: item.key, label: item.label, icon: item.icon }))}
+      value={skill}
+      onChange={(key) => changeSkill(key as EnglishSkill)}
+      accent={english.main}
+      style={{ marginBottom: 14 }}
+      compact
+    />
+  );
 
   const addWords = (count: number): void => {
     if (!(count > 0 && count <= 500)) {
@@ -216,6 +239,7 @@ export function EnglishPanel({ tab }: { tab: 'today' | 'stats' | 'achievements' 
   if (tab === 'achievements') {
     return (
       <PageScroll>
+        {skillNav}
         <Surface tone="soft" style={{ marginBottom: 16 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <IconBadge icon="🏆" accent={english.main} size={44} />
@@ -230,6 +254,7 @@ export function EnglishPanel({ tab }: { tab: 'today' | 'stats' | 'achievements' 
         </Surface>
         <AchievementGroupNav groups={groups} value={activeGroup} onChange={setActiveGroup} accent={english.main} />
         <AchievementGrid groups={selectedGroup ? [selectedGroup] : []} accent={english.main} showHeader={false} />
+        {progressEditor}
       </PageScroll>
     );
   }
@@ -237,6 +262,7 @@ export function EnglishPanel({ tab }: { tab: 'today' | 'stats' | 'achievements' 
   if (tab === 'stats') {
     return (
       <PageScroll>
+        {skillNav}
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <StatTile value={total} unit="词" label="累计词数" accent={english.deep} icon="📚" />
           <StatTile value={streak} unit="天" label="连续打卡" accent={english.deep} icon="🔥" />
@@ -292,6 +318,7 @@ export function EnglishPanel({ tab }: { tab: 'today' | 'stats' | 'achievements' 
 
   return (
     <PageScroll>
+      {skillNav}
       <Surface padding={0} radiusValue={radius.xl} style={{ overflow: 'hidden' }}>
         <View style={{ backgroundColor: english.wash, padding: 18 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -409,8 +436,6 @@ export function EnglishPanel({ tab }: { tab: 'today' | 'stats' | 'achievements' 
         </UIText>
       </Surface>
 
-      {progressEditor}
-
       <SectionHeader title="清单概览" caption="28 考研 + 六级" style={{ marginTop: 22 }} />
       <Surface tone="soft">
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -418,7 +443,7 @@ export function EnglishPanel({ tab }: { tab: 'today' | 'stats' | 'achievements' 
           <View style={{ flex: 1 }}>
             <UIText variant="bodyStrong">已解锁 {unlockedCount} / {achievementCount} 项</UIText>
             <UIText variant="caption" tone="muted" style={{ marginTop: 3 }}>
-              每条清单独立记录，进度可在上方「进度管理」中维护
+              每条清单独立记录，进度可在「洞察 / 成就」中维护
             </UIText>
           </View>
         </View>

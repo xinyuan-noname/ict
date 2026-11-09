@@ -125,7 +125,8 @@ export function CheckShell({
             accent={palette.brand}
             style={styles.category}
           />
-                    <ScrollView
+          {category === 'health' ? (
+          <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.listRow}
@@ -159,6 +160,7 @@ export function CheckShell({
               );
             })}
           </ScrollView>
+          ) : null}
         </>
       ) : null}
 
