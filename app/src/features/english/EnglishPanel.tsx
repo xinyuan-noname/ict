@@ -41,6 +41,7 @@ const SKILL_UI: Record<
     unit: string;
     quickValues: number[];
     progressGroup: string;
+    progressSeries: string;
     defaultTarget: number;
   }
 > = {
@@ -51,6 +52,7 @@ const SKILL_UI: Record<
     unit: '章',
     quickValues: [1, 2, 5],
     progressGroup: '听力',
+    progressSeries: 'voa',
     defaultTarget: 1
   },
   speaking: {
@@ -60,6 +62,7 @@ const SKILL_UI: Record<
     unit: '次',
     quickValues: [1, 3, 5],
     progressGroup: '口语',
+    progressSeries: 'speak',
     defaultTarget: 1
   },
   reading: {
@@ -69,6 +72,7 @@ const SKILL_UI: Record<
     unit: '词',
     quickValues: [5, 10, 20],
     progressGroup: '百词斩',
+    progressSeries: 'words',
     defaultTarget: 20
   },
   writing: {
@@ -78,6 +82,7 @@ const SKILL_UI: Record<
     unit: '篇',
     quickValues: [1, 2, 3],
     progressGroup: '写作',
+    progressSeries: 'write',
     defaultTarget: 1
   }
 };
@@ -216,10 +221,12 @@ export function EnglishPanel({
   const ratio = Math.min(1, targetCount / Math.max(1, skillTarget));
   const skillLabel = ENGLISH_SKILLS.find((item) => item.key === skill)?.label ?? '读';
   const progressGroup = ENGLISH_CHECKLIST_GROUPS.find((group) => group.name === ui.progressGroup);
-  const skillTotal = progressGroup
+  const progressItems =
+    progressGroup?.items.filter((item) => item.id.startsWith(`${ui.progressSeries}_`)) ?? [];
+  const skillTotal = progressItems.length
     ? Math.max(
         0,
-        ...progressGroup.items.map(
+        ...progressItems.map(
           (item) => data.itemProgress?.[item.id] ?? ENGLISH_ITEM_DEFAULTS[item.id] ?? 0
         )
       )
@@ -303,13 +310,13 @@ export function EnglishPanel({
       return;
     }
 
-    for (const item of progressGroup?.items ?? []) {
+    for (const item of progressItems) {
       nextProgress[item.id] =
         (nextProgress[item.id] ?? ENGLISH_ITEM_DEFAULTS[item.id] ?? 0) + count;
     }
     setDraft((current) => {
       const next = { ...current };
-      for (const item of progressGroup?.items ?? []) {
+      for (const item of progressItems) {
         next[item.id] = String(nextProgress[item.id] ?? 0);
       }
       return next;
