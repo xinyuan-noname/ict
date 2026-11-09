@@ -14,7 +14,7 @@ import { palette, radius, shadow, space, useTheme } from '../ui/theme';
 
 const CATEGORY_OPTIONS: { key: Category; label: string; icon: string }[] = [
   { key: 'health', label: '健康', icon: '🌿' },
-  { key: 'learning', label: '学习', icon: '📚' }
+  { key: 'learning', label: '英语', icon: '📖' }
 ];
 
 export interface CheckShellProps {

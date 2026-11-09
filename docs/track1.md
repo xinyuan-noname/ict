@@ -96,6 +96,7 @@
 - `docs/screenshots/android-achievements.png`
 - `docs/screenshots/android-system.png`
 - `docs/screenshots/android-checklist.png`
+- `docs/screenshots/android-english.png`
 - `docs/screenshots/android-login-success.png`
 - `docs/screenshots/login.png`
 

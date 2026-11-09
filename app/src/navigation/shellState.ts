@@ -23,7 +23,7 @@ export const CATEGORY_LISTS: Readonly<Record<Category, readonly ListKey[]>> = {
 
 export const CATEGORY_NAMES: Readonly<Record<Category, string>> = {
   health: '健康',
-  learning: '学习'
+  learning: '英语'
 };
 
 export const INITIAL_NAV: NavState = {

@@ -25,6 +25,7 @@ export const ENGLISH_TOTAL_POINTS = ENGLISH_ACHIEVEMENTS.reduce((sum, a) => sum 
 export interface EnglishData {
   target: number;
   wordsByDay: Record<string, number>;
+  baselineWords?: number;
 }
 
 export interface EnglishState {
@@ -34,7 +35,7 @@ export interface EnglishState {
 }
 
 export function englishTotal(data: EnglishData): number {
-  return Object.values(data.wordsByDay).reduce((sum, v) => sum + (Number(v) || 0), 0);
+  return (data.baselineWords ?? 0) + Object.values(data.wordsByDay).reduce((sum, v) => sum + (Number(v) || 0), 0);
 }
 
 export function englishStreak(data: EnglishData, today: string, addDays: (day: string, n: number) => string): number {

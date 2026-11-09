@@ -81,7 +81,7 @@ export function LoginScreen({
             今天，也从{'\n'}一件小事开始。
           </UIText>
           <UIText variant="body" tone="muted" style={styles.heroText}>
-            把喝水、服药、运动和学习放进同一份清单。记录得越轻，越容易坚持。
+            把喝水、服药、运动和英语放进同一份清单。记录得越轻，越容易坚持。
           </UIText>
         </View>
 

@@ -1,5 +1,6 @@
 // 服药 / 运动 / 英语 的本地数据层（游客与 Web 共用；登录用户后续接云端）
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ENGLISH_ITEM_DEFAULTS, ENGLISH_ITEM_TARGETS } from '../model/englishChecklist';
 import { businessToday } from '../model/waterGoal';
 
 export const LOCAL_KEYS = {
@@ -37,6 +38,12 @@ export interface SportRecord {
 export interface EnglishData {
   target: number;
   wordsByDay: Record<string, number>;
+  /** 历史累计词汇（从百词斩迁移，不计入今日和近 7 天） */
+  baselineWords?: number;
+  /** 每条清单的独立进度；target 在清单定义中维护 */
+  itemProgress?: Record<string, number>;
+  /** 每条清单的目标值，允许用户按自己的计划调整 */
+  itemTargets?: Record<string, number>;
 }
 
 export const MED_SLOTS: [string, string][] = [
@@ -46,7 +53,13 @@ export const MED_SLOTS: [string, string][] = [
   ['night', '睡前']
 ];
 
-export const DEFAULT_ENGLISH: EnglishData = { target: 20, wordsByDay: {} };
+export const DEFAULT_ENGLISH: EnglishData = {
+  target: 20,
+  wordsByDay: {},
+  baselineWords: 3000,
+  itemProgress: { ...ENGLISH_ITEM_DEFAULTS },
+  itemTargets: { ...ENGLISH_ITEM_TARGETS }
+};
 
 /** 内置演示数据：仅首次进入时写入，可整体清除 */
 export function demoSportRecords(): SportRecord[] {
