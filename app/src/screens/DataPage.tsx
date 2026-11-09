@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import type { CheckSnapshot, CheckStore } from '../check/checkStore';
 import type { DataSubTab, ListKey } from '../navigation/shellState';
 import type { SportStore } from '../sport/sportStore';
+import type { EnglishSkill } from '../model/englishChecklist';
 import { panelsOf } from '../features/registry';
 import { Segmented } from '../ui/primitives';
 import { palette, space, useTheme } from '../ui/theme';
@@ -12,6 +13,8 @@ export interface DataPageProps {
   subTab: DataSubTab;
   onChangeSubTab: (sub: DataSubTab) => void;
   isGuest: boolean;
+  englishSkill: EnglishSkill;
+  onChangeEnglishSkill: (skill: EnglishSkill) => void;
   waterSnapshot: CheckSnapshot;
   waterStore: CheckStore;
   sportStore?: SportStore;
@@ -26,6 +29,8 @@ export function DataPage({
   subTab,
   onChangeSubTab,
   isGuest,
+  englishSkill,
+  onChangeEnglishSkill,
   waterSnapshot,
   waterStore,
   sportStore
@@ -38,6 +43,8 @@ export function DataPage({
     store: waterStore,
     sportStore,
     isGuest,
+    englishSkill,
+    onChangeEnglishSkill,
     onOpenProfile: () => undefined,
     onGoRecord: () => undefined
   };

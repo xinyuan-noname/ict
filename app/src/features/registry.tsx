@@ -7,6 +7,7 @@ import { WaterAchievementsPanel, WaterTodayPanel } from './water/WaterTodayPanel
 import { MedicationPanel } from './medication/MedicationPanel';
 import { SportPanel } from './sport/SportPanel';
 import { EnglishPanel } from './english/EnglishPanel';
+import type { EnglishSkill } from '../model/englishChecklist';
 
 /**
  * 清单面板注册表 —— 页面只认这个接口，不认具体业务。
@@ -23,6 +24,8 @@ export interface ChecklistPanelContext {
   store: CheckStore;
   sportStore?: SportStore;
   isGuest: boolean;
+  englishSkill: EnglishSkill;
+  onChangeEnglishSkill: (skill: EnglishSkill) => void;
   /** 跳到「我的」完善身体档案 */
   onOpenProfile: () => void;
   /** 从数据页回到清单记录 */
@@ -54,9 +57,11 @@ export const PANELS: Readonly<Record<ListKey, ChecklistPanels>> = Object.freeze(
     Achievements: ({ sportStore }) => <SportPanel tab="achievements" sportStore={sportStore} />
   },
   english: {
-    Today: () => <EnglishPanel tab="today" />,
-    Stats: () => <EnglishPanel tab="stats" />,
-    Achievements: () => <EnglishPanel tab="achievements" />
+    Today: ({ englishSkill, onChangeEnglishSkill }) => (
+      <EnglishPanel tab="today" skill={englishSkill} onChangeSkill={onChangeEnglishSkill} />
+    ),
+    Stats: ({ englishSkill }) => <EnglishPanel tab="stats" skill={englishSkill} />,
+    Achievements: ({ englishSkill }) => <EnglishPanel tab="achievements" skill={englishSkill} />
   }
 });
 

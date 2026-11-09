@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { checklistOf, checklistsOf } from '../check/checklistRegistry';
+import { ENGLISH_SKILLS, type EnglishSkill } from '../model/englishChecklist';
 import type { CheckSnapshot, CheckStore } from '../check/checkStore';
 import type { Category, DataSubTab, ListKey, Tab } from '../navigation/shellState';
 import { panelsOf } from '../features/registry';
@@ -47,6 +48,7 @@ export function CheckShell({
   const [tab, setTab] = useState<Tab>('check');
   const [category, setCategory] = useState<Category>('health');
   const [list, setList] = useState<ListKey>('water');
+  const [englishSkill, setEnglishSkill] = useState<EnglishSkill>('reading');
   const [subTabByList, setSubTabByList] = useState<Partial<Record<ListKey, DataSubTab>>>({});
   useEffect(() => {
     const unsubscribe = store.subscribe(setSnapshot);
@@ -65,6 +67,9 @@ export function CheckShell({
   };
   const today = businessToday();
   const activeChecklist = checklistOf(list);
+  const activeSkill = ENGLISH_SKILLS.find((item) => item.key === englishSkill);
+  const headerIcon = list === 'english' ? activeSkill?.icon ?? activeChecklist.icon : activeChecklist.icon;
+  const headerName = list === 'english' ? activeSkill?.label ?? activeChecklist.name : activeChecklist.name;
   const activeColor = feature[list];
   const panels = panelsOf(list);
   const context = {
@@ -72,6 +77,8 @@ export function CheckShell({
     store,
     sportStore,
     isGuest,
+    englishSkill,
+    onChangeEnglishSkill: setEnglishSkill,
     onOpenProfile: () => setTab('profile'),
     onGoRecord: () => setTab('check')
   };
@@ -80,9 +87,9 @@ export function CheckShell({
     <View style={styles.root}>
       <View style={styles.header}>
         <View style={styles.brandRow}>
-          <IconBadge icon={activeChecklist.icon} accent={activeColor.main} size={28} />
+          <IconBadge icon={headerIcon} accent={activeColor.main} size={28} />
           <UIText variant="h2" style={{ fontSize: 18, lineHeight: 22 }}>
-            {activeChecklist.name}
+            {headerName}
           </UIText>
         </View>
         <View style={styles.headerRight}>
@@ -197,6 +204,8 @@ export function CheckShell({
             subTab={subTab}
             onChangeSubTab={changeSubTab}
             isGuest={isGuest}
+            englishSkill={englishSkill}
+            onChangeEnglishSkill={setEnglishSkill}
             waterSnapshot={snapshot}
             waterStore={store}
             sportStore={sportStore}
