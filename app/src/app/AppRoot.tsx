@@ -182,6 +182,7 @@ export function AppRoot({
         displayName={snapshot.user?.displayName ?? '华为用户'}
         sportStore={sportStore}
         pointsBalance={pointsBalance}
+        authToken={provider.currentToken() ?? undefined}
         onSync={() => void syncEngine?.flush()}
         onOpenRewards={() => setShowRewards(true)}
         onOpenSystem={() => setShowSystem(true)}

@@ -5,7 +5,7 @@ import type { ListKey } from '../navigation/shellState';
 import { BrandMark } from '../ui/primitives';
 import { palette, radius, shadow, useTheme } from '../ui/theme';
 
-const FEATURE_ORDER: ListKey[] = ['water', 'medication', 'sport', 'english'];
+const FEATURE_ORDER: ListKey[] = ['water', 'medication', 'sport', 'english', 'custom'];
 
 /**
  * 应用外壳：

@@ -2,8 +2,8 @@
 // 语义约定：tab 只有 check / data / profile 三项，统计与成就属于 data 的二级。
 
 export type Tab = 'check' | 'data' | 'profile';
-export type Category = 'health' | 'learning';
-export type ListKey = 'water' | 'medication' | 'sport' | 'english';
+export type Category = 'health' | 'learning' | 'custom';
+export type ListKey = 'water' | 'medication' | 'sport' | 'english' | 'custom';
 export type DataSubTab = 'stats' | 'achievements';
 
 export interface NavState {
@@ -14,16 +14,18 @@ export interface NavState {
   subTabByList: Readonly<Partial<Record<ListKey, DataSubTab>>>;
 }
 
-export const LIST_KEYS: readonly ListKey[] = ['water', 'medication', 'sport', 'english'];
+export const LIST_KEYS: readonly ListKey[] = ['water', 'medication', 'sport', 'english', 'custom'];
 
 export const CATEGORY_LISTS: Readonly<Record<Category, readonly ListKey[]>> = {
   health: ['water', 'medication', 'sport'],
-  learning: ['english']
+  learning: ['english'],
+  custom: ['custom']
 };
 
 export const CATEGORY_NAMES: Readonly<Record<Category, string>> = {
   health: '健康',
-  learning: '英语'
+  learning: '英语',
+  custom: '自定义'
 };
 
 export const INITIAL_NAV: NavState = {

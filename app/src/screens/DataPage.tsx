@@ -4,6 +4,7 @@ import type { CheckSnapshot, CheckStore } from '../check/checkStore';
 import type { DataSubTab, ListKey } from '../navigation/shellState';
 import type { SportStore } from '../sport/sportStore';
 import type { EnglishSkill } from '../model/englishChecklist';
+import type { CustomPlanState } from '../model/customPlan';
 import { panelsOf } from '../features/registry';
 import { Segmented } from '../ui/primitives';
 import { palette, space, useTheme } from '../ui/theme';
@@ -15,6 +16,11 @@ export interface DataPageProps {
   isGuest: boolean;
   englishSkill: EnglishSkill;
   onChangeEnglishSkill: (skill: EnglishSkill) => void;
+  customPlanState: CustomPlanState | null;
+  onChangeCustomPlanState: (state: CustomPlanState) => void;
+  customSkill: string;
+  onChangeCustomSkill: (skill: string) => void;
+  authToken?: string;
   waterSnapshot: CheckSnapshot;
   waterStore: CheckStore;
   sportStore?: SportStore;
@@ -31,6 +37,11 @@ export function DataPage({
   isGuest,
   englishSkill,
   onChangeEnglishSkill,
+  customPlanState,
+  onChangeCustomPlanState,
+  customSkill,
+  onChangeCustomSkill,
+  authToken,
   waterSnapshot,
   waterStore,
   sportStore
@@ -45,6 +56,11 @@ export function DataPage({
     isGuest,
     englishSkill,
     onChangeEnglishSkill,
+    customPlanState,
+    onChangeCustomPlanState,
+    customSkill,
+    onChangeCustomSkill,
+    authToken,
     onOpenProfile: () => undefined,
     onGoRecord: () => undefined
   };

@@ -56,6 +56,16 @@ export const CHECKLISTS: Readonly<Record<ListKey, ChecklistDef>> = Object.freeze
     icon: '📖',
     tagline: '每天二十个词',
     description: '用小步快跑的方式积累词汇与连续天数。'
+  },
+  custom: {
+    key: 'custom',
+    category: 'custom',
+    name: '自定义',
+    unit: '次',
+    supportsMetricSwitch: false,
+    icon: '✨',
+    tagline: '告诉 AI 你想坚持什么',
+    description: '根据你的需求生成一级清单、二级技能和成就。'
   }
 });
 
@@ -66,6 +76,8 @@ export function checklistOf(key: ListKey): ChecklistDef {
 export function checklistsOf(category: Category): readonly ChecklistDef[] {
   const order: readonly ListKey[] = category === 'health'
     ? ['water', 'medication', 'sport']
-    : ['english'];
+    : category === 'learning'
+      ? ['english']
+      : ['custom'];
   return order.map((key) => CHECKLISTS[key]);
 }

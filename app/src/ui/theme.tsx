@@ -10,7 +10,7 @@ import type { TextStyle, ViewStyle } from 'react-native';
  * 3. 需要接入深色模式时，在这里扩展 AppTheme 并给 ThemeProvider 传入新主题即可。
  */
 
-export type FeatureKey = 'water' | 'medication' | 'sport' | 'english';
+export type FeatureKey = 'water' | 'medication' | 'sport' | 'english' | 'custom';
 
 export interface FeaturePalette {
   /** 主色：图表、进度、图标 */
@@ -29,7 +29,8 @@ export const featurePalette: Record<FeatureKey, FeaturePalette> = {
   water: { main: '#2F80ED', deep: '#1B5FCC', tint: '#EAF2FF', wash: '#F4F8FF', label: '喝水' },
   medication: { main: '#1F9D63', deep: '#147A4B', tint: '#E8F7F0', wash: '#F3FBF7', label: '服药' },
   sport: { main: '#E8842C', deep: '#C56514', tint: '#FFF2E6', wash: '#FFF9F3', label: '运动' },
-  english: { main: '#6C5CE7', deep: '#5142C8', tint: '#EFEDFF', wash: '#F7F5FF', label: '英语' }
+  english: { main: '#6C5CE7', deep: '#5142C8', tint: '#EFEDFF', wash: '#F7F5FF', label: '英语' },
+  custom: { main: '#0F8B8D', deep: '#0B6668', tint: '#E6F7F7', wash: '#F1FBFB', label: '自定义' }
 };
 
 export const palette = {

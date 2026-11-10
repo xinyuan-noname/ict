@@ -15,6 +15,7 @@ import (
 	"ict/server/internal/adapter/audit"
 	"ict/server/internal/adapter/cloud"
 	"ict/server/internal/adapter/huawei"
+	"ict/server/internal/adapter/ollama"
 	"ict/server/internal/adapter/store/filestore"
 	"ict/server/internal/adapter/wechat"
 	"ict/server/internal/config"
@@ -180,6 +181,8 @@ func main() {
 		},
 	}
 
+	customPlanService := &service.CustomPlanService{Generator: ollama.New(ollama.Options{BaseURL: cfg.OllamaBaseURL, Model: cfg.OllamaModel, Timeout: cfg.OllamaTimeout}), Fallback: cfg.OllamaFallback}
+
 	syncService := &service.SyncService{
 		Sport: sportService, Store: sportStore, Rewards: rewardService,
 		Clock: portClock{}, Logger: logger,
@@ -230,7 +233,7 @@ func main() {
 
 	srv := &handler.Server{Deps: handler.Deps{
 		Cfg: cfg, Auth: authService, Reward: rewardService, Check: checkService,
-		Pet: petService, Sport: sportService, Sync: syncService, WeChat: weChatService,
+		Pet: petService, Sport: sportService, Sync: syncService, WeChat: weChatService, CustomPlans: customPlanService,
 		Sessions: sessions, Provider: provider, Cloud: cloudProbes,
 		Storage: store, Log: logger, StartedAt: time.Now(),
 	}}
@@ -258,7 +261,7 @@ func main() {
 		Handler:           root,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
-		WriteTimeout:      15 * time.Second,
+		WriteTimeout:      75 * time.Second,
 		IdleTimeout:       60 * time.Second,
 	}
 

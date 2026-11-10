@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { checklistOf, checklistsOf } from '../check/checklistRegistry';
 import { ENGLISH_SKILLS, type EnglishSkill } from '../model/englishChecklist';
+import { loadCustomPlanState } from '../check/customPlanStore';
+import type { CustomPlanState } from '../model/customPlan';
 import type { CheckSnapshot, CheckStore } from '../check/checkStore';
 import type { Category, DataSubTab, ListKey, Tab } from '../navigation/shellState';
 import { panelsOf } from '../features/registry';
@@ -29,6 +31,7 @@ export interface CheckShellProps {
   sportStore?: SportStore;
   onSync?: () => void;
   onOpenSystem?: () => void;
+  authToken?: string;
 }
 
 export function CheckShell({
@@ -41,7 +44,8 @@ export function CheckShell({
   pointsBalance,
   sportStore,
   onSync,
-  onOpenSystem
+  onOpenSystem,
+  authToken
 }: CheckShellProps): React.JSX.Element {
   const { feature } = useTheme();
   const [snapshot, setSnapshot] = useState<CheckSnapshot>(store.getSnapshot());
@@ -49,12 +53,23 @@ export function CheckShell({
   const [category, setCategory] = useState<Category>('health');
   const [list, setList] = useState<ListKey>('water');
   const [englishSkill, setEnglishSkill] = useState<EnglishSkill>('reading');
+  const [customPlanState, setCustomPlanState] = useState<CustomPlanState | null>(null);
+  const [customSkill, setCustomSkill] = useState('');
   const [subTabByList, setSubTabByList] = useState<Partial<Record<ListKey, DataSubTab>>>({});
   useEffect(() => {
     const unsubscribe = store.subscribe(setSnapshot);
     void store.load();
     return unsubscribe;
   }, [store]);
+
+  useEffect(() => {
+    void loadCustomPlanState().then((state) => {
+      if (state) {
+        setCustomPlanState(state);
+        setCustomSkill(state.plan.skills[0]?.name ?? '');
+      }
+    });
+  }, []);
 
   // 切分类只回落清单，不劫持当前页签，也不丢二级记忆（NAV-03/07）。
   const switchCategory = (next: Category): void => {
@@ -66,10 +81,29 @@ export function CheckShell({
     setSubTabByList((prev) => ({ ...prev, [list]: next }));
   };
   const today = businessToday();
+  const categoryOptions: { key: Category; label: string; icon: string }[] = [
+    ...CATEGORY_OPTIONS,
+    {
+      key: 'custom',
+      label: customPlanState?.plan.title ?? '自定义',
+      icon: customPlanState?.plan.icon ?? '✨'
+    }
+  ];
   const activeChecklist = checklistOf(list);
   const activeSkill = ENGLISH_SKILLS.find((item) => item.key === englishSkill);
-  const headerIcon = list === 'english' ? activeSkill?.icon ?? activeChecklist.icon : activeChecklist.icon;
-  const headerName = list === 'english' ? activeSkill?.label ?? activeChecklist.name : activeChecklist.name;
+  const customSkillDef = customPlanState?.plan.skills.find((item) => item.name === customSkill);
+  const headerIcon =
+    list === 'english'
+      ? activeSkill?.icon ?? activeChecklist.icon
+      : list === 'custom'
+        ? customSkillDef?.icon ?? customPlanState?.plan.icon ?? activeChecklist.icon
+        : activeChecklist.icon;
+  const headerName =
+    list === 'english'
+      ? activeSkill?.label ?? activeChecklist.name
+      : list === 'custom'
+        ? customSkillDef?.name ?? customPlanState?.plan.title ?? activeChecklist.name
+        : activeChecklist.name;
   const activeColor = feature[list];
   const panels = panelsOf(list);
   const context = {
@@ -79,6 +113,11 @@ export function CheckShell({
     isGuest,
     englishSkill,
     onChangeEnglishSkill: setEnglishSkill,
+    customPlanState,
+    onChangeCustomPlanState: setCustomPlanState,
+    customSkill,
+    onChangeCustomSkill: setCustomSkill,
+    authToken,
     onOpenProfile: () => setTab('profile'),
     onGoRecord: () => setTab('check')
   };
@@ -126,7 +165,7 @@ export function CheckShell({
       {tab === 'check' ? (
         <>
           <Segmented
-            options={CATEGORY_OPTIONS}
+            options={categoryOptions}
             value={category}
             onChange={switchCategory}
             accent={palette.brand}
@@ -206,6 +245,11 @@ export function CheckShell({
             isGuest={isGuest}
             englishSkill={englishSkill}
             onChangeEnglishSkill={setEnglishSkill}
+            customPlanState={customPlanState}
+            onChangeCustomPlanState={setCustomPlanState}
+            customSkill={customSkill}
+            onChangeCustomSkill={setCustomSkill}
+            authToken={authToken}
             waterSnapshot={snapshot}
             waterStore={store}
             sportStore={sportStore}

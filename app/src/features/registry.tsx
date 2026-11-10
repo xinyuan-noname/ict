@@ -8,6 +8,8 @@ import { MedicationPanel } from './medication/MedicationPanel';
 import { SportPanel } from './sport/SportPanel';
 import { EnglishPanel } from './english/EnglishPanel';
 import type { EnglishSkill } from '../model/englishChecklist';
+import type { CustomPlanState } from '../model/customPlan';
+import { CustomPanel } from './custom/CustomPanel';
 
 /**
  * 清单面板注册表 —— 页面只认这个接口，不认具体业务。
@@ -26,6 +28,11 @@ export interface ChecklistPanelContext {
   isGuest: boolean;
   englishSkill: EnglishSkill;
   onChangeEnglishSkill: (skill: EnglishSkill) => void;
+  customPlanState: CustomPlanState | null;
+  onChangeCustomPlanState: (state: CustomPlanState) => void;
+  customSkill: string;
+  onChangeCustomSkill: (skill: string) => void;
+  authToken?: string;
   /** 跳到「我的」完善身体档案 */
   onOpenProfile: () => void;
   /** 从数据页回到清单记录 */
@@ -62,6 +69,44 @@ export const PANELS: Readonly<Record<ListKey, ChecklistPanels>> = Object.freeze(
     ),
     Stats: ({ englishSkill }) => <EnglishPanel tab="stats" skill={englishSkill} />,
     Achievements: ({ englishSkill }) => <EnglishPanel tab="achievements" skill={englishSkill} />
+  },
+  custom: {
+    Today: ({ customPlanState, onChangeCustomPlanState, customSkill, onChangeCustomSkill, authToken, isGuest, onOpenProfile }) => (
+      <CustomPanel
+        tab="today"
+        state={customPlanState}
+        onChangeState={onChangeCustomPlanState}
+        skill={customSkill}
+        onChangeSkill={onChangeCustomSkill}
+        authToken={authToken}
+        isGuest={isGuest}
+        onNeedLogin={onOpenProfile}
+      />
+    ),
+    Stats: ({ customPlanState, onChangeCustomPlanState, customSkill, onChangeCustomSkill, authToken, isGuest, onOpenProfile }) => (
+      <CustomPanel
+        tab="stats"
+        state={customPlanState}
+        onChangeState={onChangeCustomPlanState}
+        skill={customSkill}
+        onChangeSkill={onChangeCustomSkill}
+        authToken={authToken}
+        isGuest={isGuest}
+        onNeedLogin={onOpenProfile}
+      />
+    ),
+    Achievements: ({ customPlanState, onChangeCustomPlanState, customSkill, onChangeCustomSkill, authToken, isGuest, onOpenProfile }) => (
+      <CustomPanel
+        tab="achievements"
+        state={customPlanState}
+        onChangeState={onChangeCustomPlanState}
+        skill={customSkill}
+        onChangeSkill={onChangeCustomSkill}
+        authToken={authToken}
+        isGuest={isGuest}
+        onNeedLogin={onOpenProfile}
+      />
+    )
   }
 });
 

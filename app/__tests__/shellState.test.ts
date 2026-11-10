@@ -26,9 +26,10 @@ describe('导航状态机', () => {
       list: 'water',
       subTabByList: {}
     });
-    expect(LIST_KEYS).toEqual(['water', 'medication', 'sport', 'english']);
+    expect(LIST_KEYS).toEqual(['water', 'medication', 'sport', 'english', 'custom']);
     expect(checklistsOf('health')).toEqual(['water', 'medication', 'sport']);
     expect(checklistsOf('learning')).toEqual(['english']);
+    expect(checklistsOf('custom')).toEqual(['custom']);
   });
 
   test('二级位置默认统计且按清单记忆', () => {
@@ -106,7 +107,7 @@ describe('导航状态机', () => {
   });
 
   test('分类集合与清单键一致', () => {
-    const all = [...CATEGORY_LISTS.health, ...CATEGORY_LISTS.learning];
+    const all = [...CATEGORY_LISTS.health, ...CATEGORY_LISTS.learning, ...CATEGORY_LISTS.custom];
     expect(new Set(all)).toEqual(new Set(LIST_KEYS));
     expect(all.length).toBe(LIST_KEYS.length);
   });

@@ -17,17 +17,18 @@ import (
 
 // Deps 是 handler 层的全部依赖；handler 只做协议转换，不含业务判断（任务 23.4）。
 type Deps struct {
-	Cfg      *config.Config
-	Auth     *service.AuthService
-	Reward   *service.RewardService
-	Check    *service.CheckService
-	Pet      *service.PetService
-	Sport    *service.SportService
-	Sync     *service.SyncService
-	WeChat   *service.WeChatAuthService
-	Sessions *service.SessionService
-	Provider interface{ Probe(context.Context) string }
-	Storage  interface{ Ping(context.Context) error }
+	Cfg         *config.Config
+	Auth        *service.AuthService
+	Reward      *service.RewardService
+	Check       *service.CheckService
+	Pet         *service.PetService
+	Sport       *service.SportService
+	Sync        *service.SyncService
+	WeChat      *service.WeChatAuthService
+	CustomPlans *service.CustomPlanService
+	Sessions    *service.SessionService
+	Provider    interface{ Probe(context.Context) string }
+	Storage     interface{ Ping(context.Context) error }
 	// Cloud 是只读资源探活；key 固定为 rds / redis / maas。
 	Cloud     map[string]interface{ Probe(context.Context) string }
 	Log       *logx.Logger
@@ -70,6 +71,9 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("DELETE /v1/check/units/{unitId}", s.checkDeleteUnit)
 	mux.HandleFunc("GET /v1/check/lists", s.checkLists)
 	mux.HandleFunc("PATCH /v1/check/lists/{listId}", s.checkSetList)
+
+	// 用户需求 -> Ollama -> 自定义一级/二级清单与成就。
+	mux.HandleFunc("POST /v1/custom-plans/generate", s.customPlanGenerate)
 	mux.HandleFunc("GET /v1/check/medication/items", s.checkMedItems)
 	mux.HandleFunc("POST /v1/check/medication/items", s.checkCreateMedItem)
 	mux.HandleFunc("PATCH /v1/check/medication/items/{itemId}", s.checkUpdateMedItem)

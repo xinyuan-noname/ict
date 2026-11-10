@@ -134,6 +134,12 @@ type Config struct {
 	RedisAddr     string
 	MaaSHealthURL string
 	MaaSAPIKey    string
+
+	// 本地/内网 Ollama：生成自定义清单。未配置时 endpoint 返回 503。
+	OllamaBaseURL  string
+	OllamaModel    string
+	OllamaTimeout  time.Duration
+	OllamaFallback bool
 }
 
 // Load 解析环境变量；任何解析失败一律拒绝启动（design 1.2.2 第 4 条）。
@@ -268,6 +274,12 @@ func Load() (*Config, error) {
 	c.RedisAddr = env("REDIS_ADDR", "")
 	c.MaaSHealthURL = env("MAAS_HEALTH_URL", "")
 	c.MaaSAPIKey = env("MAAS_API_KEY", "")
+	c.OllamaBaseURL = env("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
+	c.OllamaModel = env("OLLAMA_MODEL", "qwen2.5:0.5b")
+	c.OllamaFallback = boolean("OLLAMA_FALLBACK", false)
+	if c.OllamaTimeout, err = duration("OLLAMA_TIMEOUT", 60*time.Second); err != nil {
+		return nil, err
+	}
 
 	c.resolveEndpoints()
 	if problems := c.SelfCheck(); len(problems) > 0 {
