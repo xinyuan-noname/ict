@@ -93,6 +93,9 @@ func (s *CustomPlanService) Generate(ctx context.Context, need string) (domain.G
 		}
 		prompt = fmt.Sprintf("%s\n\n上一次输出不符合要求：%s。请重新只输出一个合法 JSON。", need, lastErr.Error())
 	}
+	if s.Fallback {
+		return fallbackPlan(need), nil
+	}
 	return domain.GeneratedPlan{}, fmt.Errorf("generate custom plan: %w", lastErr)
 }
 
