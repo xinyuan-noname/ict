@@ -9,13 +9,15 @@ import (
 // fallbackPlan 仅在未配置 Ollama 或 Ollama 暂不可用时启用（OLLAMA_FALLBACK=1）。
 // 它保证 App 在没有模型的环境里仍能走通“生成清单 -> 展示成就”的链路。
 func fallbackPlan(need string) domain.GeneratedPlan {
-	title := strings.TrimSpace(need)
-	if title == "" {
-		title = "我的清单"
+	title := "我的清单"
+	for _, keyword := range []string{"考研", "考公", "英语", "健身", "减脂", "阅读", "写作", "编程", "数学"} {
+		if strings.Contains(need, keyword) {
+			title = keyword
+			break
+		}
 	}
-	runes := []rune(title)
-	if len(runes) > 10 {
-		title = string(runes[:10])
+	if strings.TrimSpace(title) == "" {
+		title = "我的清单"
 	}
 	return domain.GeneratedPlan{
 		Title:       title,
