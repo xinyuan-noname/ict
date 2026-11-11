@@ -57,11 +57,17 @@ func NormalizeGeneratedPlan(plan *GeneratedPlan) bool {
 	plan.Title = cleanGeneratedText(plan.Title, 24)
 	plan.Icon = cleanGeneratedText(plan.Icon, 8)
 	plan.Description = cleanGeneratedText(plan.Description, 80)
-	if plan.Title == "" || len([]rune(plan.Title)) < 2 || len(plan.Skills) == 0 || len(plan.Skills) > 4 {
-		return false
+	if plan.Title == "" {
+		plan.Title = "我的清单"
 	}
 	if plan.Icon == "" {
 		plan.Icon = "✨"
+	}
+	if len(plan.Skills) == 0 {
+		return false
+	}
+	if len(plan.Skills) > 4 {
+		plan.Skills = plan.Skills[:4]
 	}
 	seenSkill := map[string]bool{}
 	for si := range plan.Skills {
@@ -69,34 +75,59 @@ func NormalizeGeneratedPlan(plan *GeneratedPlan) bool {
 		skill.Name = cleanGeneratedText(skill.Name, 16)
 		skill.Icon = cleanGeneratedText(skill.Icon, 8)
 		skill.Unit = cleanGeneratedText(skill.Unit, 8)
-		if skill.Name == "" || skill.Unit == "" || len(skill.Series) == 0 || len(skill.Series) > 4 {
-			return false
+		if skill.Name == "" {
+			skill.Name = "技能 " + string(rune('1'+si))
+		}
+		if skill.Unit == "" {
+			skill.Unit = "次"
 		}
 		if skill.Icon == "" {
 			skill.Icon = "🎯"
 		}
 		if seenSkill[skill.Name] {
-			return false
+			skill.Name = skill.Name + " " + string(rune('1'+si))
 		}
 		seenSkill[skill.Name] = true
+		if len(skill.Series) == 0 {
+			skill.Series = []GeneratedSeries{{
+				ID: "default_1", Name: skill.Name, Desc: "完成 {need} " + skill.Unit,
+				Icon: skill.Icon, Start: 1, End: 20, Steps: 5, PointsStart: 20, PointsEnd: 60,
+			}}
+		}
+		if len(skill.Series) > 4 {
+			skill.Series = skill.Series[:4]
+		}
 		seenSeries := map[string]bool{}
 		for xi := range skill.Series {
 			series := &skill.Series[xi]
 			series.ID = strings.ToLower(cleanGeneratedText(series.ID, 32))
 			if !ValidGeneratedID(series.ID) {
-				return false
+				series.ID = "series_" + string(rune('1'+si)) + "_" + string(rune('1'+xi))
 			}
+			for seenSeries[series.ID] {
+				series.ID = series.ID + "_" + string(rune('1'+xi))
+			}
+			seenSeries[series.ID] = true
 			series.Name = cleanGeneratedText(series.Name, 24)
 			series.Desc = cleanGeneratedText(series.Desc, 60)
 			series.Icon = cleanGeneratedText(series.Icon, 8)
-			if series.Name == "" || series.Desc == "" {
-				return false
+			if series.Name == "" {
+				series.Name = skill.Name
 			}
 			if series.Icon == "" {
 				series.Icon = skill.Icon
 			}
-			if series.Start < 1 || series.End <= series.Start || series.Steps < 3 || series.Steps > 8 {
-				return false
+			if series.Start < 1 {
+				series.Start = 1
+			}
+			if series.End <= series.Start {
+				series.End = series.Start + 10
+			}
+			if series.Steps < 3 {
+				series.Steps = 3
+			}
+			if series.Steps > 8 {
+				series.Steps = 8
 			}
 			if series.PointsStart <= 0 {
 				series.PointsStart = 20
@@ -104,12 +135,12 @@ func NormalizeGeneratedPlan(plan *GeneratedPlan) bool {
 			if series.PointsEnd <= series.PointsStart {
 				series.PointsEnd = series.PointsStart + (series.Steps-1)*10
 			}
-			if seenSeries[series.ID] {
-				return false
-			}
-			seenSeries[series.ID] = true
 			if !strings.Contains(series.Desc, "{need}") {
-				series.Desc += " 达到 {need} " + skill.Unit
+				if series.Desc == "" {
+					series.Desc = "完成 {need} " + skill.Unit
+				} else {
+					series.Desc += " 达到 {need} " + skill.Unit
+				}
 			}
 		}
 	}
