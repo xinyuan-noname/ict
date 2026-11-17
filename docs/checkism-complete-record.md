@@ -524,6 +524,8 @@ db/schema.sql                MySQL schema
 | `31f9a8e` | 填写学校/指导教师并忽略 docx |
 | `0bf9d05` | 队伍名称更新为闪队 |
 | `75c84ec` | 忽略 release 提交包 |
+| `2fc0e84` | 设置 checkism 图标并新增全景记录 |
+| `e24e7bb` | 新增截止性清单类型 |
 
 ---
 
