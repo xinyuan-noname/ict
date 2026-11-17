@@ -105,6 +105,93 @@ curl -fsS http://127.0.0.1:8088/readyz
 
 ---
 
+## 4.1 自动同步（GitHub Actions -> 华为云 ECS）
+
+仓库已包含：
+
+- `.github/workflows/deploy-huaweicloud.yml`
+- `deploy/auto-deploy.sh`
+
+推送 `main` 后，Actions 通过 SSH 登录 ECS 执行 `deploy/auto-deploy.sh`：拉取最新代码、重建镜像、重启 compose，并做 `/v1/health` 健康检查；失败自动回滚到上一个 commit。
+
+GitHub 仓库 Secrets 需要配置：
+
+| Secret | 说明 |
+|---|---|
+| `HUAWEI_ECS_HOST` | ECS 公网 IP 或域名 |
+| `HUAWEI_ECS_USER` | 如 `root` / `ubuntu` |
+| `HUAWEI_ECS_SSH_KEY` | ECS 私钥全文 |
+| `HUAWEI_ECS_PORT` | SSH 端口，默认 22 |
+| `HUAWEI_ECS_DEPLOY_PATH` | ECS 仓库目录，如 `/opt/check` |
+
+ECS 首次准备：
+
+```bash
+sudo mkdir -p /opt/check && sudo chown "$USER" /opt/check
+git clone git@github.com:xinyuan-noname/ict.git /opt/check
+cd /opt/check
+cp deploy/env.example deploy/.env
+# 修改真实域名、AGC、OLLAMA 配置
+sudo bash deploy/ecs-bootstrap.sh
+```
+
+之后每次 push `main` 自动同步。
+
+### 模型初始化
+
+compose 内已包含 `ollama` 和一次性 `ollama-init`：
+
+```yaml
+ollama:
+  image: ollama/ollama:0.40.13
+ollama-init:
+  command: ["ollama pull ${OLLAMA_MODEL:-qwen2.5:0.5b}"]
+```
+
+首次部署会下载 `qwen2.5:0.5b`（约 397 MB）到 `ollama-models` 卷。4 GiB ECS 可运行；建议 4 vCPU / 8 GiB 以获得更稳的生成速度。
+
+### 生产配置
+
+`deploy/.env` 至少修改：
+
+```dotenv
+ENV=production
+AUTH_MODE=real
+AUTH_ALLOW_MOCK=0
+AUTH_STORAGE_NAMESPACE=cloud
+SESSION_PEPPER=<32字节随机值>
+HUAWEI_CLIENT_ID=<AGC Client ID>
+HUAWEI_CLIENT_SECRET=<AGC Client Secret>
+WINDOWS_REDIRECT_URI=https://<domain>/auth/windows/callback
+OLLAMA_MODEL=qwen2.5:0.5b
+OLLAMA_FALLBACK=0
+```
+
+模型验证通过后把 `OLLAMA_FALLBACK` 设为 `0`，避免静默使用模板。
+
+### HTTPS / 域名
+
+- 推荐 ELB / WAF 终止 443，转发到 ECS `8088`。
+- 或给 Nginx 挂证书，增加 443 server。
+- Web 端 `clientBaseUrl()` 同源，无需改 API 地址。
+- Android release 构建需把 `app/src/shared/config.ts` 的 `PRODUCTION_API_BASE_URL` 改成 `https://<domain>` 后重新打包。
+
+## 4.2 CodeArts 替代
+
+如果团队使用华为云 CodeArts：
+
+1. 在 CodeArts Repo 导入 GitHub 仓库，或配置 GitHub 镜像同步；
+2. 新建流水线：代码源 -> Shell/部署任务；
+3. 部署任务执行：
+   ```bash
+   cd /opt/check && bash deploy/auto-deploy.sh
+   ```
+4. 触发器设置为 push `main`。
+
+`auto-deploy.sh` 不依赖 GitHub Actions，CodeArts、Jenkins、手动 SSH 都可以复用。
+
+---
+
 ## 5. CodeArts 代码智能体使用记录
 
 赛题一要求体现「需求理解 → 代码生成 → 项目构建 → 问题修复 → 部署上线」。建议在 `docs/track1.md` 中记录每次 Prompt 与产出文件，截图放在 `docs/screenshots/`。

@@ -1,0 +1,31 @@
+name: deploy-huaweicloud
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: huaweicloud-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Deploy to Huawei Cloud ECS
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HUAWEI_ECS_HOST }}
+          username: ${{ secrets.HUAWEI_ECS_USER }}
+          key: ${{ secrets.HUAWEI_ECS_SSH_KEY }}
+          port: ${{ secrets.HUAWEI_ECS_PORT || 22 }}
+          script_stop: true
+          envs: HUAWEI_ECS_DEPLOY_PATH
+          script: |
+            set -e
+            cd "$HUAWEI_ECS_DEPLOY_PATH"
+            bash deploy/auto-deploy.sh
+        env:
+          HUAWEI_ECS_DEPLOY_PATH: ${{ secrets.HUAWEI_ECS_DEPLOY_PATH }}
