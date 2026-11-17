@@ -409,6 +409,10 @@ npm run secret:scan
 
 ![checkism icon](../app/assets/brand/icon-master.png)
 
+Android 真机应用信息页：
+
+![Android app icon](screenshots/android-app-icon.png)
+
 - 主色：品牌红 `#C7000B`
 - 背景：暖白 `#FFF8F3`
 - 白色对勾 + 青色小点
