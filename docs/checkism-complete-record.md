@@ -317,6 +317,16 @@ ollama-init:
 
 ### 首次部署
 
+本地测试当前使用 `LOCAL_TEST_API=true`，Android 构建直接访问电脑局域网：
+
+```text
+http://192.168.137.1:8443
+```
+
+同时 `app/android/app/src/release/AndroidManifest.xml` 允许局域网 HTTP，便于本地 Release 包脱离 Metro 打开。
+
+> 正式上云前必须：把 `app/src/shared/config.ts` 的 `LOCAL_TEST_API` 改为 `false`，恢复生产 HTTPS 域名，并移除 release 的 cleartext 配置。
+
 ```bash
 sudo mkdir -p /opt/check
 sudo chown "$USER" /opt/check

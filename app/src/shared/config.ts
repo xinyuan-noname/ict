@@ -4,12 +4,18 @@ import type { Platform as AuthPlatform } from '../api/authApi';
 export const APP_VERSION = '1.0.0';
 export const APP_ENV = __DEV__ ? 'development' : 'production';
 
+// 本地真机联调：发布构建暂时直接指向电脑局域网地址。
+// 正式上云前把 LOCAL_TEST_API 改为 false，并替换成 HTTPS 域名。
+export const LOCAL_TEST_API = true;
+export const LOCAL_API_BASE_URL = 'http://192.168.137.1:8443';
+
 // 生产构建必须改成实际部署的 HTTPS 域名（华为云 ECS / 网关）。
-// 未改时华为授权码能拿到，但客户端无法把 code 交给服务端换票。
-export const PRODUCTION_API_BASE_URL = 'https://api.example.com';
+export const PRODUCTION_API_BASE_URL = LOCAL_TEST_API
+  ? LOCAL_API_BASE_URL
+  : 'https://api.example.com';
 
 // 本机联调：手机与电脑同一局域网时，填电脑的局域网 IPv4。
-// 真机调试要配合 authd 监听 :8443，且 Debug 构建允许 http。
+// 真机调试要配合 authd 监听 :8443。
 export const DEV_ANDROID_API_BASE_URL = 'http://192.168.137.1:8443';
 
 // Android 模拟器通过 10.0.2.2 访问宿主机；真机联调使用上面的局域网地址。
@@ -38,6 +44,9 @@ export function clientBaseUrl(): string {
 // 与 clientBaseUrl 配套：生产 Web 仅放行本机回环的 http（本地预览），其余必须 https。
 export function clientAllowInsecure(): boolean {
   if (__DEV__) {
+    return true;
+  }
+  if (LOCAL_TEST_API && Platform.OS === 'android') {
     return true;
   }
   if (Platform.OS === 'web') {
