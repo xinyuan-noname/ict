@@ -41,3 +41,4 @@ records/*.secret.md
 .dev/
 app/dist/
 *.docx
+release/
