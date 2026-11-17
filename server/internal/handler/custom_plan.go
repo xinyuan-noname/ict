@@ -9,7 +9,9 @@ import (
 )
 
 type generatePlanBody struct {
-	Need string `json:"need"`
+	Need     string `json:"need"`
+	Mode     string `json:"mode"`
+	Deadline string `json:"deadline"`
 }
 
 func (s *Server) customPlanGenerate(w http.ResponseWriter, r *http.Request) {

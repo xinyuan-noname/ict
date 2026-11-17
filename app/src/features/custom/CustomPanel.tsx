@@ -6,6 +6,7 @@ import {
   createCustomPlanState,
   customSkillItems,
   type CustomAchievementItem,
+  type CustomPlanMode,
   type CustomPlanState
 } from '../../model/customPlan';
 import { businessToday } from '../../model/waterGoal';
@@ -51,6 +52,17 @@ function toGridItems(items: CustomAchievementItem[]): AchievementItem[] {
   }));
 }
 
+function daysUntil(deadline: string): number | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(deadline)) {
+    return null;
+  }
+  const end = new Date(`${deadline}T23:59:59`).getTime();
+  if (!Number.isFinite(end)) {
+    return null;
+  }
+  return Math.ceil((end - Date.now()) / 86400000);
+}
+
 export function CustomPanel({
   tab,
   state,
@@ -64,6 +76,8 @@ export function CustomPanel({
   const { feature } = useTheme();
   const color = feature.custom;
   const [need, setNeed] = useState('');
+  const [mode, setMode] = useState<CustomPlanMode>('recurring');
+  const [deadlineInput, setDeadlineInput] = useState('');
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
   const [editingPlan, setEditingPlan] = useState(false);
@@ -104,13 +118,22 @@ export function CustomPanel({
       setError('登录后才能使用 AI 生成清单');
       return;
     }
+    if (mode === 'deadline' && !/^\d{4}-\d{2}-\d{2}$/.test(deadlineInput)) {
+      setError('请填写截止日期，格式 YYYY-MM-DD');
+      return;
+    }
     setGenerating(true);
     setError('');
     try {
-      const result = await API.generate(authToken, need.trim());
-      const next = createCustomPlanState(result.plan);
+      const result = await API.generate(authToken, need.trim(), mode, mode === 'deadline' ? deadlineInput : undefined);
+      const plan = {
+        ...result.plan,
+        mode,
+        deadline: mode === 'deadline' ? deadlineInput : undefined
+      };
+      const next = createCustomPlanState(plan);
       update(next);
-      const first = result.plan.skills[0]?.name;
+      const first = plan.skills[0]?.name;
       if (first) {
         onChangeSkill(first);
       }
@@ -192,6 +215,35 @@ export function CustomPanel({
         </Surface>
         <Surface>
           <UIText variant="caption" tone="muted" style={styles.label}>
+            清单类型
+          </UIText>
+          <Segmented
+            options={[
+              { key: 'recurring', label: '重复性' },
+              { key: 'deadline', label: '截止性' }
+            ]}
+            value={mode}
+            onChange={(value) => setMode(value as CustomPlanMode)}
+            accent={color.main}
+            compact
+            style={{ marginBottom: 12 }}
+          />
+          {mode === 'deadline' ? (
+            <View style={{ marginBottom: 12 }}>
+              <UIText variant="caption" tone="muted" style={styles.label}>
+                截止日期
+              </UIText>
+              <TextInput
+                value={deadlineInput}
+                onChangeText={setDeadlineInput}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={palette.faint}
+                style={styles.dateInput}
+                editable={!generating}
+              />
+            </View>
+          ) : null}
+          <UIText variant="caption" tone="muted" style={styles.label}>
             你想坚持什么？
           </UIText>
           <TextInput
@@ -245,6 +297,111 @@ export function CustomPanel({
   const plan = state.plan;
   const gridItems = toGridItems(items);
   const unit = selectedSkill?.unit ?? '次';
+  const isDeadline = plan.mode === 'deadline';
+  const doneCount = items.filter((item) => item.progress >= item.need).length;
+  const deadlineDays = plan.deadline ? daysUntil(plan.deadline) : null;
+
+  const toggleDeadlineItem = (item: CustomAchievementItem): void => {
+    if (!state) {
+      return;
+    }
+    update({
+      ...state,
+      itemProgress: {
+        ...state.itemProgress,
+        [item.key]: item.progress >= item.need ? 0 : item.need
+      }
+    });
+  };
+
+  if (isDeadline) {
+    return (
+      <PageScroll>
+        {skillTabs}
+        <Surface padding={0} radiusValue={radius.xl} style={{ overflow: 'hidden' }}>
+          <View style={{ backgroundColor: color.wash, padding: 18 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Pill label="截止性" accent={color.main} dot />
+              <IconBadge icon={plan.icon} accent={color.main} size={38} />
+            </View>
+            <UIText variant="h2" color={color.deep} style={{ marginTop: 10 }}>
+              {plan.title}
+            </UIText>
+            <UIText variant="caption" tone="muted" style={{ marginTop: 4 }}>
+              {plan.description}
+            </UIText>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12 }}>
+              <Pill
+                label={
+                  deadlineDays === null
+                    ? `截止 ${plan.deadline ?? '未设置'}`
+                    : deadlineDays >= 0
+                      ? `剩余 ${deadlineDays} 天`
+                      : `已截止 ${Math.abs(deadlineDays)} 天`
+                }
+                accent={color.main}
+                tone={deadlineDays !== null && deadlineDays < 0 ? 'solid' : 'tint'}
+              />
+              <Pill label={`完成 ${doneCount}/${items.length}`} accent={color.main} tone="outline" />
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 16 }}>
+              <View style={{ flex: 1 }}>
+                <ProgressBar ratio={doneCount / Math.max(1, items.length)} color={color.main} height={8} />
+                <UIText variant="caption" tone="faint" style={{ marginTop: 8 }}>
+                  勾选完成的事项，不再按天重复。
+                </UIText>
+              </View>
+              <ProgressRing
+                ratio={doneCount / Math.max(1, items.length)}
+                size={92}
+                color={color.main}
+                trackColor={`${color.main}16`}
+                value={`${doneCount}/${items.length}`}
+                unit=""
+                label="完成"
+              />
+            </View>
+          </View>
+        </Surface>
+
+        <SectionHeader title="截止事项" caption={`${selectedSkill?.name ?? ''} · ${unit}`} style={{ marginTop: 22 }} />
+        <Surface>
+          {items.map((item) => {
+            const done = item.progress >= item.need;
+            return (
+              <Pressable
+                key={item.key}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: done }}
+                onPress={() => toggleDeadlineItem(item)}
+                style={({ pressed }) => [styles.deadlineRow, pressed && { opacity: 0.7 }]}
+              >
+                <View style={[styles.checkbox, done && { backgroundColor: color.main, borderColor: color.main }]}>
+                  {done ? <UIText variant="caption" color="#FFFFFF" style={{ fontWeight: '800' }}>✓</UIText> : null}
+                </View>
+                <IconBadge icon={item.icon} accent={color.main} size={30} />
+                <View style={{ flex: 1 }}>
+                  <UIText variant="bodyStrong" style={{ fontSize: 13 }}>{item.name}</UIText>
+                  <UIText variant="caption" tone="muted" numberOfLines={1}>{item.desc}</UIText>
+                </View>
+                <UIText variant="caption" color={done ? palette.success : palette.faint} style={{ fontWeight: '700' }}>
+                  {done ? '已完成' : '未完成'}
+                </UIText>
+              </Pressable>
+            );
+          })}
+        </Surface>
+
+        <AppButton
+          label="重新生成清单"
+          variant="ghost"
+          accent={color.main}
+          onPress={() => setEditingPlan(true)}
+          style={{ marginTop: 18 }}
+        />
+      </PageScroll>
+    );
+  }
 
   if (tab === 'achievements') {
     return (
@@ -255,7 +412,9 @@ export function CustomPanel({
             <View style={{ flex: 1 }}>
               <UIText variant="bodyStrong">{selectedSkill?.name ?? skill}成就</UIText>
               <UIText variant="caption" tone="muted" style={{ marginTop: 2 }}>
-                今日 {todayCount} {unit} · 已解锁 {unlocked}/{items.length}
+                {isDeadline
+                  ? `完成 ${doneCount}/${items.length} · 截止 ${plan.deadline ?? '未设置'}`
+                  : `今日 ${todayCount} ${unit} · 已解锁 ${unlocked}/${items.length}`}
               </UIText>
             </View>
             <Pill label={`${unlocked}/${items.length}`} accent={color.main} tone="solid" />
@@ -317,9 +476,27 @@ export function CustomPanel({
     return (
       <PageScroll>
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <StatTile value={todayCount} unit={unit} label="今日" accent={color.deep} icon={selectedSkill?.icon ?? '✨'} />
-          <StatTile value={total} unit={unit} label="最高进度" accent={color.deep} icon="📈" />
-          <StatTile value={unlocked} unit="项" label="已解锁" accent={color.deep} icon="🏅" />
+          <StatTile
+            value={isDeadline ? doneCount : todayCount}
+            unit={isDeadline ? '项' : unit}
+            label={isDeadline ? '已完成' : '今日'}
+            accent={color.deep}
+            icon={selectedSkill?.icon ?? '✨'}
+          />
+          <StatTile
+            value={isDeadline ? Math.max(0, deadlineDays ?? 0) : total}
+            unit={isDeadline ? '天' : unit}
+            label={isDeadline ? '剩余天数' : '最高进度'}
+            accent={color.deep}
+            icon={isDeadline ? '⏳' : '📈'}
+          />
+          <StatTile
+            value={isDeadline ? items.length : unlocked}
+            unit="项"
+            label={isDeadline ? '总事项' : '已解锁'}
+            accent={color.deep}
+            icon={isDeadline ? '🗂️' : '🏅'}
+          />
         </View>
         <SectionHeader title="清单结构" caption={plan.description} style={{ marginTop: 22 }} />
         <Surface>
@@ -482,5 +659,33 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: palette.ink,
     textAlign: 'right'
+  },
+  dateInput: {
+    borderWidth: 1,
+    borderColor: palette.line,
+    backgroundColor: palette.surfaceAlt,
+    borderRadius: radius.sm,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: palette.ink
+  },
+  deadlineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: palette.line
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: palette.faint,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: palette.surface
   }
 });

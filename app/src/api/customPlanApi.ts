@@ -20,11 +20,16 @@ export class CustomPlanApi {
       });
   }
 
-  async generate(token: string, need: string): Promise<GenerateCustomPlanResult> {
+  async generate(
+    token: string,
+    need: string,
+    mode: 'recurring' | 'deadline' = 'recurring',
+    deadline?: string
+  ): Promise<GenerateCustomPlanResult> {
     const response = await this.client.request<GenerateCustomPlanResult>('/v1/custom-plans/generate', {
       method: 'POST',
       token,
-      body: { need }
+      body: { need, mode, deadline }
     });
     return response.data;
   }

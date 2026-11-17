@@ -2,6 +2,8 @@ import { logInterpolate } from './englishChecklist';
 
 export type CustomTargetPeriod = 'day' | 'week' | 'month';
 
+export type CustomPlanMode = 'recurring' | 'deadline';
+
 export interface CustomSeries {
   id: string;
   name: string;
@@ -26,6 +28,8 @@ export interface CustomPlan {
   icon: string;
   description: string;
   skills: CustomSkill[];
+  mode?: CustomPlanMode;
+  deadline?: string;
 }
 
 export interface CustomPlanState {

@@ -36,5 +36,11 @@ describe('自定义清单', () => {
     expect(items[4].need).toBe(300);
     expect(items[0].progress).toBe(0);
   });
+
+  test('自定义清单支持截止性类型', () => {
+    const state = createCustomPlanState({ ...plan, mode: 'deadline', deadline: '2026-12-31' });
+    expect(state.plan.mode).toBe('deadline');
+    expect(state.plan.deadline).toBe('2026-12-31');
+  });
 });
 
