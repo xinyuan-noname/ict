@@ -197,11 +197,13 @@ Android 实机/模拟器：
 
 ## 项目提交材料
 
-- [赛题 1 作品信息收集表（已填成员）](docs/【赛题1-作品信息收集表】checkism.docx)
-- [项目完成报告模板（Word）](docs/completion-report-template.docx)
 - [项目完成报告模板（Markdown）](docs/completion-report-template.md)
+- Word 版与官方作品信息表仅在本地生成，已按 `*.docx` 规则忽略，不随仓库提交：
+  - `docs/项目完成报告-已填写.docx`
+  - `docs/【赛题1-作品信息收集表】checkism-已填写.docx`
 
 团队成员：陈皓庭、白德布鑫、潘振宇。
+学校：天津工业大学；指导教师：李杰；队长：陈皓庭，18708477617，3236256044@qq.com。
 
 ## 当前边界（如实说明）
 

@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-import re
+import os
 from pathlib import Path
 
 from docx import Document
@@ -13,7 +13,7 @@ from docx.shared import Pt
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "docs" / "templates" / "official-submission-form.docx"
-OUTPUT = ROOT / "docs" / "【赛题1-作品信息收集表】checkism.docx"
+OUTPUT = Path(os.environ.get("FORM_OUTPUT", str(ROOT / "docs" / "【赛题1-作品信息收集表】checkism-已填写.docx")))
 
 BODY_FONT = "宋体"
 HEAD_FONT = "微软雅黑"
@@ -46,14 +46,14 @@ def main() -> None:
     document = Document(str(SOURCE))
     table = document.tables[0]
 
-    fill_cell(table.cell(1, 1), "[请填写学校名称]")
+    fill_cell(table.cell(1, 1), "天津工业大学")
     fill_cell(table.cell(2, 1), "checkism")
-    fill_cell(table.cell(4, 1), "[请填写指导老师]")
+    fill_cell(table.cell(4, 1), "李杰")
     fill_cell(table.cell(4, 2), "陈皓庭", bold=True)
     fill_cell(table.cell(4, 3), "白德布鑫", bold=True)
     fill_cell(table.cell(4, 4), "潘振宇", bold=True)
-    fill_cell(table.cell(5, 1), "[请填写队长联系电话]")
-    fill_cell(table.cell(6, 1), "[请填写队长联系邮箱]")
+    fill_cell(table.cell(5, 1), "18708477617")
+    fill_cell(table.cell(6, 1), "3236256044@qq.com")
     fill_cell(table.cell(7, 1), "请在此插入 1 张约 2MB 的团队合照（提交前补充）")
     fill_cell(table.cell(10, 1), "check · 每日健康清单")
     fill_cell(table.cell(11, 1), "生活应用 / 健康管理")
