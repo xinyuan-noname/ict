@@ -17,7 +17,7 @@ from docx.shared import Cm, Pt, RGBColor
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "docs" / "completion-report-template.md"
-OUTPUT = Path(os.environ.get("REPORT_OUTPUT", str(ROOT / "docs" / "项目完成报告-已填写.docx")))
+OUTPUT = Path(os.environ.get("REPORT_OUTPUT", str(ROOT / "docs" / "项目完成报告-闪队-已填写.docx")))
 
 BODY_FONT = "宋体"
 HEAD_FONT = "微软雅黑"
@@ -261,6 +261,7 @@ def build() -> None:
     cover_rows = [
         ["作品名称", "check · 每日健康清单"],
         ["参赛方向", "生活服务 / 健康管理"],
+        ["队伍名称", "闪队"],
         ["团队成员", "陈皓庭、白德布鑫、潘振宇"],
         ["学校 / 学院", "天津工业大学"],
         ["指导教师", "李杰"],

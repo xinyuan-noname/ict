@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fill the official Huawei ICT submission-info template for checkism."""
+"""Fill the official Huawei ICT submission-info template for 闪队."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from docx.shared import Pt
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "docs" / "templates" / "official-submission-form.docx"
-OUTPUT = Path(os.environ.get("FORM_OUTPUT", str(ROOT / "docs" / "【赛题1-作品信息收集表】checkism-已填写.docx")))
+OUTPUT = Path(os.environ.get("FORM_OUTPUT", str(ROOT / "docs" / "【赛题1-作品信息收集表】闪队-已填写.docx")))
 
 BODY_FONT = "宋体"
 HEAD_FONT = "微软雅黑"
@@ -47,7 +47,7 @@ def main() -> None:
     table = document.tables[0]
 
     fill_cell(table.cell(1, 1), "天津工业大学")
-    fill_cell(table.cell(2, 1), "checkism")
+    fill_cell(table.cell(2, 1), "闪队")
     fill_cell(table.cell(4, 1), "李杰")
     fill_cell(table.cell(4, 2), "陈皓庭", bold=True)
     fill_cell(table.cell(4, 3), "白德布鑫", bold=True)
