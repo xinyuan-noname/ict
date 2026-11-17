@@ -173,7 +173,7 @@ cd ..
 npm run check:contracts
 ```
 
-当前基线：前端 115 个测试通过，Go 全包测试通过，Webpack 生产构建通过。
+当前基线：前端 120 个测试通过，Go 全包测试通过，Webpack 生产构建通过。
 
 ## 截图
 
@@ -194,6 +194,14 @@ Android 实机/模拟器：
 英语清单（28 考研 + 六级，分组成就）：
 
 ![英语成就](docs/screenshots/android-english.png)
+
+## 项目提交材料
+
+- [赛题 1 作品信息收集表（已填成员）](docs/【赛题1-作品信息收集表】checkism.docx)
+- [项目完成报告模板（Word）](docs/completion-report-template.docx)
+- [项目完成报告模板（Markdown）](docs/completion-report-template.md)
+
+团队成员：陈皓庭、白德布鑫、潘振宇。
 
 ## 当前边界（如实说明）
 
