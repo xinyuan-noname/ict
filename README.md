@@ -195,6 +195,14 @@ Android 实机/模拟器：
 
 ![英语成就](docs/screenshots/android-english.png)
 
+## 项目全景
+
+[checkism 全景记录（单一事实来源）](docs/checkism-complete-record.md)
+
+应用图标：
+
+![checkism icon](app/assets/brand/icon-master.png)
+
 ## 项目提交材料
 
 - [项目完成报告模板（Markdown）](docs/completion-report-template.md)
