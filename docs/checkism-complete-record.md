@@ -1,8 +1,8 @@
 # checkism 全景记录
 
-> 单一事实来源（Single Source of Truth）  
-> 最后更新：2026-11-17  
-> 仓库：https://github.com/xinyuan-noname/ict  
+> 单一事实来源（Single Source of Truth）
+> 最后更新：2026-11-17
+> 仓库：https://github.com/xinyuan-noname/ict
 > 作品：**check · 每日健康清单**
 
 本文档记录 checkism 的产品、技术、团队、构建、测试、部署、AI 模型、比赛提交和当前限制。其他文档作为专题展开，本文件用于快速了解全貌。
