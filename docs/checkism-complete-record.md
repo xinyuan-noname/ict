@@ -558,6 +558,7 @@ db/schema.sql                MySQL schema
 | `75c84ec` | 忽略 release 提交包 |
 | `2fc0e84` | 设置 checkism 图标并新增全景记录 |
 | `e24e7bb` | 新增截止性清单类型 |
+| `ea7d837` | 清单管理、类型底栏与表单视图 |
 
 ---
 
