@@ -4,7 +4,7 @@ import type { CheckSnapshot, CheckStore } from '../check/checkStore';
 import type { DataSubTab, ListKey } from '../navigation/shellState';
 import type { SportStore } from '../sport/sportStore';
 import type { EnglishSkill } from '../model/englishChecklist';
-import type { CustomPlanState } from '../model/customPlan';
+import type { CustomPlanMode, CustomPlanState } from '../model/customPlan';
 import { panelsOf } from '../features/registry';
 import { Segmented } from '../ui/primitives';
 import { palette, space, useTheme } from '../ui/theme';
@@ -18,6 +18,7 @@ export interface DataPageProps {
   onChangeEnglishSkill: (skill: EnglishSkill) => void;
   customPlanState: CustomPlanState | null;
   onChangeCustomPlanState: (state: CustomPlanState) => void;
+  customMode: CustomPlanMode;
   customSkill: string;
   onChangeCustomSkill: (skill: string) => void;
   authToken?: string;
@@ -39,6 +40,7 @@ export function DataPage({
   onChangeEnglishSkill,
   customPlanState,
   onChangeCustomPlanState,
+  customMode,
   customSkill,
   onChangeCustomSkill,
   authToken,
@@ -58,6 +60,7 @@ export function DataPage({
     onChangeEnglishSkill,
     customPlanState,
     onChangeCustomPlanState,
+    customMode,
     customSkill,
     onChangeCustomSkill,
     authToken,

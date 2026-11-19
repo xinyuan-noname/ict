@@ -8,7 +8,7 @@ import { MedicationPanel } from './medication/MedicationPanel';
 import { SportPanel } from './sport/SportPanel';
 import { EnglishPanel } from './english/EnglishPanel';
 import type { EnglishSkill } from '../model/englishChecklist';
-import type { CustomPlanState } from '../model/customPlan';
+import type { CustomPlanMode, CustomPlanState } from '../model/customPlan';
 import { CustomPanel } from './custom/CustomPanel';
 
 /**
@@ -30,6 +30,7 @@ export interface ChecklistPanelContext {
   onChangeEnglishSkill: (skill: EnglishSkill) => void;
   customPlanState: CustomPlanState | null;
   onChangeCustomPlanState: (state: CustomPlanState) => void;
+  customMode: CustomPlanMode;
   customSkill: string;
   onChangeCustomSkill: (skill: string) => void;
   authToken?: string;
@@ -71,11 +72,12 @@ export const PANELS: Readonly<Record<ListKey, ChecklistPanels>> = Object.freeze(
     Achievements: ({ englishSkill }) => <EnglishPanel tab="achievements" skill={englishSkill} />
   },
   custom: {
-    Today: ({ customPlanState, onChangeCustomPlanState, customSkill, onChangeCustomSkill, authToken, isGuest, onOpenProfile }) => (
+    Today: ({ customPlanState, onChangeCustomPlanState, customMode, customSkill, onChangeCustomSkill, authToken, isGuest, onOpenProfile }) => (
       <CustomPanel
         tab="today"
         state={customPlanState}
         onChangeState={onChangeCustomPlanState}
+        mode={customMode}
         skill={customSkill}
         onChangeSkill={onChangeCustomSkill}
         authToken={authToken}
@@ -83,11 +85,12 @@ export const PANELS: Readonly<Record<ListKey, ChecklistPanels>> = Object.freeze(
         onNeedLogin={onOpenProfile}
       />
     ),
-    Stats: ({ customPlanState, onChangeCustomPlanState, customSkill, onChangeCustomSkill, authToken, isGuest, onOpenProfile }) => (
+    Stats: ({ customPlanState, onChangeCustomPlanState, customMode, customSkill, onChangeCustomSkill, authToken, isGuest, onOpenProfile }) => (
       <CustomPanel
         tab="stats"
         state={customPlanState}
         onChangeState={onChangeCustomPlanState}
+        mode={customMode}
         skill={customSkill}
         onChangeSkill={onChangeCustomSkill}
         authToken={authToken}
@@ -95,11 +98,12 @@ export const PANELS: Readonly<Record<ListKey, ChecklistPanels>> = Object.freeze(
         onNeedLogin={onOpenProfile}
       />
     ),
-    Achievements: ({ customPlanState, onChangeCustomPlanState, customSkill, onChangeCustomSkill, authToken, isGuest, onOpenProfile }) => (
+    Achievements: ({ customPlanState, onChangeCustomPlanState, customMode, customSkill, onChangeCustomSkill, authToken, isGuest, onOpenProfile }) => (
       <CustomPanel
         tab="achievements"
         state={customPlanState}
         onChangeState={onChangeCustomPlanState}
+        mode={customMode}
         skill={customSkill}
         onChangeSkill={onChangeCustomSkill}
         authToken={authToken}

@@ -1,28 +1,64 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { CustomPlanState } from '../model/customPlan';
+import { customPlanTitle, type CustomPlanState } from '../model/customPlan';
 
-const KEY = 'local.customPlan.v1';
+const KEY = 'local.customPlans.v2';
+const LEGACY_KEY = 'local.customPlan.v1';
 
-export async function loadCustomPlanState(): Promise<CustomPlanState | null> {
+function withId(state: CustomPlanState): CustomPlanState {
+  const nextTitle = customPlanTitle(state.plan);
+  if (state.plan.id && nextTitle === state.plan.title) {
+    return state;
+  }
+  return {
+    ...state,
+    plan: {
+      ...state.plan,
+      id: state.plan.id ?? `plan_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`,
+      title: nextTitle
+    }
+  };
+}
+
+function valid(state: unknown): state is CustomPlanState {
+  return Boolean(
+    state &&
+      typeof state === 'object' &&
+      (state as CustomPlanState).plan?.skills?.length
+  );
+}
+
+export async function loadCustomPlanStates(): Promise<CustomPlanState[]> {
   try {
     const raw = await AsyncStorage.getItem(KEY);
-    if (!raw) {
-      return null;
+    if (raw) {
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed)) {
+        return parsed.filter(valid).map(withId);
+      }
     }
-    const parsed = JSON.parse(raw) as CustomPlanState;
-    if (!parsed?.plan?.skills?.length) {
-      return null;
+
+    // 兼容旧版单清单数据，并迁移到数组。
+    const legacy = await AsyncStorage.getItem(LEGACY_KEY);
+    if (legacy) {
+      const parsed = JSON.parse(legacy) as unknown;
+      if (valid(parsed)) {
+        const migrated = [withId(parsed)];
+        await AsyncStorage.setItem(KEY, JSON.stringify(migrated));
+        await AsyncStorage.removeItem(LEGACY_KEY);
+        return migrated;
+      }
     }
-    return parsed;
+    return [];
   } catch {
-    return null;
+    return [];
   }
 }
 
-export async function saveCustomPlanState(state: CustomPlanState): Promise<void> {
-  await AsyncStorage.setItem(KEY, JSON.stringify(state));
+export async function saveCustomPlanStates(states: CustomPlanState[]): Promise<void> {
+  await AsyncStorage.setItem(KEY, JSON.stringify(states));
 }
 
-export async function clearCustomPlanState(): Promise<void> {
+export async function clearCustomPlanStates(): Promise<void> {
   await AsyncStorage.removeItem(KEY);
+  await AsyncStorage.removeItem(LEGACY_KEY);
 }

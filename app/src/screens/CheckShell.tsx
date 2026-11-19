@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { checklistOf, checklistsOf } from '../check/checklistRegistry';
 import { ENGLISH_SKILLS, type EnglishSkill } from '../model/englishChecklist';
-import { clearCustomPlanState, loadCustomPlanState } from '../check/customPlanStore';
+import { loadCustomPlanStates, saveCustomPlanStates } from '../check/customPlanStore';
 import { loadEnabledLists, saveEnabledLists, type EnabledLists } from '../check/checkSettingsStore';
 import { CheckSettingsPanel } from '../features/settings/CheckSettingsPanel';
-import type { CustomPlanState } from '../model/customPlan';
+import type { CustomPlanMode, CustomPlanState } from '../model/customPlan';
 import type { CheckSnapshot, CheckStore } from '../check/checkStore';
 import type { Category, DataSubTab, ListKey, Tab } from '../navigation/shellState';
 import { panelsOf } from '../features/registry';
@@ -14,7 +14,7 @@ import { DataPage } from './DataPage';
 import type { SportStore } from '../sport/sportStore';
 import { formatMonthDay } from '../shared/format';
 import { businessToday } from '../model/waterGoal';
-import { AppAvatar, AppButton, IconBadge, Pill, Segmented, Surface, UIText } from '../ui/primitives';
+import { AppAvatar, IconBadge, Pill, Segmented, Surface, UIText } from '../ui/primitives';
 import { palette, radius, shadow, space, useTheme } from '../ui/theme';
 
 const CATEGORY_OPTIONS: { key: Category; label: string; icon: string }[] = [
@@ -55,7 +55,9 @@ export function CheckShell({
   const [category, setCategory] = useState<Category>('health');
   const [list, setList] = useState<ListKey>('water');
   const [englishSkill, setEnglishSkill] = useState<EnglishSkill>('reading');
-  const [customPlanState, setCustomPlanState] = useState<CustomPlanState | null>(null);
+  const [customPlans, setCustomPlans] = useState<CustomPlanState[]>([]);
+  const [activeCustomId, setActiveCustomId] = useState('');
+  const [creatingCustomMode, setCreatingCustomMode] = useState<CustomPlanMode | null>(null);
   const [customSkill, setCustomSkill] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [enabledLists, setEnabledLists] = useState<EnabledLists>({});
@@ -67,10 +69,11 @@ export function CheckShell({
   }, [store]);
 
   useEffect(() => {
-    void loadCustomPlanState().then((state) => {
-      if (state) {
-        setCustomPlanState(state);
-        setCustomSkill(state.plan.skills[0]?.name ?? '');
+    void loadCustomPlanStates().then((states) => {
+      setCustomPlans(states);
+      if (states[0]) {
+        setActiveCustomId(states[0].plan.id ?? '');
+        setCustomSkill(states[0].plan.skills[0]?.name ?? '');
       }
     });
     void loadEnabledLists().then(setEnabledLists);
@@ -96,14 +99,65 @@ export function CheckShell({
     void saveEnabledLists(merged);
   };
 
-  const deleteCustomPlan = (): void => {
-    void clearCustomPlanState();
-    setCustomPlanState(null);
+  const deleteCustomPlan = (id: string): void => {
+    const next = customPlans.filter((item) => item.plan.id !== id);
+    setCustomPlans(next);
+    void saveCustomPlanStates(next);
+    if (activeCustomId === id) {
+      setActiveCustomId(next[0]?.plan.id ?? '');
+      setCustomSkill(next[0]?.plan.skills[0]?.name ?? '');
+    }
     setSettingsOpen(false);
-    if (category === 'custom') {
+    if (category === 'custom' && next.length === 0) {
       setCategory('health');
       setList(enabledChecklists('health')[0] ?? 'water');
     }
+  };
+
+  const updateCustomPlanState = (next: CustomPlanState): void => {
+    setCreatingCustomMode(null);
+    setCustomPlans((prev) => {
+      const exists = prev.some((item) => item.plan.id === next.plan.id);
+      const merged = exists
+        ? prev.map((item) => (item.plan.id === next.plan.id ? next : item))
+        : [...prev, next];
+      void saveCustomPlanStates(merged);
+      return merged;
+    });
+    setActiveCustomId(next.plan.id ?? '');
+    setCustomSkill(next.plan.skills[0]?.name ?? '');
+    if (next.plan.mode === 'deadline') {
+      setTab('deadline');
+      setCategory('custom');
+      setList('custom');
+    } else {
+      setTab('check');
+      setCategory('custom');
+      setList('custom');
+    }
+  };
+
+  const startCreateCustom = (mode: CustomPlanMode): void => {
+    setSettingsOpen(false);
+    setCreatingCustomMode(mode);
+    setActiveCustomId('');
+    setCategory('custom');
+    setList('custom');
+    setTab(mode === 'deadline' ? 'deadline' : 'check');
+  };
+
+  const openCustomPlan = (id: string): void => {
+    const target = customPlans.find((item) => item.plan.id === id);
+    if (!target) {
+      return;
+    }
+    setSettingsOpen(false);
+    setCreatingCustomMode(null);
+    setActiveCustomId(id);
+    setCustomSkill(target.plan.skills[0]?.name ?? '');
+    setCategory('custom');
+    setList('custom');
+    setTab(target.plan.mode === 'deadline' ? 'deadline' : 'check');
   };
 
   // 切分类只回落清单，不劫持当前页签，也不丢二级记忆（NAV-03/07）。
@@ -116,22 +170,35 @@ export function CheckShell({
     setSubTabByList((prev) => ({ ...prev, [list]: next }));
   };
   const today = businessToday();
+  const activeCustomMode: CustomPlanMode = tab === 'deadline' ? 'deadline' : 'recurring';
+  const customPlanState =
+    creatingCustomMode === activeCustomMode
+      ? null
+      : customPlans.find(
+          (item) => item.plan.id === activeCustomId && (item.plan.mode ?? 'recurring') === activeCustomMode
+        ) ??
+        customPlans.find((item) => (item.plan.mode ?? 'recurring') === activeCustomMode) ??
+        null;
   const isDeadlinePlan = customPlanState?.plan.mode === 'deadline';
+  const customCategoryOption = {
+    key: 'custom' as Category,
+    label: customPlanState?.plan.title ?? '新建清单',
+    icon: customPlanState?.plan.icon ?? '✨'
+  };
   const categoryOptions: { key: Category; label: string; icon: string }[] = [
     ...CATEGORY_OPTIONS,
-    ...(isDeadlinePlan
-      ? []
-      : [
-          {
-            key: 'custom' as Category,
-            label: customPlanState?.plan.title ?? '自定义',
-            icon: customPlanState?.plan.icon ?? '✨'
-          }
-        ])
+    ...(isDeadlinePlan ? [] : [customCategoryOption])
   ];
   const activeChecklist = checklistOf(list);
   const activeSkill = ENGLISH_SKILLS.find((item) => item.key === englishSkill);
   const customSkillDef = customPlanState?.plan.skills.find((item) => item.name === customSkill);
+  useEffect(() => {
+    if (!customPlanState) {
+      return;
+    }
+    const names = customPlanState.plan.skills.map((item) => item.name);
+    setCustomSkill((prev) => (names.includes(prev) ? prev : names[0] ?? ''));
+  }, [customPlanState?.plan.id]);
   const headerIcon =
     tab === 'deadline' && !isDeadlinePlan
       ? '⏳'
@@ -161,16 +228,18 @@ export function CheckShell({
   };
   const switchTab = (next: Tab): void => {
     if (next === 'deadline') {
-      if (isDeadlinePlan) {
-        setCategory('custom');
-        setList('custom');
-      }
+      setCreatingCustomMode(null);
+      setCategory('custom');
+      setList('custom');
       setTab('deadline');
       return;
     }
-    if (next === 'check' && list === 'custom' && isDeadlinePlan) {
-      setCategory('health');
-      setList(enabledChecklists('health')[0] ?? 'water');
+    if (next === 'check') {
+      setCreatingCustomMode(null);
+      if (list === 'custom' && isDeadlinePlan) {
+        setCategory('health');
+        setList(enabledChecklists('health')[0] ?? 'water');
+      }
     }
     setTab(next);
   };
@@ -188,7 +257,8 @@ export function CheckShell({
     englishSkill,
     onChangeEnglishSkill: setEnglishSkill,
     customPlanState,
-    onChangeCustomPlanState: setCustomPlanState,
+    onChangeCustomPlanState: updateCustomPlanState,
+    customMode: activeCustomMode,
     customSkill,
     onChangeCustomSkill: setCustomSkill,
     authToken,
@@ -319,31 +389,7 @@ export function CheckShell({
 
       <View style={styles.body}>
         {tab === 'check' ? panels.Today(context) : null}
-        {tab === 'deadline' ? (
-          isDeadlinePlan ? (
-            panels.Today(context)
-          ) : (
-            <View style={styles.deadlineEmpty}>
-              <IconBadge icon="◷" accent={palette.brand} size={52} />
-              <UIText variant="h2" style={{ marginTop: 14 }}>
-                还没有截止性清单
-              </UIText>
-              <UIText variant="body" tone="muted" style={{ marginTop: 6, textAlign: 'center' }}>
-                截止性清单在指定日期前完成，按事项勾选，不按天重复。
-              </UIText>
-              <AppButton
-                label="去自定义创建"
-                accent={palette.brand}
-                onPress={() => {
-                  setTab('check');
-                  setCategory('custom');
-                  setList('custom');
-                }}
-                style={{ marginTop: 18, alignSelf: 'stretch' }}
-              />
-            </View>
-          )
-        ) : null}
+        {tab === 'deadline' ? panels.Today(context) : null}
         {tab === 'data' ? (
           <DataPage
             checklist={list}
@@ -353,7 +399,8 @@ export function CheckShell({
             englishSkill={englishSkill}
             onChangeEnglishSkill={setEnglishSkill}
             customPlanState={customPlanState}
-            onChangeCustomPlanState={setCustomPlanState}
+            onChangeCustomPlanState={updateCustomPlanState}
+            customMode={activeCustomMode}
             customSkill={customSkill}
             onChangeCustomSkill={setCustomSkill}
             authToken={authToken}
@@ -412,15 +459,11 @@ export function CheckShell({
       {settingsOpen ? (
         <CheckSettingsPanel
           enabled={enabledLists}
-          customPlan={customPlanState}
+          customPlans={customPlans}
           onToggle={toggleList}
-          onOpenCustom={() => {
-            setSettingsOpen(false);
-            setCategory('custom');
-            setList('custom');
-            setTab(isDeadlinePlan ? 'deadline' : 'check');
-          }}
+          onOpenCustom={openCustomPlan}
           onDeleteCustom={deleteCustomPlan}
+          onCreateCustom={startCreateCustom}
           onClose={() => setSettingsOpen(false)}
         />
       ) : null}
@@ -486,13 +529,6 @@ const styles = StyleSheet.create({
   bannerWrap: { paddingHorizontal: space.xl, paddingTop: 10 },
   banner: { paddingVertical: 9, paddingHorizontal: 12 },
   body: { flex: 1, minHeight: 0, marginTop: 6 },
-  deadlineEmpty: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: space.xl,
-    paddingVertical: 32
-  },
   tabs: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -4,6 +4,20 @@ export type CustomTargetPeriod = 'day' | 'week' | 'month';
 
 export type CustomPlanMode = 'recurring' | 'deadline';
 
+const GENERIC_TITLES = ['我的清单', '自定义', '自定义清单', '我的自定义清单'];
+
+export function customPlanTitle(plan: Pick<CustomPlan, 'title' | 'skills'>): string {
+  const title = plan.title?.trim();
+  const generic = (value: string): boolean =>
+    GENERIC_TITLES.some((item) => value === item || value.includes(item));
+  if (title && !generic(title)) {
+    return title;
+  }
+  const skill = plan.skills[0]?.name?.trim();
+  const base = skill && !generic(skill) ? skill : '学习';
+  return `${base}清单`;
+}
+
 export interface CustomSeries {
   id: string;
   name: string;
@@ -24,6 +38,7 @@ export interface CustomSkill {
 }
 
 export interface CustomPlan {
+  id?: string;
   title: string;
   icon: string;
   description: string;
@@ -59,12 +74,17 @@ export function customSeriesNeeds(series: CustomSeries): number[] {
 }
 
 export function createCustomPlanState(plan: CustomPlan): CustomPlanState {
+  const planWithId: CustomPlan = {
+    ...plan,
+    title: customPlanTitle(plan),
+    id: plan.id ?? `plan_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`
+  };
   const itemProgress: Record<string, number> = {};
   const itemTargets: Record<string, number> = {};
   const dailyBySkill: Record<string, Record<string, number>> = {};
   const targetsBySkill: Record<string, number> = {};
   const periodsBySkill: Record<string, CustomTargetPeriod> = {};
-  for (const skill of plan.skills) {
+  for (const skill of planWithId.skills) {
     dailyBySkill[skill.name] = {};
     targetsBySkill[skill.name] = 1;
     periodsBySkill[skill.name] = 'day';
@@ -77,7 +97,7 @@ export function createCustomPlanState(plan: CustomPlan): CustomPlanState {
       });
     }
   }
-  return { plan, itemProgress, itemTargets, dailyBySkill, targetsBySkill, periodsBySkill };
+  return { plan: planWithId, itemProgress, itemTargets, dailyBySkill, targetsBySkill, periodsBySkill };
 }
 
 export function customSkillItems(state: CustomPlanState, skillName: string): CustomAchievementItem[] {

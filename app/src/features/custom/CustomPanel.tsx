@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { CustomPlanApi } from '../../api/customPlanApi';
-import { saveCustomPlanState } from '../../check/customPlanStore';
 import {
   createCustomPlanState,
   customSkillItems,
@@ -30,6 +29,7 @@ export interface CustomPanelProps {
   tab: 'today' | 'stats' | 'achievements';
   state: CustomPlanState | null;
   onChangeState: (state: CustomPlanState) => void;
+  mode: CustomPlanMode;
   skill: string;
   onChangeSkill: (skill: string) => void;
   authToken?: string;
@@ -67,6 +67,7 @@ export function CustomPanel({
   tab,
   state,
   onChangeState,
+  mode,
   skill,
   onChangeSkill,
   authToken,
@@ -76,7 +77,6 @@ export function CustomPanel({
   const { feature } = useTheme();
   const color = feature.custom;
   const [need, setNeed] = useState('');
-  const [mode, setMode] = useState<CustomPlanMode>('recurring');
   const [deadlineInput, setDeadlineInput] = useState('');
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
@@ -106,7 +106,6 @@ export function CustomPanel({
 
   const update = (next: CustomPlanState): void => {
     onChangeState(next);
-    void saveCustomPlanState(next);
   };
 
   const generate = async (): Promise<void> => {
@@ -204,30 +203,20 @@ export function CustomPanel({
       <PageScroll>
         <Surface tone="soft" style={{ marginBottom: 16 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <IconBadge icon="✨" accent={color.main} size={44} />
+            <IconBadge icon={mode === 'deadline' ? '◷' : '↻'} accent={color.main} size={44} />
             <View style={{ flex: 1 }}>
-              <UIText variant="bodyStrong">生成我的清单</UIText>
+              <UIText variant="bodyStrong">
+                {mode === 'deadline' ? '新建截止性清单' : '新建重复性清单'}
+              </UIText>
               <UIText variant="caption" tone="muted" style={{ marginTop: 2 }}>
-                一级标题、二级技能和成就都交给 AI 设计
+                {mode === 'deadline'
+                  ? '一级标题、二级事项和截止日期分开创建'
+                  : '一级标题、二级技能和成就都交给 AI 设计'}
               </UIText>
             </View>
           </View>
         </Surface>
         <Surface>
-          <UIText variant="caption" tone="muted" style={styles.label}>
-            清单类型
-          </UIText>
-          <Segmented
-            options={[
-              { key: 'recurring', label: '重复性' },
-              { key: 'deadline', label: '截止性' }
-            ]}
-            value={mode}
-            onChange={(value) => setMode(value as CustomPlanMode)}
-            accent={color.main}
-            compact
-            style={{ marginBottom: 12 }}
-          />
           {mode === 'deadline' ? (
             <View style={{ marginBottom: 12 }}>
               <UIText variant="caption" tone="muted" style={styles.label}>

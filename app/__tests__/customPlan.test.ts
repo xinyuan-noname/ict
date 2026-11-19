@@ -1,4 +1,4 @@
-import { createCustomPlanState, customSkillItems, customSeriesNeeds, type CustomPlan } from '../src/model/customPlan';
+import { createCustomPlanState, customPlanTitle, customSkillItems, customSeriesNeeds, type CustomPlan } from '../src/model/customPlan';
 
 const plan: CustomPlan = {
   title: '备考',
@@ -41,6 +41,11 @@ describe('自定义清单', () => {
     const state = createCustomPlanState({ ...plan, mode: 'deadline', deadline: '2026-12-31' });
     expect(state.plan.mode).toBe('deadline');
     expect(state.plan.deadline).toBe('2026-12-31');
+  });
+
+  test('不再把“我的清单”当作一级标题', () => {
+    expect(customPlanTitle({ ...plan, title: '我的清单' })).toBe('阅读清单');
+    expect(createCustomPlanState({ ...plan, title: '我的清单' }).plan.title).toBe('阅读清单');
   });
 });
 
