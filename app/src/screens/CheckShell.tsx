@@ -460,6 +460,7 @@ export function CheckShell({
         <CheckSettingsPanel
           enabled={enabledLists}
           customPlans={customPlans}
+          mode={activeCustomMode}
           onToggle={toggleList}
           onOpenCustom={openCustomPlan}
           onDeleteCustom={deleteCustomPlan}

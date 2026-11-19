@@ -10,6 +10,7 @@ import { palette, radius, shadow, space, useTheme } from '../../ui/theme';
 export interface CheckSettingsPanelProps {
   enabled: EnabledLists;
   customPlans: CustomPlanState[];
+  mode: CustomPlanMode;
   onToggle: (key: ListKey, enabled: boolean) => void;
   onOpenCustom: (id: string) => void;
   onDeleteCustom: (id: string) => void;
@@ -25,6 +26,7 @@ const CATEGORY_TITLES: { key: Category; label: string; icon: string }[] = [
 export function CheckSettingsPanel({
   enabled,
   customPlans,
+  mode,
   onToggle,
   onOpenCustom,
   onDeleteCustom,
@@ -32,6 +34,8 @@ export function CheckSettingsPanel({
   onClose
 }: CheckSettingsPanelProps): React.JSX.Element {
   const { feature } = useTheme();
+  const isDeadline = mode === 'deadline';
+  const modeLabel = isDeadline ? '截止性' : '重复性';
 
   const confirmDelete = (plan: CustomPlanState): void => {
     Alert.alert('删除自定义清单', `删除「${plan.plan.title}」后，它的进度和成就也会一并清除。`, [
@@ -123,9 +127,9 @@ export function CheckSettingsPanel({
       <Surface style={styles.sheet} padding={0} radiusValue={radius.xl}>
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
-            <UIText variant="h2">清单管理</UIText>
+            <UIText variant="h2">清单管理 · {modeLabel}</UIText>
             <UIText variant="caption" tone="muted" style={{ marginTop: 3 }}>
-              按一级 / 二级管理，内置与自定义分开
+              当前窗口：{modeLabel}清单，按一级 / 二级管理
             </UIText>
           </View>
           <Pressable accessibilityRole="button" onPress={onClose} hitSlop={8} style={styles.close}>
@@ -136,59 +140,62 @@ export function CheckSettingsPanel({
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}>
-          <UIText variant="caption" tone="muted" style={styles.sectionLabel}>
-            内置清单
-          </UIText>
-          {CATEGORY_TITLES.map((category) => {
-            const items = checklistsOf(category.key)
-              .filter((item) => BUILTIN_LIST_KEYS.includes(item.key))
-              .map((item) => CHECKLISTS[item.key]);
-            return (
-              <View key={category.key} style={styles.categoryGroup}>
-                <View style={styles.categoryHeader}>
-                  <UIText variant="caption" tone="muted">
-                    {category.icon}
-                  </UIText>
-                  <UIText variant="bodyStrong">{category.label}</UIText>
-                  <UIText variant="caption" tone="faint">
-                    一级
-                  </UIText>
-                </View>
-                {items.map((item) => {
-                  const color = feature[item.key];
-                  const value = enabled[item.key] !== false;
-                  return (
-                    <View key={item.key} style={styles.row}>
-                      <View style={styles.treeLine} />
-                      <IconBadge icon={item.icon} accent={color.main} size={30} />
-                      <View style={{ flex: 1 }}>
-                        <UIText variant="bodyStrong">{item.name}</UIText>
-                        <UIText variant="caption" tone="muted">
-                          二级 · {item.tagline}
-                        </UIText>
-                      </View>
-                      <Switch
-                        value={value}
-                        onValueChange={(next) => onToggle(item.key, next)}
-                        trackColor={{ false: palette.line, true: `${color.main}66` }}
-                        thumbColor={value ? color.main : palette.faint}
-                      />
+          {!isDeadline ? (
+            <>
+              <UIText variant="caption" tone="muted" style={styles.sectionLabel}>
+                内置清单
+              </UIText>
+              {CATEGORY_TITLES.map((category) => {
+                const items = checklistsOf(category.key)
+                  .filter((item) => BUILTIN_LIST_KEYS.includes(item.key))
+                  .map((item) => CHECKLISTS[item.key]);
+                return (
+                  <View key={category.key} style={styles.categoryGroup}>
+                    <View style={styles.categoryHeader}>
+                      <UIText variant="caption" tone="muted">
+                        {category.icon}
+                      </UIText>
+                      <UIText variant="bodyStrong">{category.label}</UIText>
+                      <UIText variant="caption" tone="faint">
+                        一级
+                      </UIText>
                     </View>
-                  );
-                })}
-              </View>
-            );
-          })}
+                    {items.map((item) => {
+                      const color = feature[item.key];
+                      const value = enabled[item.key] !== false;
+                      return (
+                        <View key={item.key} style={styles.row}>
+                          <View style={styles.treeLine} />
+                          <IconBadge icon={item.icon} accent={color.main} size={30} />
+                          <View style={{ flex: 1 }}>
+                            <UIText variant="bodyStrong">{item.name}</UIText>
+                            <UIText variant="caption" tone="muted">
+                              二级 · {item.tagline}
+                            </UIText>
+                          </View>
+                          <Switch
+                            value={value}
+                            onValueChange={(next) => onToggle(item.key, next)}
+                            trackColor={{ false: palette.line, true: `${color.main}66` }}
+                            thumbColor={value ? color.main : palette.faint}
+                          />
+                        </View>
+                      );
+                    })}
+                  </View>
+                );
+              })}
+            </>
+          ) : null}
 
           <View style={styles.divider} />
           <UIText variant="caption" tone="muted" style={styles.sectionLabel}>
-            自定义清单
+            {modeLabel}自定义清单
           </UIText>
           <UIText variant="caption" tone="faint" style={{ marginBottom: 6 }}>
             每个自定义清单是一级，清单内的技能是二级。
           </UIText>
-          {renderCustomGroup('recurring', '重复性清单')}
-          {renderCustomGroup('deadline', '截止性清单')}
+          {renderCustomGroup(mode, `${modeLabel}清单`)}
         </ScrollView>
       </Surface>
     </View>
