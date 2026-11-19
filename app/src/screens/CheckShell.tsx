@@ -324,7 +324,7 @@ export function CheckShell({
             panels.Today(context)
           ) : (
             <View style={styles.deadlineEmpty}>
-              <IconBadge icon="⏳" accent={palette.brand} size={52} />
+              <IconBadge icon="◷" accent={palette.brand} size={52} />
               <UIText variant="h2" style={{ marginTop: 14 }}>
                 还没有截止性清单
               </UIText>
@@ -381,8 +381,8 @@ export function CheckShell({
       <View style={styles.tabs} testID="bottom-tabs">
         {(
           [
-            ['check', '重复', '🔁'],
-            ['deadline', '截止', '⏳'],
+            ['check', '重复', '↻'],
+            ['deadline', '截止', '◷'],
             ['data', '洞察', '▤'],
             ['profile', '我的', '◉']
           ] as [Tab, string, string][]
