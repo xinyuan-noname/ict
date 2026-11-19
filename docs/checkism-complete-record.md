@@ -349,6 +349,23 @@ http://192.168.137.1:8443
 
 > 正式上云前必须：把 `app/src/shared/config.ts` 的 `LOCAL_TEST_API` 改为 `false`，恢复生产 HTTPS 域名，并移除 release 的 cleartext 配置。
 
+### 本地登录前必须启动 authd
+
+手机登录失败时先检查电脑后端，而不是重复点登录：
+
+```powershell
+# 终端 1：启动后端（保持窗口不关）
+powershell -ExecutionPolicy Bypass -File scripts/start-authd-real.ps1
+
+# 终端 2：确认电脑和局域网都可访问
+curl http://127.0.0.1:8443/v1/health
+curl http://192.168.137.1:8443/v1/health
+```
+
+手机与电脑必须同一局域网，且 Windows 防火墙放行 TCP 8443。健康检查返回 `status: ok` 后再打开 App。
+
+当前本地验证结果：authd 启动后，华为账号 `hid36683688` 登录成功，云端同步开启。
+
 ```bash
 sudo mkdir -p /opt/check
 sudo chown "$USER" /opt/check
