@@ -1,7 +1,7 @@
 // 导航状态机：纯内存、纯函数、零 I/O（NAV-13 禁止跨会话持久化）。
 // 语义约定：tab 只有 check / data / profile 三项，统计与成就属于 data 的二级。
 
-export type Tab = 'check' | 'data' | 'profile';
+export type Tab = 'check' | 'deadline' | 'data' | 'profile';
 export type Category = 'health' | 'learning' | 'custom';
 export type ListKey = 'water' | 'medication' | 'sport' | 'english' | 'custom';
 export type DataSubTab = 'stats' | 'achievements';

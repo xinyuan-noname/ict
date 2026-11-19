@@ -14,7 +14,7 @@ import { DataPage } from './DataPage';
 import type { SportStore } from '../sport/sportStore';
 import { formatMonthDay } from '../shared/format';
 import { businessToday } from '../model/waterGoal';
-import { AppAvatar, IconBadge, Pill, Segmented, Surface, UIText } from '../ui/primitives';
+import { AppAvatar, AppButton, IconBadge, Pill, Segmented, Surface, UIText } from '../ui/primitives';
 import { palette, radius, shadow, space, useTheme } from '../ui/theme';
 
 const CATEGORY_OPTIONS: { key: Category; label: string; icon: string }[] = [
@@ -116,32 +116,70 @@ export function CheckShell({
     setSubTabByList((prev) => ({ ...prev, [list]: next }));
   };
   const today = businessToday();
+  const isDeadlinePlan = customPlanState?.plan.mode === 'deadline';
   const categoryOptions: { key: Category; label: string; icon: string }[] = [
     ...CATEGORY_OPTIONS,
-    {
-      key: 'custom',
-      label: customPlanState?.plan.title ?? '自定义',
-      icon: customPlanState?.plan.icon ?? '✨'
-    }
+    ...(isDeadlinePlan
+      ? []
+      : [
+          {
+            key: 'custom' as Category,
+            label: customPlanState?.plan.title ?? '自定义',
+            icon: customPlanState?.plan.icon ?? '✨'
+          }
+        ])
   ];
   const activeChecklist = checklistOf(list);
   const activeSkill = ENGLISH_SKILLS.find((item) => item.key === englishSkill);
   const customSkillDef = customPlanState?.plan.skills.find((item) => item.name === customSkill);
   const headerIcon =
-    list === 'english'
-      ? activeSkill?.icon ?? activeChecklist.icon
-      : list === 'custom'
-        ? customSkillDef?.icon ?? customPlanState?.plan.icon ?? activeChecklist.icon
-        : activeChecklist.icon;
+    tab === 'deadline' && !isDeadlinePlan
+      ? '⏳'
+      : list === 'english'
+        ? activeSkill?.icon ?? activeChecklist.icon
+        : list === 'custom'
+          ? customSkillDef?.icon ?? customPlanState?.plan.icon ?? activeChecklist.icon
+          : activeChecklist.icon;
   const headerName =
-    list === 'english'
-      ? activeSkill?.label ?? activeChecklist.name
-      : list === 'custom'
-        ? customSkillDef?.name ?? customPlanState?.plan.title ?? activeChecklist.name
-        : activeChecklist.name;
-  const activeColor = feature[list];
-  const isDeadlineTab = list === 'custom' && customPlanState?.plan.mode === 'deadline';
+    tab === 'deadline' && !isDeadlinePlan
+      ? '截止清单'
+      : list === 'english'
+        ? activeSkill?.label ?? activeChecklist.name
+        : list === 'custom'
+          ? customSkillDef?.name ?? customPlanState?.plan.title ?? activeChecklist.name
+          : activeChecklist.name;
+  const activeColor = tab === 'deadline' && !isDeadlinePlan ? feature.custom : feature[list];
+  const isCheckTab = tab === 'check' || tab === 'deadline';
+  const goRecord = (): void => {
+    if (isDeadlinePlan) {
+      setCategory('custom');
+      setList('custom');
+      setTab('deadline');
+      return;
+    }
+    setTab('check');
+  };
+  const switchTab = (next: Tab): void => {
+    if (next === 'deadline') {
+      if (isDeadlinePlan) {
+        setCategory('custom');
+        setList('custom');
+      }
+      setTab('deadline');
+      return;
+    }
+    if (next === 'check' && list === 'custom' && isDeadlinePlan) {
+      setCategory('health');
+      setList(enabledChecklists('health')[0] ?? 'water');
+    }
+    setTab(next);
+  };
   const panels = panelsOf(list);
+  useEffect(() => {
+    if (tab === 'check' && category === 'custom' && isDeadlinePlan) {
+      setTab('deadline');
+    }
+  }, [tab, category, isDeadlinePlan]);
   const context = {
     snapshot,
     store,
@@ -155,7 +193,7 @@ export function CheckShell({
     onChangeCustomSkill: setCustomSkill,
     authToken,
     onOpenProfile: () => setTab('profile'),
-    onGoRecord: () => setTab('check')
+    onGoRecord: goRecord
   };
 
   return (
@@ -194,7 +232,7 @@ export function CheckShell({
         </View>
       </View>
 
-      {tab === 'check' ? (
+      {isCheckTab ? (
         <View style={styles.dateRow}>
           <View style={{ flex: 1, minWidth: 0 }}>
             <UIText variant="h1" numberOfLines={1}>
@@ -281,6 +319,31 @@ export function CheckShell({
 
       <View style={styles.body}>
         {tab === 'check' ? panels.Today(context) : null}
+        {tab === 'deadline' ? (
+          isDeadlinePlan ? (
+            panels.Today(context)
+          ) : (
+            <View style={styles.deadlineEmpty}>
+              <IconBadge icon="⏳" accent={palette.brand} size={52} />
+              <UIText variant="h2" style={{ marginTop: 14 }}>
+                还没有截止性清单
+              </UIText>
+              <UIText variant="body" tone="muted" style={{ marginTop: 6, textAlign: 'center' }}>
+                截止性清单在指定日期前完成，按事项勾选，不按天重复。
+              </UIText>
+              <AppButton
+                label="去自定义创建"
+                accent={palette.brand}
+                onPress={() => {
+                  setTab('check');
+                  setCategory('custom');
+                  setList('custom');
+                }}
+                style={{ marginTop: 18, alignSelf: 'stretch' }}
+              />
+            </View>
+          )
+        ) : null}
         {tab === 'data' ? (
           <DataPage
             checklist={list}
@@ -297,7 +360,7 @@ export function CheckShell({
             waterSnapshot={snapshot}
             waterStore={store}
             sportStore={sportStore}
-            onGoRecord={() => setTab('check')}
+            onGoRecord={goRecord}
           />
         ) : null}
         {tab === 'profile' ? (
@@ -318,7 +381,8 @@ export function CheckShell({
       <View style={styles.tabs} testID="bottom-tabs">
         {(
           [
-            ['check', isDeadlineTab ? '截止' : '重复', isDeadlineTab ? '⏳' : '🔁'],
+            ['check', '重复', '🔁'],
+            ['deadline', '截止', '⏳'],
             ['data', '洞察', '▤'],
             ['profile', '我的', '◉']
           ] as [Tab, string, string][]
@@ -329,7 +393,7 @@ export function CheckShell({
               key={key}
               accessibilityRole="button"
               accessibilityState={{ selected: active }}
-              onPress={() => setTab(key)}
+              onPress={() => switchTab(key)}
               style={({ pressed }) => [styles.tab, pressed && { opacity: 0.65 }]}
             >
               <View style={[styles.tabIcon, active && { backgroundColor: palette.brandTint }]}>
@@ -354,6 +418,7 @@ export function CheckShell({
             setSettingsOpen(false);
             setCategory('custom');
             setList('custom');
+            setTab(isDeadlinePlan ? 'deadline' : 'check');
           }}
           onDeleteCustom={deleteCustomPlan}
           onClose={() => setSettingsOpen(false)}
@@ -421,6 +486,13 @@ const styles = StyleSheet.create({
   bannerWrap: { paddingHorizontal: space.xl, paddingTop: 10 },
   banner: { paddingVertical: 9, paddingHorizontal: 12 },
   body: { flex: 1, minHeight: 0, marginTop: 6 },
+  deadlineEmpty: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: space.xl,
+    paddingVertical: 32
+  },
   tabs: {
     flexDirection: 'row',
     alignItems: 'center',
