@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { checklistOf, checklistsOf } from '../check/checklistRegistry';
 import { ENGLISH_SKILLS, type EnglishSkill } from '../model/englishChecklist';
-import { loadCustomPlanState } from '../check/customPlanStore';
+import { clearCustomPlanState, loadCustomPlanState } from '../check/customPlanStore';
+import { loadEnabledLists, saveEnabledLists, type EnabledLists } from '../check/checkSettingsStore';
+import { CheckSettingsPanel } from '../features/settings/CheckSettingsPanel';
 import type { CustomPlanState } from '../model/customPlan';
 import type { CheckSnapshot, CheckStore } from '../check/checkStore';
 import type { Category, DataSubTab, ListKey, Tab } from '../navigation/shellState';
@@ -55,6 +57,8 @@ export function CheckShell({
   const [englishSkill, setEnglishSkill] = useState<EnglishSkill>('reading');
   const [customPlanState, setCustomPlanState] = useState<CustomPlanState | null>(null);
   const [customSkill, setCustomSkill] = useState('');
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [enabledLists, setEnabledLists] = useState<EnabledLists>({});
   const [subTabByList, setSubTabByList] = useState<Partial<Record<ListKey, DataSubTab>>>({});
   useEffect(() => {
     const unsubscribe = store.subscribe(setSnapshot);
@@ -69,12 +73,43 @@ export function CheckShell({
         setCustomSkill(state.plan.skills[0]?.name ?? '');
       }
     });
+    void loadEnabledLists().then(setEnabledLists);
   }, []);
+
+  const isListEnabled = (key: ListKey): boolean => enabledLists[key] !== false;
+  const enabledChecklists = (next: Category): ListKey[] =>
+    checklistsOf(next)
+      .filter((item) => isListEnabled(item.key))
+      .map((item) => item.key);
+
+  useEffect(() => {
+    const available = enabledChecklists(category);
+    if (available.length > 0 && !available.includes(list)) {
+      setList(available[0] ?? list);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category, enabledLists, list]);
+
+  const toggleList = (key: ListKey, next: boolean): void => {
+    const merged = { ...enabledLists, [key]: next };
+    setEnabledLists(merged);
+    void saveEnabledLists(merged);
+  };
+
+  const deleteCustomPlan = (): void => {
+    void clearCustomPlanState();
+    setCustomPlanState(null);
+    setSettingsOpen(false);
+    if (category === 'custom') {
+      setCategory('health');
+      setList(enabledChecklists('health')[0] ?? 'water');
+    }
+  };
 
   // 切分类只回落清单，不劫持当前页签，也不丢二级记忆（NAV-03/07）。
   const switchCategory = (next: Category): void => {
     setCategory(next);
-    setList(checklistsOf(next)[0]?.key ?? 'water');
+    setList(enabledChecklists(next)[0] ?? checklistsOf(next)[0]?.key ?? 'water');
   };
   const subTab: DataSubTab = subTabByList[list] ?? 'stats';
   const changeSubTab = (next: DataSubTab): void => {
@@ -105,6 +140,7 @@ export function CheckShell({
         ? customSkillDef?.name ?? customPlanState?.plan.title ?? activeChecklist.name
         : activeChecklist.name;
   const activeColor = feature[list];
+  const isDeadlineTab = list === 'custom' && customPlanState?.plan.mode === 'deadline';
   const panels = panelsOf(list);
   const context = {
     snapshot,
@@ -132,6 +168,14 @@ export function CheckShell({
           </UIText>
         </View>
         <View style={styles.headerRight}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="清单管理"
+            onPress={() => setSettingsOpen(true)}
+            style={({ pressed }) => [styles.settingsButton, pressed && { opacity: 0.7 }]}
+          >
+            <UIText variant="bodyStrong" tone="muted">⚙</UIText>
+          </Pressable>
           {onOpenRewards ? (
             <Pressable
               accessibilityRole="button"
@@ -178,7 +222,7 @@ export function CheckShell({
             contentContainerStyle={styles.listRow}
             style={styles.listScroll}
           >
-            {checklistsOf(category).map((item) => {
+            {checklistsOf(category).filter((item) => isListEnabled(item.key)).map((item) => {
               const color = feature[item.key];
               const active = item.key === list;
               return (
@@ -274,7 +318,7 @@ export function CheckShell({
       <View style={styles.tabs} testID="bottom-tabs">
         {(
           [
-            ['check', '清单', '✓'],
+            ['check', isDeadlineTab ? '截止' : '重复', isDeadlineTab ? '⏳' : '🔁'],
             ['data', '洞察', '▤'],
             ['profile', '我的', '◉']
           ] as [Tab, string, string][]
@@ -300,6 +344,21 @@ export function CheckShell({
           );
         })}
       </View>
+
+      {settingsOpen ? (
+        <CheckSettingsPanel
+          enabled={enabledLists}
+          customPlan={customPlanState}
+          onToggle={toggleList}
+          onOpenCustom={() => {
+            setSettingsOpen(false);
+            setCategory('custom');
+            setList('custom');
+          }}
+          onDeleteCustom={deleteCustomPlan}
+          onClose={() => setSettingsOpen(false)}
+        />
+      ) : null}
     </View>
   );
 }
@@ -316,6 +375,14 @@ const styles = StyleSheet.create({
   },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  settingsButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: palette.surfaceAlt
+  },
   points: {
     flexDirection: 'row',
     alignItems: 'center',

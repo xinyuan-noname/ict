@@ -301,7 +301,7 @@ export function CustomPanel({
   const doneCount = items.filter((item) => item.progress >= item.need).length;
   const deadlineDays = plan.deadline ? daysUntil(plan.deadline) : null;
 
-  const toggleDeadlineItem = (item: CustomAchievementItem): void => {
+  const toggleItem = (item: CustomAchievementItem): void => {
     if (!state) {
       return;
     }
@@ -373,7 +373,7 @@ export function CustomPanel({
                 key={item.key}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: done }}
-                onPress={() => toggleDeadlineItem(item)}
+                onPress={() => toggleItem(item)}
                 style={({ pressed }) => [styles.deadlineRow, pressed && { opacity: 0.7 }]}
               >
                 <View style={[styles.checkbox, done && { backgroundColor: color.main, borderColor: color.main }]}>
@@ -594,6 +594,33 @@ export function CustomPanel({
           </View>
         </View>
         <ProgressBar ratio={Math.min(1, unlocked / Math.max(1, items.length))} color={color.main} height={7} />
+      </Surface>
+
+      <SectionHeader title="清单表单" caption={`${selectedSkill?.name ?? ''} · 勾选即完成`} style={{ marginTop: 22 }} />
+      <Surface>
+        {items.map((item) => {
+          const done = item.progress >= item.need;
+          return (
+            <Pressable
+              key={item.key}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: done }}
+              onPress={() => toggleItem(item)}
+              style={({ pressed }) => [styles.deadlineRow, pressed && { opacity: 0.7 }]}
+            >
+              <View style={[styles.checkbox, done && { backgroundColor: color.main, borderColor: color.main }]}>
+                {done ? <UIText variant="caption" color="#FFFFFF" style={{ fontWeight: '800' }}>✓</UIText> : null}
+              </View>
+              <View style={{ flex: 1 }}>
+                <UIText variant="bodyStrong" style={{ fontSize: 13 }}>{item.name}</UIText>
+                <UIText variant="caption" tone="muted" numberOfLines={2}>{item.desc}</UIText>
+              </View>
+              <UIText variant="caption" color={done ? palette.success : palette.faint} style={{ fontWeight: '700' }}>
+                {done ? '已完成' : `${item.progress}/${item.need} ${unit}`}
+              </UIText>
+            </Pressable>
+          );
+        })}
       </Surface>
 
       <AppButton

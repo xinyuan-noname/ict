@@ -22,3 +22,7 @@ export async function loadCustomPlanState(): Promise<CustomPlanState | null> {
 export async function saveCustomPlanState(state: CustomPlanState): Promise<void> {
   await AsyncStorage.setItem(KEY, JSON.stringify(state));
 }
+
+export async function clearCustomPlanState(): Promise<void> {
+  await AsyncStorage.removeItem(KEY);
+}
