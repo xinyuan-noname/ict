@@ -19,14 +19,25 @@ if ($env:HUAWEI_CLIENT_SECRET.Length -lt 32) {
 }
 
 if (-not $env:SESSION_PEPPER) {
-  $bytes = New-Object byte[] 32
-  [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
-  $env:SESSION_PEPPER = ($bytes | ForEach-Object { $_.ToString("x2") }) -join ""
+  $pepperFile = Join-Path $root "server\data\session.pepper"
+  if (Test-Path -LiteralPath $pepperFile) {
+    $env:SESSION_PEPPER = (Get-Content -LiteralPath $pepperFile -Raw).Trim()
+  } else {
+    $bytes = New-Object byte[] 32
+    [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+    $env:SESSION_PEPPER = ($bytes | ForEach-Object { $_.ToString("x2") }) -join ""
+    $parent = Split-Path -Parent $pepperFile
+    if (-not (Test-Path -LiteralPath $parent)) {
+      New-Item -ItemType Directory -Path $parent -Force | Out-Null
+    }
+    Set-Content -LiteralPath $pepperFile -Value $env:SESSION_PEPPER -NoNewline
+  }
 }
 
 $env:AUTH_MODE = "real"
 $env:AUTH_ALLOW_MOCK = "0"
 $env:SERVER_ADDR = ":8443"
+$env:AUTH_STORAGE_NAMESPACE = "real"
 
 $ip = Get-NetIPAddress -AddressFamily IPv4 |
   Where-Object { $_.IPAddress -like '192.168.137.*' } |

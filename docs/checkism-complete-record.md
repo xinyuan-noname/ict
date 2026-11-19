@@ -364,6 +364,8 @@ curl http://192.168.137.1:8443/v1/health
 
 手机与电脑必须同一局域网，且 Windows 防火墙放行 TCP 8443。健康检查返回 `status: ok` 后再打开 App。
 
+`scripts/start-authd-real.ps1` 会把 `SESSION_PEPPER` 保存到 `server/data/session.pepper`（本地忽略文件）。不要每次启动都生成新 pepper，否则旧会话会全部失效，App 会提示 `AUTH_005 登录已过期`。
+
 当前本地验证结果：authd 启动后，华为账号 `hid36683688` 登录成功，云端同步开启。
 
 ```bash
